@@ -17,32 +17,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_fast_comp_dict.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_fast_comp_dict.c,v 1.3 1994/10/20 03:56:55 tes Exp $
  *
  **************************************************************************/
 
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:06  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:44  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:34:57  rjmcnab
-   *** empty log message ***
-
+   $Log: mg_fast_comp_dict.c,v $
    * Revision 1.3  1994/10/20  03:56:55  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -52,7 +33,7 @@
    *
  */
 
-static char *RCSID = "$Id: mg_fast_comp_dict.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg_fast_comp_dict.c,v 1.3 1994/10/20 03:56:55 tes Exp $";
 
 #include "sysfuncs.h"
 
@@ -61,7 +42,6 @@ static char *RCSID = "$Id: mg_fast_comp_dict.c 16583 2008-07-29 10:20:36Z davidb
 #include "timing.h"
 #include "messages.h"
 #include "memlib.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "local_strings.h"
 #include "mg.h"
@@ -101,7 +81,8 @@ static void *cur;
 static u_char *fixup;
 static u_long mem, fixup_mem;
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   ProgTime StartTime;
   int ch;
@@ -144,65 +125,12 @@ int main (int argc, char **argv)
   if ((u_long) cur > (u_long) buffer + mem)
     FatalError (1, "The buffer was not big enough for the dictionary");
 
-  {
-    /* [RPAP - Jan 97: Endian Ordering] */
-    compression_dict *cd = (compression_dict *) buffer;
-    int i, which;
-
-    /* cfh */
-    for (which = 0; which <= 1; which++)
-      {
-	int j;
-	
-	HTONSI(cd->cfh[which]->hd.num_codes);
-	HTONSI(cd->cfh[which]->hd.mincodelen);
-	HTONSI(cd->cfh[which]->hd.maxcodelen);
-	for (j = 0; j < MAX_HUFFCODE_LEN + 1; j++)
-	  {
-	    HTONSI(cd->cfh[which]->hd.lencount[j]);
-	    HTONUL(cd->cfh[which]->hd.min_code[j]);
-	  }
-	HTONUL(cd->cfh[which]->uncompressed_size);
-	for (j = 0; j < MAX_HUFFCODE_LEN + 1; j++)
-	  HTONUL(cd->cfh[which]->huff_words_size[j]);
-      }
-    HTONUL(cd->MemForCompDict);
-    /* ad */
-    if (cd->cdh.novel_method == MG_NOVEL_BINARY ||
-	cd->cdh.novel_method == MG_NOVEL_DELTA ||
-	cd->cdh.novel_method == MG_NOVEL_HYBRID ||
-	cd->cdh.novel_method == MG_NOVEL_HYBRID_MTF)
-      for (which = 0; which <= 1; which++)
-	{
-	  int j;
-	  
-	  HTONUL(cd->ad->afh[which].num_frags);
-	  HTONUL(cd->ad->afh[which].mem_for_frags);
-	  for (j = 0; j < 33; j++)
-	    {
-	      HTONSI(cd->ad->blk_start[which][j]);
-	      HTONSI(cd->ad->blk_end[which][j]);
-	    }
-	}
-    /* cdh */
-    HTONUL(cd->cdh.dict_type);
-    HTONUL(cd->cdh.novel_method);
-    for (i = 0; i < TEXT_PARAMS; i++)
-      HTONUL(cd->cdh.params[which]);
-    HTONUL(cd->cdh.num_words[0]);
-    HTONUL(cd->cdh.num_words[1]);
-    HTONUL(cd->cdh.num_word_chars[0]);
-    HTONUL(cd->cdh.num_word_chars[1]);
-    HTONUL(cd->cdh.lookback);
-    HTONSI(cd->fast_loaded);
-  }
-
   unfixup_buffer ();
 
   save_fast_dict (filename);
 
   Message ("%s", ElapsedTime (&StartTime, NULL));
-  return 0;
+  exit (0);
 }
 
 
@@ -228,15 +156,13 @@ mem_for_aux_dict (compression_dict_header * cdh, char *filename)
   u_long mem = sizeof (auxiliary_dict);
   FILE *aux;
 
-  aux = open_file (filename, TEXT_DICT_AUX_SUFFIX, "rb",
-		   MAGIC_AUX_DICT, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  aux = open_file (filename, TEXT_DICT_AUX_SUFFIX, "r",
+		   MAGIC_AUX_DICT, MG_ABORT);
 
   for (i = 0; i <= 1; i++)
     {
       aux_frags_header afh;
       fread (&afh, sizeof (afh), 1, aux);
-      NTOHUL(afh.num_frags);  /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(afh.mem_for_frags);  /* [RPAP - Jan 97: Endian Ordering] */
       mem += afh.num_frags * sizeof (u_char *);
       mem = ALIGN_SIZE (mem + afh.mem_for_frags, u_char *);
       fseek (aux, afh.mem_for_frags, SEEK_CUR);
@@ -289,22 +215,11 @@ mem_for_comp_dict (char *filename)
   comp_frags_header cfh;
   FILE *dict;
   int which;
-  int i;  /* [RPAP - Jan 97: Endian Ordering] */
 
-  dict = open_file (filename, TEXT_DICT_SUFFIX, "rb",
-		    MAGIC_DICT, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  dict = open_file (filename, TEXT_DICT_SUFFIX, "r",
+		    MAGIC_DICT, MG_ABORT);
 
   fread (&cdh, sizeof (cdh), 1, dict);
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(cdh.dict_type);
-  NTOHUL(cdh.novel_method);
-  for (i = 0; i < TEXT_PARAMS; i++)
-    NTOHUL(cdh.params[i]);
-  NTOHUL(cdh.num_words[0]);
-  NTOHUL(cdh.num_words[1]);
-  NTOHUL(cdh.num_word_chars[0]);
-  NTOHUL(cdh.num_word_chars[1]);
-  NTOHUL(cdh.lookback);
 
   for (which = 0; which < 2; which++)
     switch (cdh.dict_type)
@@ -441,8 +356,8 @@ LoadAuxDict (compression_dict_header * cdh,
   int i;
   FILE *aux;
 
-  aux = open_file (filename, TEXT_DICT_AUX_SUFFIX, "rb",
-		   MAGIC_AUX_DICT, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  aux = open_file (filename, TEXT_DICT_AUX_SUFFIX, "r",
+		   MAGIC_AUX_DICT, MG_ABORT);
 
   ad = getmem (sizeof (auxiliary_dict), sizeof (u_char *));
 
@@ -453,9 +368,6 @@ LoadAuxDict (compression_dict_header * cdh,
 
       fread (&ad->afh[i], sizeof (aux_frags_header), 1, aux);
 
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(ad->afh[i].num_frags);
-      NTOHUL(ad->afh[i].mem_for_frags);
 
       ad->word_data[i] = getmem (ad->afh[i].mem_for_frags, 1);
       FIXUP (&ad->word_data[i]);
@@ -637,8 +549,8 @@ load_comp_dict (char *filename)
   cd = getmem (sizeof (compression_dict), sizeof (u_char *));
   cd->fast_loaded = 1;
 
-  dict = open_file (filename, TEXT_DICT_SUFFIX, "rb",
-		    MAGIC_DICT, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  dict = open_file (filename, TEXT_DICT_SUFFIX, "r",
+		    MAGIC_DICT, MG_ABORT);
 
   Read_cdh (dict, &cd->cdh, NULL, NULL);
 
@@ -763,6 +675,7 @@ load_comp_dict (char *filename)
       cd->ad = LoadAuxDict (&cd->cdh, filename);
       FIXUP (&cd->ad);
     }
+
 }
 
 
@@ -771,29 +684,11 @@ save_fast_dict (char *filename)
 {
   FILE *fdict;
 
-  fdict = create_file (filename, TEXT_DICT_FAST_SUFFIX, "wb",
-		       MAGIC_FAST_DICT, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
-
-  {
-    u_long *p;
-    for (p = buffer; (u_long) p < (u_long) cur; p++)
-      {
-	if (IS_FIXUP (p))
-	  HTONUL(*p);
-      }
-  }
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(mem);
-  HTONUL(fixup_mem);
+  fdict = create_file (filename, TEXT_DICT_FAST_SUFFIX, "w",
+		       MAGIC_FAST_DICT, MG_ABORT);
 
   fwrite (&mem, sizeof (mem), 1, fdict);
   fwrite (&fixup_mem, sizeof (fixup_mem), 1, fdict);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(mem);
-  NTOHUL(fixup_mem);
-
   fwrite (buffer, sizeof (u_char), mem, fdict);
   fwrite (fixup, sizeof (u_char), fixup_mem, fdict);
 

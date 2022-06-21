@@ -17,39 +17,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mgquery.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mgquery.c,v 1.1 1997/07/16 05:51:46 wew Exp wew $
  *
  **************************************************************************/
 
 /*
-   $Log$
-   Revision 1.2  2004/06/22 04:17:51  kjdon
-   fixed a couple of compiler warnings
-
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:18  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.3  1999/01/08 00:33:46  rjmcnab
-
-   Enabled mg and the library software to read in more than one index
-   at a time.
-
-   Revision 1.2  1998/11/25 07:55:49  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:29  rjmcnab
-   *** empty log message ***
-
+   $Log: mgquery.c,v $
+ * Revision 1.1  1997/07/16  05:51:46  wew
+ * Initial revision
+ *
    * Revision 1.3  1994/10/20  03:57:02  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -59,7 +35,11 @@
    *
  */
 
-static char *RCSID = "$Id: mgquery.c 16583 2008-07-29 10:20:36Z davidb $";
+/*
+  minor revisions 1999/07/30 Tim Bell <bhat@cs.mu.oz.au>
+*/
+
+static char *RCSID = "$Id: mgquery.c,v 1.1 1997/07/16 05:51:46 wew Exp wew $";
 
 #include "sysfuncs.h"
 
@@ -97,7 +77,6 @@ static char *RCSID = "$Id: mgquery.c 16583 2008-07-29 10:20:36Z davidb $";
 #include "messages.h"
 #include "timing.h"
 #include "memlib.h"
-#include "local_strings.h"  /* [RPAP - Feb 97: Term Frequency] */
 
 #include "filestats.h"
 #include "invf.h"
@@ -112,33 +91,12 @@ static char *RCSID = "$Id: mgquery.c 16583 2008-07-29 10:20:36Z davidb $";
 #include "commands.h"
 #include "text_get.h"
 #include "term_lists.h"
-#include "query_term_list.h"
+
 
 
 FILE *OutFile = NULL, *InFile = NULL;
 int OutPipe = 0, InPipe = 0;
 int Quitting = 0;
-
-/* [RPAP - Feb 97: NZDL Additions] */
-#if defined(PARADOCNUM) ||  defined(NZDL)
-int GetDocNumFromParaNum(query_data *qd, int paranum) {
-  int Documents = qd->td->cth.num_of_docs;
-  int *Paragraph = qd->paragraph;
-  int low = 1, high = Documents;
-  int mid = (low+high)/2;
-
-  while ((mid = (low+high)/2) >=1 && mid <= Documents)
-    {
-      if (paranum > Paragraph[mid])
-	low = mid+1;
-      else if (paranum <= Paragraph[mid-1])
-	high = mid-1;
-      else
-	return mid;
-    }
-  FatalError(1, "Bad paragraph number.\n");
-}
-#endif
 
 #ifdef TREC_MODE
 char *trec_ids = NULL;
@@ -147,6 +105,17 @@ long *trec_paras = NULL;
 
 static volatile int PagerRunning = 0;
 static volatile int Ctrl_C = 0;
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*****************************************************************************/
@@ -347,25 +316,24 @@ static void
 StatFile (File * F)
 {
   static unsigned long NumBytes = 0, NumSeeks = 0, NumReads = 0;
-  if (F) 
-    {
-      if ((int) F != -1)
-	{
-	  if (!BooleanEnv (GetEnv ("briefstats"), 0))
-	    Add_Stats (S_File, F->name, "%7.1f kB (%3d seeks, %7d reads)",
-		       (double) F->Current.NumBytes / 1024, F->Current.NumSeeks,
-		       F->Current.NumReads);
-	  NumBytes += F->Current.NumBytes;
-	  NumSeeks += F->Current.NumSeeks;
-	  NumReads += F->Current.NumReads;
-	}
-      else
-	{
-	  Add_Stats (S_File, "total", "%7.1f kB (%3d seeks, %7d reads)",
-		     (double) NumBytes / 1024, NumSeeks, NumReads);
-	  NumSeeks = NumReads = NumBytes = 0;
-	}
-    }
+  if (F)
+    if (F != (File *) -1)
+      {
+	if (!BooleanEnv (GetEnv ("briefstats"), 0))
+	  Add_Stats (S_File, F->name, "%7.1f kB (%3d seeks, %7d reads)",
+		   (double) F->Current.NumBytes / 1024, F->Current.NumSeeks,
+		     F->Current.NumReads);
+	NumBytes += F->Current.NumBytes;
+	NumSeeks += F->Current.NumSeeks;
+	NumReads += F->Current.NumReads;
+      }
+    else
+      {
+	Add_Stats (S_File, "total", "%7.1f kB (%3d seeks, %7d reads)",
+		   (double) NumBytes / 1024, NumSeeks, NumReads);
+	NumSeeks = NumReads = NumBytes = 0;
+      }
+
 }
 
 
@@ -377,15 +345,6 @@ File_Stats (query_data * qd)
   StatFile (qd->File_text_idx_wgt);
   StatFile (qd->File_text);
   StatFile (qd->File_stem);
-
-  /* [RPAP - Jan 97: Stem Index Change] */
-  if (qd->sd->sdh.indexed)
-    {
-      StatFile (qd->File_stem1);
-      StatFile (qd->File_stem2);
-      StatFile (qd->File_stem3);
-    }
-
   StatFile (qd->File_invf);
   StatFile (qd->File_weight_approx);
   StatFile (qd->File_text_idx);
@@ -408,12 +367,7 @@ get_query (query_data * qd)
 	      if (stdin == InFile)
 		return (NULL);	/* EOF */
 	      if (InPipe)
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-		_pclose (InFile);
-#else
 		pclose (InFile);
-#endif
 	      else
 		fclose (InFile);
 	      InPipe = 0;
@@ -441,12 +395,7 @@ static RETSIGTYPE
 SIGPIPE_handler (int sig)
 #endif
 {
-  /* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-  signal (sig, SIG_IGN);
-#else
   signal (SIGPIPE, SIG_IGN);
-#endif
   PagerRunning = 0;
 }
 
@@ -490,7 +439,7 @@ GetPostProc (char *line)
 	{
 	  char *s;
 	  s = re_comp (post_proc);
-	  if (!s)
+	  if (s != NULL)    /* no error msg returned */
 	    {
 	      Xfree (post_proc);
 	      post_proc = NULL;
@@ -510,9 +459,8 @@ PostProc (char *UDoc, int verbatim)
   if (!post_proc)
     return 1;
 
-  if (verbatim) {
-    return (strstr (UDoc, post_proc) != NULL);
-  }
+  if (verbatim)
+    return strstr (UDoc, post_proc) != NULL;
   return re_exec ((char *) UDoc);
 }
 
@@ -534,7 +482,7 @@ in_chain (int para, int ip, DocEntry * dc)
 int 
 RawDocOutput (query_data * qd, u_long num, FILE * Output)
 {
-  static u_long last_pos = 0;
+  static last_pos = 0;
   static u_char *c_buffer = 0;
   static int buf_len = -1;
   static u_char *uc_buffer = 0;
@@ -629,17 +577,6 @@ HeaderOut (FILE * Output, u_char * UDoc, unsigned long ULen, int heads_length)
     }
 }
 
-/* [RPAP - Feb 97: NZDL Additions] */
-#if defined(PARADOCNUM) || defined(NZDL)
-void PrintDocNum(FILE *output, char query_type,
-		 int docnum, int indexnum, float weight)
-{
-  if (query_type == 'R' || query_type == 'A')
-    fprintf(output, "%7d.%-7d  %6.4f\n", docnum, indexnum, weight);
-  else
-    fprintf(output, "%7d.%-7d\n", docnum, indexnum);
-}
-#endif
 
 static int 
 ProcessDocs (query_data * qd, int num, int verbatim,
@@ -653,8 +590,7 @@ ProcessDocs (query_data * qd, int num, int verbatim,
   int heads_length = atoi (GetDefEnv ("heads_length", "50"));
   char QueryType = get_query_type ();
   int need_text = (OutputType == OUTPUT_TEXT || OutputType == OUTPUT_HILITE ||
-		   OutputType == OUTPUT_HEADERS || OutputType == OUTPUT_SILENT || 
-		   post_proc); /* [RJM June 1997 -- fixing post retrieval scan] */
+	       OutputType == OUTPUT_HEADERS || OutputType == OUTPUT_SILENT);
 
   if (OutputType == OUTPUT_TEXT || OutputType == OUTPUT_HILITE)
     {
@@ -704,6 +640,7 @@ ProcessDocs (query_data * qd, int num, int verbatim,
 	    FatalError (1, "UDoc is unexpectedly NULL");
 	}
 
+
       if (!UDoc || PostProc ((char *) UDoc, verbatim))
 	{
 	  switch (OutputType)
@@ -713,56 +650,8 @@ ProcessDocs (query_data * qd, int num, int verbatim,
 	      break;
 	    case OUTPUT_DOCNUMS:	/* This prints out the docnums string */
 	      if (PagerRunning)
-		{
-
-/* [RPAP - Feb 97: NZDL Additions] */
-#if defined(PARADOCNUM) || defined(NZDL)
-		  int doc_num = GetDocNum(qd);
-
-		  if (qd->paragraph)
-		    {
-		      if (qd->id->ifh.InvfLevel == 3 &&
-			  (QueryType == 'R' || QueryType == 'A'))
-			{
-			  /* Print weights for each paragraph in document */
-			  
-
-			  int true_doc_num = GetDocNumFromParaNum(qd, doc_num);
-
-			  /* Get number of paragraphs in this document */
-
-			  int num_paragraphs = 
-			    qd->paragraph[true_doc_num]-qd->paragraph[true_doc_num-1];
-
-			  int init_para = FetchInitialParagraph(qd->td,
-								doc_num);
-			  DocEntry *de, *doc_chain = GetDocChain(qd);
-			  int i;
-
-			  for (i = 0; i < num_paragraphs; i++)
-			    {
-			      if ((de = in_chain(i, init_para, doc_chain)))
-				PrintDocNum(Output, QueryType,
-					    true_doc_num, init_para+i,
-					    de->Weight);
-			    }
-			}
-		      else
-			PrintDocNum(Output, QueryType,
-				    GetDocNumFromParaNum(qd, GetDocNum(qd)),
-				    GetDocNum(qd),
-				    GetDocWeight(qd));
-		    }
-		  else
-		    {
-		      PrintDocNum(Output, QueryType,
-				  doc_num, doc_num, GetDocWeight(qd));
-		    }
-#else
-		fprintf (Output, "%7d   %6.4f   %7lu\n", GetDocNum (qd),
+		fprintf (Output, "%8d   %6.4f   %7lu\n", GetDocNum (qd),
 			 GetDocWeight (qd), GetDocCompLength (qd));
-#endif
-		}
 	      break;
 	    case OUTPUT_HEADERS:	/* This prints out the headers of the documents */
 	      if (PagerRunning)
@@ -791,29 +680,9 @@ ProcessDocs (query_data * qd, int num, int verbatim,
 		int j, para = -1, curr_para = 0;
 		int init_para = -1;
 		DocEntry *de, *doc_chain = NULL;
+		int p_on = 0;
 		register char ch = ' ';
 		register char lch = '\n';
-
-/* [RPAP - Feb 97: NZDL Additions] */
-#if defined(PARADOCNUM) || defined(NZDL)
-		if (qd->id->ifh.InvfLevel == 3)
-		  {
-		    init_para = FetchInitialParagraph(qd->td, GetDocNum(qd));
-		    
-		    StringOut(Output, para_sepstr, 
-			      1, init_para+curr_para,
-			      0, 0);
-
-		  }
-		else
-		  StringOut(Output, doc_sepstr, 
-			    1, GetDocNum(qd),
-			    QueryType == 'A' || QueryType == 'R',
-			    GetDocWeight(qd));
-
-#else
-		int p_on = 0;
-
 		if (PagerRunning)
 		  {
 		    StringOut (Output, doc_sepstr,
@@ -839,7 +708,6 @@ ProcessDocs (query_data * qd, int num, int verbatim,
 		    if (doc_chain->DocNum - init_para == 0)
 		      p_on = 1;
 		  }
-#endif
 		for (j = 0; j < ULen; j++)
 		  {
 		    ch = UDoc[j];
@@ -850,18 +718,6 @@ ProcessDocs (query_data * qd, int num, int verbatim,
 		      case '\01':
 			ch = '\n';
 		      case '\03':
-/* [RPAP - Feb 97: NZDL Additions] */
-#if defined(PARADOCNUM) || defined(NZDL)
-			/* print paragraph numbers only if this is
-			   a level 3 index */
-			if (qd->id->ifh.InvfLevel == 3)
-			  {
-			    curr_para++;
-			    StringOut(Output, para_sepstr, 
-				      1, init_para+curr_para,
-				      0, 0);
-			  }
-#else
 			p_on = 0;
 			curr_para++;
 			StringOut (Output, para_sepstr,
@@ -875,21 +731,17 @@ ProcessDocs (query_data * qd, int num, int verbatim,
 			if (doc_chain &&
 			    doc_chain->DocNum - init_para == curr_para)
 			  p_on = 1;
-#endif
 			break;
 		      default:
 			{
 			  if (PagerRunning)
 			    {
 			      fputc (ch, Output);
-/* [RPAP - Feb 97: NZDL Additions] */
-#if !defined(PARADOCNUM) && !defined(NZDL)
 			      if (p_on && isprint (ch))
 				{
 				  fputc ('\b', Output);
 				  fputc ('_', Output);
 				}
-#endif
 			    }
 
 			  lch = ch;
@@ -898,17 +750,14 @@ ProcessDocs (query_data * qd, int num, int verbatim,
 		  }
 		if (PagerRunning && lch != '\n')
 		  fputc ('\n', Output);
-/* [RPAP - Feb 97: NZDL Additions] */
-#if !defined(PARADOCNUM) && !defined(NZDL)
 		p_on = 0;
-#endif
 	      }
 	    }
 	  if (PagerRunning)
 	    fflush (Output);
-
-	  DocCount++; /* moved within if statement [RJM June 1997 -- fixing post retrieval scan] */
 	}
+      DocCount++;
+
     }
   while (NextDoc (qd) && PagerRunning && (!Ctrl_C));
 
@@ -945,13 +794,7 @@ output_terminator (FILE * out)
 /* Documents are fetched, then decompressed and displayed according to the */
 /* format implied in  FormString(). */
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-# define HILITE_PAGER "mg_hilite_words.exe"
-#else
-# define HILITE_PAGER "mg_hilite_words"
-#endif
-
+#define HILITE_PAGER "mg_hilite_words"
 #define MAX_HILITE_PAGER_STR 80	/* for command & its options */
 
 static void 
@@ -967,10 +810,7 @@ MoreDocs (query_data * qd, char *Query, char OutputType)
 
   qd->num_of_ans = qd->DL->num;
 
-  /* [RPAP - Feb 97: WIN32 Port] */
-#ifndef __WIN32__
   signal (SIGPIPE, SIGPIPE_handler);
-#endif
   signal (SIGINT, SIGINT_handler);
 
   PagerRunning = 1;
@@ -990,12 +830,11 @@ MoreDocs (query_data * qd, char *Query, char OutputType)
 	  fprintf (stderr, "Unable to allocate memory for highlighting\n");
 	  return;
 	}
-      sprintf (pager, "%s --style=%s --pager=%s --stem_method=%ld --stemmer=%ld %s",
+      sprintf (pager, "%s --style=%s --pager=%s --stem_method=%ld %s",
 	       HILITE_PAGER,
 	       GetEnv ("hilite_style"),
 	       GetEnv ("pager"),
 	       qd->sd->sdh.stem_method,
-	       qd->sd->sdh.stemmer_num,
 	       terms_str);
 
     }
@@ -1004,22 +843,9 @@ MoreDocs (query_data * qd, char *Query, char OutputType)
       Output = OutFile;
     }
 
-/* [RPAP - Feb 97: NZDL Additions] */
-#if defined(OUTPUTSTEMMEDWORDS) || defined(NZDL)
-  if (!isatty(fileno(OutFile)) && get_query_type() != QUERY_DOCNUMS)
-    {
-      ConvertTermsToString(qd->TL, terms_str);
-      fprintf(Output, "%s\n", terms_str);
-    }
-#endif
   if (pager)
     {
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-      Output = _popen (pager, "w");
-#else
       Output = popen (pager, "w");
-#endif
       using_pipe = (Output != NULL);
       if (!using_pipe)
 	{
@@ -1033,11 +859,10 @@ MoreDocs (query_data * qd, char *Query, char OutputType)
     {
       if (OutputType == OUTPUT_COUNT && !post_proc)
 	DocCount = qd->DL->num;
-      else {
+      else
 	DocCount = ProcessDocs (qd, qd->DL->num,
 				BooleanEnv (GetEnv ("verbatim"), 1),
 				OutputType, Output);
-      }
     }
 
   if (PagerRunning)
@@ -1050,12 +875,7 @@ MoreDocs (query_data * qd, char *Query, char OutputType)
     free (pager);		/* as needed to malloc to create the pager string */
 
   if (using_pipe)
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-    _pclose (Output);
-#else
     pclose (Output);
-#endif
 
   if (qd->DL->num == 0)
     fprintf (stderr, "No entries correspond to that query.\n");
@@ -1111,47 +931,6 @@ shut_down_stats (query_data * qd, ProgTime * start,
 }
 
 
-
-char *wordfreqword2str (u_char * s)
-{
-  static char buf[1024];
-  int i, len = (int) *s++;
-
-  for (i = 0; i < len; i++)
-    {
-      buf[i] = (char)s[i];
-    }
-  buf[len] = '\0';
-
-  return buf;
-}
-
-
-/* [RPAP - Feb 97: Term Frequency] */
-/*********************************
- * PrintQueryTermFreq
- *
- * Prints the query terms and their respective frequencies within the collection
- *********************************/
-void
-PrintQueryTermFreqs (QueryTermList *qtl)
-{
-  int i;
-
-  /* Print the number of terms */
-  fprintf (OutFile, "%d\n", qtl->num);
-
-  /* Print the terms and their respective frequency within the collection */
-  for (i = 0; i < qtl->num; i++)
-    if (qtl->QTE[i].stem_method == -1)
-      /* Using default stem method - don't print stem method beside term */
-      fprintf (OutFile, "%s %d\n", wordfreqword2str (qtl->QTE[i].Term), qtl->QTE[i].Count);
-    else
-      /* Term was forced with a stem, print stem method with term */
-      fprintf (OutFile, "%s#%d %d\n", wordfreqword2str (qtl->QTE[i].Term), qtl->QTE[i].stem_method, qtl->QTE[i].Count);
-}
-
-
 void 
 query (void)
 {
@@ -1163,19 +942,9 @@ query (void)
   TotalInvfTime.RealTime = TotalInvfTime.CPUTime = 0;
   TotalTextTime.RealTime = TotalTextTime.CPUTime = 0;
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-  qd = InitQuerySystem (GetDefEnv ("mgdir", ".\\"),
-                        GetDefEnv ("mgname", ""),
-			GetDefEnv ("textname", NULL), /* [RJM 06/97: text filename] */
-			&iqt);
-#else
   qd = InitQuerySystem (GetDefEnv ("mgdir", "./"),
-                        GetDefEnv ("mgname", ""),
-			GetDefEnv ("textname", NULL), /* [RJM 06/97: text filename] */
-                        &iqt);
-#endif
-
+			GetDefEnv ("mgname", ""),
+			&iqt);
   if (!qd)
     FatalError (1, mg_errorstrs[mg_errno], mg_error_data);
   start_up_stats (qd, iqt);
@@ -1226,13 +995,7 @@ query (void)
 	    BooleanQueryInfo bqi;
 	    maxdocs = GetDefEnv ("maxdocs", "all");
 	    bqi.MaxDocsToRetrieve = strcmp (maxdocs, "all") ? atoi (maxdocs) : -1;
-	    /* [RPAP - Jan 97: Stem Index Change] */
-	    if (qd->sd->sdh.indexed)
-	      BooleanQuery (qd, line, &bqi, (BooleanEnv (GetEnv ("casefold"), 0) |
-					     (BooleanEnv (GetEnv ("stem"), 0) << 1)));
-	    else
-	      BooleanQuery (qd, line, &bqi, qd->sd->sdh.stem_method);
-
+	    BooleanQuery (qd, line, &bqi);
 	    break;
 	  }
 	case QUERY_APPROX:
@@ -1269,10 +1032,6 @@ query (void)
 	}
 
       GetTime (&InvfTime);
-
-      /* [RPAP - Feb 97: Term Frequency] */
-      if (qd->QTL && BooleanEnv (GetEnv ("term_freq"), 0))
-	PrintQueryTermFreqs (qd->QTL);
 
       if (qd->DL)
 	MoreDocs (qd, line, OutputType);
@@ -1313,22 +1072,12 @@ query (void)
 void 
 search_for_collection (char *name)
 {
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-  char *dir = GetDefEnv ("mgdir", ".\\");
-#else
   char *dir = GetDefEnv ("mgdir", "./");
-#endif
   char buffer[512];
   struct stat stat_buf;
   if (strrchr (dir, '/') && *(strrchr (dir, '/') + 1) != '\0')
     {
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-      sprintf (buffer, "%s", dir);
-#else
       sprintf (buffer, "%s/", dir);
-#endif
       SetEnv ("mgdir", buffer, NULL);
       dir = GetEnv ("mgdir");
     }
@@ -1340,12 +1089,7 @@ search_for_collection (char *name)
 	{
 	  /* The name is a directory */
 	  SetEnv ("mgname", name, NULL);
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-          SetEnv ("mgdir", ".\\", NULL);
-#else
 	  SetEnv ("mgdir", "./", NULL);
-#endif
 	  return;
 	}
     }
@@ -1356,12 +1100,7 @@ search_for_collection (char *name)
       if ((stat_buf.st_mode & S_IFDIR) != 0)
 	{
 	  /* The name is a directory */
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-          sprintf (buffer, "%s%s", name, name);
-#else
 	  sprintf (buffer, "%s/%s", name, name);
-#endif
 	  SetEnv ("mgname", buffer, NULL);
 	  return;
 	}
@@ -1373,15 +1112,9 @@ search_for_collection (char *name)
       if ((stat_buf.st_mode & S_IFDIR) != 0)
 	{
 	  /* The name is a directory */
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-          sprintf (buffer, "%s%s", name, name);
-          SetEnv ("mgdir", ".\\", NULL);
-#else
 	  sprintf (buffer, "%s/%s", name, name);
-          SetEnv ("mgdir", "./", NULL);
-#endif
 	  SetEnv ("mgname", buffer, NULL);
+	  SetEnv ("mgdir", "./", NULL);
 	  return;
 	}
     }
@@ -1392,7 +1125,8 @@ search_for_collection (char *name)
 /* main () */
 /* Initialises global variables based on command line switches, and opens */
 /* files.  Then calls  query ()  to perform the querying. */
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
   ProgTime StartTime;
   int decomp = 0;
@@ -1411,29 +1145,24 @@ int main (int argc, char **argv)
   InFile = stdin;
 
   opterr = 0;
-  /* [RJM 06/97: text filename] */
-  while ((ch = getopt (argc, argv, "Df:d:t:h")) != -1) {
-    switch (ch) {
+  while ((ch = getopt (argc, argv, "Df:d:h")) != -1)
+    switch (ch)
+      {
       case 'f':
 	SetEnv ("mgname", optarg, NULL);
 	break;
       case 'd':
 	SetEnv ("mgdir", optarg, NULL);
 	break;
-      case 't': /* [RJM 06/97: text filename] */
-	SetEnv ("textname", optarg, NULL);
-	break;
       case 'D':
 	decomp = 1;
 	break;
       case 'h':
       case '?':
-	fprintf (stderr, "usage: %s [-D] [-f base name of collection] "
-		 "[-t base name of files for text] " /* [RJM 06/97: text filename] */
+	fprintf (stderr, "usage: %s [-D] [-f base name of collection]"
 		 "[-d data directory] [collection]\n", argv[0]);
 	exit (1);
-    }      
-  }
+      }
 
   PushEnv ();
 
@@ -1446,7 +1175,7 @@ int main (int argc, char **argv)
       if (!BooleanEnv (GetEnv ("expert"), 0) && isatty (fileno (InFile)))
 	{
 	  fprintf (stderr, "\n\n\t     FULL TEXT RETRIEVAL QUERY PROGRAM\n");
-	  fprintf (stderr, "%24s%s\n\n", "", *"21 Mar 1994" == '%' ? __DATE__ : "21 Mar 1994");
+	  fprintf (stderr, "%24s%s\n\n", "", *"30 Jul 1999" == '%' ? __DATE__ : "30 Jul 1999");
 	  fprintf (stderr, "\n");
 	  fprintf (stderr, "  mgquery version " VERSION ", Copyright (C) 1994 Neil Sharman\n");
 	  fprintf (stderr, "  mgquery comes with ABSOLUTELY NO WARRANTY; for details type `.warranty'\n");
@@ -1468,18 +1197,9 @@ int main (int argc, char **argv)
       InitQueryTimes iqt;
       query_data *qd;
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-      qd = InitQuerySystem (GetDefEnv ("mgdir", ".\\"),
-                            GetDefEnv ("mgname", ""),
-                            GetDefEnv ("textname", NULL), /* [RJM 06/97: text filename] */
-                            &iqt);
-#else
       qd = InitQuerySystem (GetDefEnv ("mgdir", "./"),
 			    GetDefEnv ("mgname", ""),
-                            GetDefEnv ("textname", NULL), /* [RJM 06/97: text filename] */
 			    &iqt);
-#endif
       if (!qd)
 	FatalError (1, mg_errorstrs[mg_errno], mg_error_data);
 
@@ -1498,5 +1218,5 @@ int main (int argc, char **argv)
     }
 
   UninitEnv ();
-  return 0;
+  exit (0);
 }

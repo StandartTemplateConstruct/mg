@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: pbmtools.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: pbmtools.h,v 1.2 1994/09/20 04:42:01 tes Exp $
  *
  **************************************************************************/
 

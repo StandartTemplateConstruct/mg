@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mgticbuild.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mgticbuild.c,v 1.1.1.1 1994/08/11 03:26:12 tes Exp $
  *
  **************************************************************************/
 
@@ -37,7 +37,7 @@ usage ()
   exit (1);
 }
 
-void 
+int 
 main (int argc, char *args[])
 {
   int i;
@@ -142,4 +142,6 @@ main (int argc, char *args[])
   if (lib)
     fclose (lib);
   marklist_free (&list);
+  exit(0);
 }
+

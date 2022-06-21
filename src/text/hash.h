@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hash.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: hash.h,v 1.3 1994/10/20 03:56:44 tes Exp $
  *
  **************************************************************************/
 
@@ -33,7 +33,7 @@
 		register long len = *p++;		\
 		register unsigned long hval;		\
 		if (len>25) len = 25;			\
-		for (hval=0; len; --len)		\
+		for (hval=0; len; len--)		\
 		  hval = (hval << 5) - hval + *p++;	\
 		step = hval % (tablesize - 2) + 1;	\
 		h = hval % tablesize;			\

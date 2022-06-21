@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: timing.h,v 1.2 1994/09/20 04:20:11 tes Exp $
+ *
  **************************************************************************/
 
 #ifndef H_TIMING
@@ -38,13 +40,8 @@
 #  endif
 # endif
 #else
-/* [RPAP - Feb 97: WIN32 Port] */
-# ifdef __WIN32__
-   struct timeval { long tv_sec, tv_usec; };
-# else
-#  include <sys/time.h>
-#  include <sys/resource.h>
-# endif
+# include <sys/time.h>
+# include <sys/resource.h>
 #endif
 
 

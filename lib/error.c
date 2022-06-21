@@ -18,11 +18,7 @@
 /* Written by David MacKenzie <djm@gnu.ai.mit.edu>.  */
 
 #ifdef HAVE_CONFIG_H
-# ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-#  include <win32cfg.h>
-# else
-#  include <sysfuncs.h>
-# endif
+#include <config.h>
 #endif
 
 #include <stdio.h>
@@ -59,7 +55,7 @@ extern char *program_name;
 #endif
 
 #if HAVE_STRERROR
-char *strerror (int errnum);
+char *strerror ();
 #else
 static char *
 private_strerror (errnum)

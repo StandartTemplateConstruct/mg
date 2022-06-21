@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: weights.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: weights.c,v 1.2 1994/09/20 04:42:18 tes Exp $
  *
  **************************************************************************/
 
@@ -27,7 +27,6 @@
 #include "memlib.h"
 #include "messages.h"
 #include "timing.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg.h"
 #include "invf.h"
@@ -41,22 +40,13 @@
 #define MAXBITS (sizeof(unsigned long) * 8)
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:27  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.1  1998/11/17 09:35:51  rjmcnab
-   *** empty log message ***
-
+   $Log: weights.c,v $
    * Revision 1.2  1994/09/20  04:42:18  tes
    * For version 1.1
    *
  */
 
-static char *RCSID = "$Id: weights.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: weights.c,v 1.2 1994/09/20 04:42:18 tes Exp $";
 
 
 
@@ -76,9 +66,7 @@ LoadDocWeights (File * weight_file,
   Fseek (weight_file, sizeof (long), 0);
   Fread (&awd->bits, sizeof (awd->bits), 1, weight_file);
   Fread (&awd->L, sizeof (awd->L), 1, weight_file);
-  NTOHD(awd->L);  /* [RPAP - Jan 97: Endian Ordering] */
   Fread (&awd->B, sizeof (awd->B), 1, weight_file);
-  NTOHD(awd->B);  /* [RPAP - Jan 97: Endian Ordering] */
 
   awd->mask = awd->bits == 32 ? 0xffffffff : (1 << awd->bits) - 1;
 
@@ -91,12 +79,6 @@ LoadDocWeights (File * weight_file,
     }
 
   Fread (awd->DocWeights, sizeof (unsigned long), num, weight_file);
-  {
-    /* [RPAP - Jan 97: Endian Ordering] */
-    unsigned long i;
-    for (i = 0; i < num; i++)
-      NTOHUL(awd->DocWeights[i]);
-  }
 
   awd->MemForWeights = num * sizeof (unsigned long);
   awd->num_of_docs = num_of_docs;

@@ -28,7 +28,6 @@ SHELL = /bin/sh
 VPATH = @srcdir@
 exec_prefix = @exec_prefix@
 prefix = @prefix@
-bindir = @bindir@
 srcdir = @srcdir@
 subdir = src/scripts
 top_srcdir = @top_srcdir@
@@ -40,6 +39,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 TOUCH = echo timestamp >
  
+bindir = $(exec_prefix)/bin
 datadir = $(prefix)/share
 libexecdir = $(exec_prefix)/libexec
 localedir = $(datadir)/locale
@@ -98,10 +98,11 @@ xmg : xmg.sh
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-install: execinstall #maninstall
+install: execinstall maninstall
 uninstall: execuninstall manuninstall
 
 execinstall: $(EXEC)
+	$(top_srcdir)/mkinstalldirs $(bindir); \
 	for name in $(EXEC); do \
 	  $(INSTALL_PROGRAM) $$name \
 	  $(bindir)/`echo $$name | sed '$(transform)'`; \
@@ -141,10 +142,9 @@ dist: $(DISTFILES)
 	  ln $(srcdir)/$$file $(distdir) 2> /dev/null \
 	  || cp -p $(srcdir)/$$file $(distdir); \
 	done
-
-# screws up distclean (jrm21) 
-#Makefile: Makefile.in ../../../../config.status
-#	cd ../../../.. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+ 
+Makefile: Makefile.in ../../config.status
+	cd ../.. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
  
 # Tell versions [3.59,3.63) of GNU make not to export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

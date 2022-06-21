@@ -17,15 +17,26 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: memlib.c,v 1.1 1994/08/22 00:24:47 tes Exp $
+ *
  **************************************************************************/
+
+/*
+   $Log: memlib.c,v $
+   * Revision 1.1  1994/08/22  00:24:47  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: memlib.c,v 1.1 1994/08/22 00:24:47 tes Exp $";
+
 
 #include "sysfuncs.h"
 #include "memlib.h"
 
 /* Defined as strdup is not an ANSI function */
-/* change the name so we do not have problems with other libs */
 char *
-my_mg_strdup(const char *str)
+my_strdup(const char *str)
 {
   char *ret_str = malloc(strlen(str)+1);
   if (ret_str) return strcpy(ret_str, str);
@@ -39,4 +50,4 @@ Realloc_func Xrealloc = realloc;
 
 Free_func Xfree = free;
 
-Strdup_func Xstrdup = my_mg_strdup;
+Strdup_func Xstrdup = my_strdup;

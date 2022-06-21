@@ -56,6 +56,9 @@
 # Date: 13 March 1994
 # Authors: Bruce McKenzie, Ian Witten and Craig Nevill-Manning
 
+# 28/7/97 Modified by William Webber to work with tcl7.5+/tk4.0+ (may still
+#    be some bugs, and certainly are some inefficiencies).
+
 ###############################################################################
 # Customizing xmg
 ###############################################################################
@@ -107,6 +110,7 @@
 #			the last document retrieved
 #	scrolledto	document prefixes have been obtained for all documents
 #			up to this position in the document list
+#       scrollIndex     current position scrolled to in query panel
 #
 #   static variable needed in just one procedure
 #
@@ -225,14 +229,33 @@ proc sendQuery {window} {
     enterText .m.d.text ""
 }
 
+# Depending on how the scrollbar is manipulated, it can send a 'moveto 
+# FRACTION', a 'scroll NUMBER units', or a 'scroll NUMBER pages'
+# command.  This procedure filters this into the single number argument
+# expected by scroll. 
+proc scrollFilter {window args} {
+    global ListBoxLength hits scrollIndex
+    if {[lindex $args 0] == "moveto"} {       # moveto FRACTION
+	scroll $window [expr round($hits*[lindex $args 1])]
+    } else {
+	if {[lindex $args 2] == "pages"} {
+	    if {[lindex $args 1] < 0} {     # page scroll is +/- one page
+		scroll $window [expr $scrollIndex-$ListBoxLength]
+	    } else {                       
+		scroll $window [expr $scrollIndex+$ListBoxLength]
+	    }
+	} else {   # unit scroll is +/- one line
+	    scroll $window [expr $scrollIndex+[lindex $args 1]]
+	}
+    }
+}
+
+
 # Scrolling routine for the document list
 #
 proc scroll {window n} {
-    global hits scrolledto ListBoxLength Terminator fileId ImageString
+    global hits scrolledto ListBoxLength Terminator fileId ImageString scrollIndex
 
-    $window.sdocnums yview $n
-    $window.sdocs yview $n
-    $window.srank yview $n
     set last $n
     if {$last <= 0} {set last 0}
     incr last $ListBoxLength
@@ -258,6 +281,14 @@ proc scroll {window n} {
     sendto ".set terminator \"$Terminator\\n\""
     sendto ".set mode text"
 #   .m config -cursor {}
+
+    set scrollIndex $n
+    if {$scrollIndex <= 0} { set scrollIndex 0 }
+    if {$scrollIndex > [expr $hits-$ListBoxLength]} {set scrollIndex [expr $hits-$ListBoxLength]}
+
+    $window.sdocnums yview $n
+    $window.sdocs yview $n
+    $window.srank yview $n
 }
 
 proc getImageDocumentHead {d} {
@@ -287,7 +318,7 @@ proc showDocument {window y newWindow doclist query} {
 }
 
 proc adjacentDocument {index doclist window q button} {
-    global ListBoxLength
+    global ListBoxLength hits
 
     showThisDocument $index $doclist $window $q
 
@@ -296,7 +327,10 @@ proc adjacentDocument {index doclist window q button} {
       if {$index < $first || $index >= $first + $ListBoxLength} {
           scroll .m.t.q.r [expr $index - $ListBoxLength / 2]
       }
-      .m.t.q.r.sdocs select from $index
+#      .m.t.q.r.sdocs select from $index
+# ouch!
+      .m.t.q.r.sdocs selection clear 0 $hits
+      .m.t.q.r.sdocs selection set $index
     } 
 }
 
@@ -701,7 +735,7 @@ proc mkQuery {window} {
     entry $window.e.entry -relief sunk -width 47 -textvariable query
     pack $window.e.label -side left
     pack $window.e.entry -side right -expand yes -fill x
-    focus default $window.e.entry
+#    focus default $window.e.entry
     focus $window.e.entry
 
     bind $window.e.entry <Control-Key> {null}
@@ -724,13 +758,14 @@ proc mkQuery {window} {
 # next is the "results" frame (note that the docnums listbox doesn't appear on
 # the screen)
     frame $window.r
-    scrollbar $window.r.sscroll -relief sunken -command "scroll $window.r"
+#    scrollbar $window.r.sscroll -relief sunken -command "scroll $window.r"
+    scrollbar $window.r.sscroll -relief sunken -command "scrollFilter $window.r"
 #    bind $window.r.sscroll <ButtonRelease-1> "updateSdocs $window.r.sdocs $window.r.sdocnums"
     listbox $window.r.sdocnums
     listbox $window.r.sdocs -relief sunken \
-            -setgrid 1 -geometry 50x$ListBoxLength
+            -setgrid 1 -width 50 -height $ListBoxLength
     listbox $window.r.srank -yscroll "$window.r.sscroll set" \
-            -setgrid 1 -geometry 4x$ListBoxLength
+            -setgrid 1 -width 4 -height $ListBoxLength
   
     bind $window.r.srank <Any-1> {null}
     bind $window.r.srank <Any-2> {null}
@@ -909,6 +944,7 @@ set buttonfont [query_resource buttonfont Buttonfont $defaultbuttonfont]
 set MaxWindowHeight 10
 set HeadLength 100
 set scrolledto 0
+set scrollIndex 0
 set ListBoxLength 12
 set windowname 0
 set Terminator "RECORD_END"
@@ -917,7 +953,7 @@ set query ""
 set ImageString "::::::::::"
 set stacking ".m.t"
 
-tk_listboxSingleSelect Listbox
+# tk_listboxSingleSelect Listbox
 option add *Text.wrap word
 
 option add *Text.font $textfont

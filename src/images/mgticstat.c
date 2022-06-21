@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mgticstat.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mgticstat.c,v 1.1.1.1 1994/08/11 03:26:12 tes Exp $
  *
  **************************************************************************/
 
@@ -36,7 +36,7 @@ usage ()
   exit (1);
 }
 
-void 
+int 
 main (int argc, char *args[])
 {
   FILE *lib, *outf = (stdout);
@@ -127,4 +127,6 @@ main (int argc, char *args[])
   fprintf (outf, "average centroid position=(%d,%d)\n", avx / count, avy / count);
   fprintf (outf, "average width=%d, average height=%d\n", www / count, hhh / count);
   fclose (lib);
+  exit(0);
 }
+

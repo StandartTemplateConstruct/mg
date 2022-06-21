@@ -1,0 +1,1 @@
+The rest of the man files are in the respective src directories.

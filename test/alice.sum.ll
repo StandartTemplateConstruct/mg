@@ -1,0 +1,9 @@
+./mgdata/alice/alice.invf: 2618428 19209
+./mgdata/alice/alice.invf.chunk: 189460 2134
+./mgdata/alice/alice.invf.chunk.trans: 331998 2585
+./mgdata/alice/alice.invf.dict: 516730 23275
+./mgdata/alice/alice.invf.dict.blocked: 1030622 33210
+./mgdata/alice/alice.invf.idx: 309022 7572
+./mgdata/alice/alice.text: 5078095 40098
+./mgdata/alice/alice.text.idx: 185050 3380
+./mgdata/alice/alice.text.stats: 2432186 49138

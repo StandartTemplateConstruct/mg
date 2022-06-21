@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: lists.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: lists.c,v 1.3 1994/10/20 03:56:50 tes Exp $
  *
  **************************************************************************/
 
@@ -30,19 +30,7 @@
 #include "locallib.h"
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:01  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1999/07/01 09:30:48  rjmcnab
-   Changes for better match reporting.
-
-   Revision 1.1  1998/11/17 09:34:47  rjmcnab
-   *** empty log message ***
-
+   $Log: lists.c,v $
    * Revision 1.3  1994/10/20  03:56:50  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -52,7 +40,7 @@
    *
  */
 
-static char *RCSID = "$Id: lists.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: lists.c,v 1.3 1994/10/20 03:56:50 tes Exp $";
 
 
 
@@ -68,8 +56,6 @@ MakeDocList (int num)
   if (!(d = Xmalloc (sizeof (DocList) + sizeof (DocEntry) * (num - 1))))
     return (NULL);
   d->num = 0;
-  d->total_retrieved = 0;
-  d->is_approx = 0;
   return (d);
 }
 

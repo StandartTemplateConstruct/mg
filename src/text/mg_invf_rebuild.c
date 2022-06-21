@@ -17,19 +17,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_invf_rebuild.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_invf_rebuild.c,v 1.4 1994/11/29 00:32:03 tes Exp $
  *
  **************************************************************************/
 
 #include "sysfuncs.h"
-
 #include "memlib.h"
 #include "messages.h"
 #include "timing.h"
 #include "bitio_m.h"
 #include "bitio_m_stdio.h"
 #include "bitio_gen.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg_files.h"
 #include "invf.h"
@@ -47,26 +45,7 @@ typedef struct invf_info
 invf_info;
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:11  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:46  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:10  rjmcnab
-   *** empty log message ***
-
+   $Log: mg_invf_rebuild.c,v $
    * Revision 1.4  1994/11/29  00:32:03  tes
    * Committing the new merged files and changes.
    *
@@ -79,7 +58,7 @@ invf_info;
    *
  */
 
-static char *RCSID = "$Id: mg_invf_rebuild.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg_invf_rebuild.c,v 1.4 1994/11/29 00:32:03 tes Exp $";
 
 static char pathname[256];
 
@@ -111,7 +90,8 @@ usage (char *pgname)
 
 
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   ProgTime start;
   char *dir_name, *file_name = "";
@@ -185,10 +165,7 @@ int main (int argc, char **argv)
   process_files (file_name);
   Message ("%s\n", ElapsedTime (&start, NULL));
   Message ("**** Don\'t forget to rebuild the stemmed dictionary with mg_invf_dict. ****\n");
-  Message ("**** If the collection was built with stem indexes don\'t forget to     ****\n");
-  Message ("**** rebuild them with mg_stem_idx.                                     ****\n");
-
-  return 0;
+  exit (0);
 }
 
 
@@ -208,96 +185,70 @@ process_files (char *filename)
 
   outmode = mode;
 
-  /* open .invf.ORG, rename .invf if have to */
-  sprintf (FName, FILE_NAME_FORMAT ".ORG", pathname, filename, INVF_SUFFIX);  /* [RPAP - Feb 97: WIN32 Port] */
-  if (!(in = fopen (FName, "rb")))  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (FName, "%s/%s%s.ORG", pathname, filename, INVF_SUFFIX);
+  if (!(in = fopen (FName, "r")))
     {
       char fname[256];
-      sprintf (fname, FILE_NAME_FORMAT, pathname, filename, INVF_SUFFIX);  /* [RPAP - Feb 97: WIN32 Port] */
+      sprintf (fname, "%s/%s%s", pathname, filename, INVF_SUFFIX);
       rename (fname, FName);
-      if (!(in = fopen (FName, "rb")))  /* [RPAP - Feb 97: WIN32 Port] */
+      if (!(in = fopen (FName, "r")))
 	FatalError (1, "Unable to open \"%s\".\n", FName);
     }
   else
     {
       char fname[256];
-      sprintf (fname, FILE_NAME_FORMAT, pathname, filename, INVF_SUFFIX);  /* [RPAP - Feb 97: WIN32 Port] */
+      sprintf (fname, "%s/%s%s", pathname, filename, INVF_SUFFIX);
       unlink (fname);
     }
   Message ("Opening \"%s\"\n", FName);
 
-  /* check the magic number for .invf.ORG */
-  if (fread (&magic, sizeof (magic), 1, in) != 1 || NTOHUL(magic) != MAGIC_INVF)  /* [RPAP - Jan 97: Endian Ordering] */
+  if (fread (&magic, sizeof (magic), 1, in) != 1 || magic != MAGIC_INVF)
     FatalError (1, "Bad magic number in \"%s\".\n", FName);
 
-
-  /* open .invf.idx.ORG, rename .invf.idx if have to */
-  sprintf (FName, FILE_NAME_FORMAT ".ORG", pathname, filename, INVF_IDX_SUFFIX);  /* [RPAP - Feb 97: WIN32 Port] */
-  if (!(idx = fopen (FName, "rb")))  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (FName, "%s/%s%s.ORG", pathname, filename, INVF_IDX_SUFFIX);
+  if (!(idx = fopen (FName, "r")))
     {
       char fname[256];
-      sprintf (fname, FILE_NAME_FORMAT, pathname, filename, INVF_IDX_SUFFIX);
+      sprintf (fname, "%s/%s%s", pathname, filename, INVF_IDX_SUFFIX);
       rename (fname, FName);
-      if (!(idx = fopen (FName, "rb")))  /* [RPAP - Feb 97: WIN32 Port] */
+      if (!(idx = fopen (FName, "r")))
 	FatalError (1, "Unable to open \"%s\".\n", FName);
     }
   else
     {
       char fname[256];
-      sprintf (fname, FILE_NAME_FORMAT, pathname, filename, INVF_IDX_SUFFIX);
+      sprintf (fname, "%s/%s%s", pathname, filename, INVF_IDX_SUFFIX);
       unlink (fname);
     }
   Message ("Opening \"%s\"\n", FName);
 
-  /* check the magic number for .invf.idx.ORG */
-  if (fread (&magic, sizeof (magic), 1, idx) != 1 || NTOHUL(magic) != MAGIC_INVI)  /* [RPAP - Jan 97: Endian Ordering] */
+  if (fread (&magic, sizeof (magic), 1, idx) != 1 || magic != MAGIC_INVI)
     FatalError (1, "Bad magic number in \"%s\".\n", FName);
 
-  sprintf (FName, FILE_NAME_FORMAT, pathname, filename, INVF_SUFFIX);  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (FName, "%s/%s%s", pathname, filename, INVF_SUFFIX);
   Message ("Creating \"%s\"\n", FName);
-  if (!(out = fopen (FName, "wb")))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(out = fopen (FName, "w")))
     FatalError (1, "Unable to open \"%s\".\n", FName);
 
-  sprintf (FName, FILE_NAME_FORMAT, pathname, filename, INVF_IDX_SUFFIX);  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (FName, "%s/%s%s", pathname, filename, INVF_IDX_SUFFIX);
   Message ("Creating \"%s\"\n", FName);
-  if (!(odx = fopen (FName, "wb")))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(odx = fopen (FName, "w")))
     FatalError (1, "Unable to open \"%s\".\n", FName);
 
-  sprintf (FName, FILE_NAME_FORMAT, pathname, filename, INVF_DICT_SUFFIX);  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (FName, "%s/%s%s", pathname, filename, INVF_DICT_SUFFIX);
   Message ("Opening \"%s\"\n", FName);
-  if (!(dict = fopen (FName, "rb")))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(dict = fopen (FName, "r")))
     FatalError (1, "Unable to open \"%s\".\n", FName);
 
-  if (fread (&magic, sizeof (magic), 1, dict) != 1 || NTOHUL(magic) != MAGIC_STEM_BUILD)  /* [RPAP - Jan 97: Endian Ordering] */
+  if (fread (&magic, sizeof (magic), 1, dict) != 1 || magic != MAGIC_STEM_BUILD)
     FatalError (1, "Bad magic number in \"%s\".\n", FName);
 
   fread ((char *) &idh, sizeof (idh), 1, dict);
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(idh.lookback);
-  NTOHUL(idh.dict_size);
-  NTOHUL(idh.total_bytes);
-  NTOHUL(idh.index_string_bytes);
-  NTOHD(idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(idh.num_of_docs);
-  NTOHUL(idh.static_num_of_docs);
-  NTOHUL(idh.num_of_words);
-  NTOHUL(idh.stemmer_num);
-  NTOHUL(idh.stem_method);
-
-  HTONUL2(MAGIC_INVF, magic);  /* [RPAP - Jan 97: Endian Ordering] */
+  magic = MAGIC_INVF;
   fwrite ((char *) &magic, sizeof (magic), 1, out);
 
   fread ((char *) &ifh_in, sizeof (ifh_in), 1, in);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(ifh_in.no_of_words);
-  NTOHUL(ifh_in.no_of_ptrs);
-  NTOHUL(ifh_in.skip_mode);
-  for (i = 0; i < 16; i++)
-    NTOHUL(ifh_in.params[i]);
-  NTOHUL(ifh_in.InvfLevel);
-
   ifh_out = ifh_in;
   ifh_out.skip_mode = outmode;
   bzero ((char *) ifh_out.params, sizeof (ifh_out.params));
@@ -313,31 +264,14 @@ process_files (char *filename)
       ifh_out.params[1] = mins;
       break;
     }
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(ifh_out.no_of_words);
-  HTONUL(ifh_out.no_of_ptrs);
-  HTONUL(ifh_out.skip_mode);
-  for (i = 0; i < 16; i++)
-    HTONUL(ifh_out.params[i]);
-  HTONUL(ifh_out.InvfLevel);
-
   fwrite ((char *) &ifh_out, sizeof (ifh_out), 1, out);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(ifh_out.no_of_words);
-  NTOHUL(ifh_out.no_of_ptrs);
-  NTOHUL(ifh_out.skip_mode);
-  for (i = 0; i < 16; i++)
-    NTOHUL(ifh_out.params[i]);
-  NTOHUL(ifh_out.InvfLevel);
 
   Message ("The file is a level %d inverted file.\n", ifh_in.InvfLevel);
 
   bits_out = ftell (out) * 8;
 
 
-  HTONUL2(MAGIC_INVI, magic);  /* [RPAP - Jan 97: Endian Ordering] */
+  magic = MAGIC_INVI;
   fwrite ((char *) &magic, sizeof (magic), 1, odx);
 
   DECODE_START (in)
@@ -365,13 +299,8 @@ process_files (char *filename)
       fread ((char *) &fcnt, sizeof (fcnt), 1, dict);
       fread ((char *) &wcnt, sizeof (wcnt), 1, dict);
 
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fcnt);
-      NTOHUL(wcnt);
-
-      HTONUL2(bits_out >> 3, bytes_out);  /* [RPAP - Jan 97: Endian Ordering] */
+      bytes_out = bits_out >> 3;
       fwrite ((char *) &bytes_out, sizeof (bytes_out), 1, odx);
-      NTOHUL(bytes_out);  /* [RPAP - Jan 97: Endian Ordering] */
 
       p = fcnt;
       blk = BIO_Bblock_Init (idh.static_num_of_docs, p);
@@ -554,9 +483,8 @@ process_files (char *filename)
   ENCODE_CONTINUE (out_buf)
     ENCODE_DONE
 
-    HTONUL2(bits_out >> 3, bytes_out);  /* [RPAP - Jan 97: Endian Ordering] */
+    bytes_out = bits_out >> 3;
   fwrite ((char *) &bytes_out, sizeof (bytes_out), 1, odx);
-  NTOHUL(bytes_out);
 
   fclose (idx);
   fclose (odx);

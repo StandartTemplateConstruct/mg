@@ -24,32 +24,25 @@
 
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
-
+ 
 SHELL = /bin/sh
 srcdir = @srcdir@
 subdir = lib
 VPATH = @srcdir@
-
-
+ 
 AR = ar
 CC = @CC@
-CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -fpic 
+CFLAGS = @CFLAGS@ 
+CPPFLAGS = @CPPFLAGS@
 DEFS = @DEFS@
 RANLIB = @RANLIB@
-
-##########################################
-# Uncomment for compiling for the nzdl project
-#
-CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -DQUIET -fpic
-##########################################
-
-
+ 
 prefix = @prefix@
 datadir = $(prefix)/share
 localedir = $(datadir)/locale
-
-COMPILE = $(CC) -c $(DEFS) $(INCLUDES) $(CFLAGS)
-
+ 
+COMPILE = $(CC) -c $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+ 
 .SUFFIXES:
 .SUFFIXES: .c .o
 .c.o:
@@ -57,7 +50,7 @@ COMPILE = $(CC) -c $(DEFS) $(INCLUDES) $(CFLAGS)
 
 ANSI2KNR = @ANSI2KNR@
 o = .@U@o
-
+ 
 .SUFFIXES: ._c ._o
 .c._c:
 	./ansi2knr $< > $*.tmp && mv $*.tmp $@
@@ -71,73 +64,51 @@ o = .@U@o
 	@rm -f _$*.c
 	@ln $*._c _$*.c && $(COMPILE) _$*.c && mv _$*.o $@ && rm _$*.c
 
-
-INCLUDES = -I../../.. -I.. -I$(srcdir)
-
+ 
+INCLUDES = -I.. -I$(srcdir)
+ 
 HEADERS = \
-    bitio_m_random.h   filestats.h        local_strings.h    lovinstem.h \
+    bitio_m_random.h   filestats.h        local_strings.h    stem.h \
     bitio_m_stdio.h    getopt.h           memlib.h \
-    bitio_gen.h        bitio_mem.h        mgheap.h             messages.h \
+    bitio_gen.h        bitio_mem.h        heap.h             messages.h \
     bitio_m.h          bitio_mems.h       huffman.h          timing.h \
     bitio_m_mem.h      bitio_random.h     huffman_mem.h      perf_hash.h \
     bitio_m_mems.h     bitio_stdio.h      huffman_stdio.h    sptree.h \
-    pathmax.h          getpagesize.h \
-    random.h           simplefrenchstem.h unitool.h  longlong.h
-# regex.h            rx.h               
-
+    regex.h            rx.h               pathmax.h          getpagesize.h \
+    random.h \
+    longlong.h
 
 SOURCES = \
-    bitio_random.c    mgheap.c            memlib.c \
+    bitio_random.c    heap.c            memlib.c \
     bitio_stdio.c     huffman.c         messages.c \
     bitio_gen.c       filestats.c       huffman_mem.c     perf_hash.c \
     bitio_mem.c       getopt.c          huffman_stdio.c   sptree.c \
-    bitio_mems.c      getopt1.c         local_strings.c   lovinstem.c \
-    timing.c  \
+    bitio_mems.c      getopt1.c         local_strings.c   stem.c \
+    timing.c          regex.c           rx.c    \
     alloca.c          error.c           xmalloc.c         strstr.c \
-    gmalloc.c         ftruncate.c       strcasecmp.c      random.c \
-    simplefrenchstem.c                  unitool.c
-# regex.c           rx.c              
+    ftruncate.c       strcasecmp.c      random.c          gmalloc.c
 
 OBJECTS = @ALLOCA@ @LIBOBJS@ \
-    bitio_random$o    mgheap$o            memlib$o \
+    bitio_random$o    heap$o            memlib$o \
     bitio_stdio$o     huffman$o         messages$o \
     bitio_gen$o       filestats$o       huffman_mem$o     perf_hash$o \
     bitio_mem$o       getopt$o          huffman_stdio$o   sptree$o \
-    bitio_mems$o      getopt1$o         local_strings$o   lovinstem$o \
-    timing$o \
+    bitio_mems$o      getopt1$o         local_strings$o   stem$o \
+    timing$o         \
     error$o           xmalloc$o \
-    random$o          simplefrenchstem$o \
-    unitool$o
-#   gmalloc$o regex$o		rx$o 
-
-LIB_OBJECTS =   \
-    bitio_random$o    mgheap$o            memlib$o \
-    bitio_stdio$o     huffman$o          \
-    bitio_gen$o       filestats$o       huffman_mem$o     perf_hash$o \
-    bitio_mem$o       getopt$o          huffman_stdio$o   sptree$o \
-    bitio_mems$o      getopt1$o         local_strings$o   lovinstem$o \
-    timing$o \
-    error$o           xmalloc$o \
-    random$o          simplefrenchstem$o \
-    unitool$o
-
-
+    random$o
+# gmalloc$o
+ 
 DISTFILES = Makefile.in $(HEADERS) $(SOURCES)
+ 
+all : libmg.a
 
-all : libmglib.a gsdllibmg.a
-
-libmglib.a : $(OBJECTS)
-	rm -f libmglib.a
-	$(AR) cru libmglib.a $(OBJECTS)
-	$(RANLIB) libmglib.a
+libmg.a : $(OBJECTS)
+	rm -f libmg.a
+	$(AR) cru libmg.a $(OBJECTS)
+	$(RANLIB) libmg.a
 
 $(OBJECTS): ../config.h
-
-gsdllibmg.a: $(LIB_OBJECTS)
-	rm -f gsdllibmg.a
-	$(AR) cru gsdllibmg.a $(LIB_OBJECTS)
-	$(RANLIB) gsdllibmg.a
-
 
 install: 
 installdirs:
@@ -146,7 +117,7 @@ execinstall:
 execuninstall:
 maninstall:
 manuninstall:
-
+ 
 dist: $(DISTFILES)
 	for file in $(DISTFILES); do \
 	  ln $$file $(distdir) 2> /dev/null \
@@ -155,20 +126,20 @@ dist: $(DISTFILES)
 
 mostlyclean:
 	rm -f *.o *_.o
-
+ 
 clean: mostlyclean
-	rm -f libmglib.a gsdllibmg.a
-
+	rm -f libmg.a
+ 
 distclean: clean
 	rm -f Makefile
-
+ 
 maintainer-clean: distclean
 	@echo "This command is intended only for maintainers to use;"
 	@echo "rebuilding the deleted files may require special tools."
 
-#Makefile: Makefile.in ../../../config.status
-#	cd ../../.. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
-
+Makefile: Makefile.in ../config.status
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+ 
 # Tell versions [3.59,3.63) of GNU make not to export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -17,59 +17,34 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mgstat.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mgstat.c,v 1.2 1994/09/20 04:41:59 tes Exp $
  *
  **************************************************************************/
 
 #include "sysfuncs.h"
 
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
-
 #include "mg_files.h"
+#include "sysfuncs.h"
 #include "locallib.h"
 #include "mg.h"
 #include "words.h"
 #include "invf.h"
 #include "text.h"
-#include "longlong.h"
+
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.2  2001/09/21 12:46:42  kjm18
-   updated mg to be in line with mg_1.3f. Now uses long long for some variables
-   to enable indexing of very large collections.
-
-   Revision 1.1  1999/08/10 21:18:19  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:50  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:31  rjmcnab
-   *** empty log message ***
-
+   $Log: mgstat.c,v $
    * Revision 1.2  1994/09/20  04:41:59  tes
    * For version 1.1
    *
  */
 
-static char *RCSID = "$Id: mgstat.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mgstat.c,v 1.2 1994/09/20 04:41:59 tes Exp $";
 
 char *search_for_collection (char *name);
 int process_file (char *, char *, int);
 void ProcessDict (char *);
 void ProcessStem (char *);
-long ProcessStemBlk (char *name);  /* [RPAP - Jan 97: Stem Index Change] */
 
 static mg_ullong inputbytes = 0;
 static mg_ullong total = 0;
@@ -78,14 +53,14 @@ static mg_ullong total = 0;
 
 
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   mg_ullong sub_total;
   int fast;
   char *file_name = "";
   int ch;
   int exact = 0;
-  long indexed = 0; /* [RPAP - Jan 97: Stem Index Change] */
   opterr = 0;
   while ((ch = getopt (argc, argv, "Ehf:d:")) != -1)
     switch (ch)
@@ -111,12 +86,11 @@ int main (int argc, char **argv)
 
   ProcessDict (file_name);
   ProcessStem (file_name);
-  indexed = ProcessStemBlk (file_name); /* [RPAP - Jan 97: Stem Index Change] */
 
   {
     char Name[256];
     char *s;
-    sprintf (Name, FILE_NAME_FORMAT, get_basepath (), file_name, "");
+    sprintf (Name, "%s/%s", get_basepath (), file_name);
     s = strrchr (Name, '/');
     if (s)
       *s = '\0';
@@ -130,15 +104,6 @@ int main (int argc, char **argv)
   process_file (file_name, TEXT_IDX_WGT_SUFFIX, exact);
   process_file (file_name, APPROX_WEIGHTS_SUFFIX, exact);
   process_file (file_name, INVF_DICT_BLOCKED_SUFFIX, exact);
-
-  /* [RPAP - Jan 97: Stem Index Change] */
-  if (indexed)
-    {
-      process_file (file_name, INVF_DICT_BLOCKED_1_SUFFIX, exact);
-      process_file (file_name, INVF_DICT_BLOCKED_2_SUFFIX, exact);
-      process_file (file_name, INVF_DICT_BLOCKED_3_SUFFIX, exact);
-    }
-
   fast = process_file (file_name, TEXT_DICT_FAST_SUFFIX, exact);
   if (!fast)
     {
@@ -170,8 +135,7 @@ int main (int argc, char **argv)
   total += sub_total;
   printf ("\n");
   process_file (NULL, "TOTAL", exact);
-  return 0;
-
+  exit (0);
 }
 
 
@@ -232,24 +196,16 @@ ProcessDict (char *name)
   compressed_text_header cth;
   int have_cth = 0;
 
-  if ((f = open_file (name, TEXT_DICT_SUFFIX, "rb", MAGIC_DICT, MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if ((f = open_file (name, TEXT_DICT_SUFFIX, "r", MAGIC_DICT, MG_MESSAGE)))
     {
       Read_cdh (f, &cdh, NULL, NULL);
       fclose (f);
       have_cdh = 1;
     }
 
-  if ((f = open_file (name, TEXT_SUFFIX, "rb", MAGIC_TEXT, MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if ((f = open_file (name, TEXT_SUFFIX, "r", MAGIC_TEXT, MG_MESSAGE)))
     {
       fread ((char *) &cth, sizeof (cth), 1, f);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(cth.num_of_docs);
-      NTOHD(cth.num_of_bytes); /* [RJM 07/97: 4G limit] */
-      NTOHUL(cth.num_of_words);
-      NTOHUL(cth.length_of_longest_doc);
-      NTOHD(cth.ratio);
-
       fclose (f);
       have_cth = 1;
     }
@@ -289,14 +245,14 @@ ProcessStem (char *name)
   FILE *f;
   struct invf_dict_header idh;
 
-  if (!(f = open_file (name, INVF_DICT_SUFFIX, "rb",
-		       MAGIC_STEM_BUILD, MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(f = open_file (name, INVF_DICT_SUFFIX, "r",
+		       MAGIC_STEM_BUILD, MG_MESSAGE)))
     return;
   fread ((char *) &idh, sizeof (idh), 1, f);
-  printf ("Words in collection [stem]         : %10ld\n", NTOHUL(idh.num_of_words));  /* [RPAP - Jan 97: Endian Ordering] */
-  printf ("Words in stem                      : %10ld\n", NTOHUL(idh.dict_size));  /* [RPAP - Jan 97: Endian Ordering] */
-  printf ("Indexed fragments                  : %10ld\n", NTOHUL(idh.num_of_docs));  /* [RPAP - Jan 97: Endian Ordering] */
-  printf ("Total chars of stem words          : %10ld\n", NTOHUL(idh.total_bytes));  /* [RPAP - Jan 97: Endian Ordering] */
+  printf ("Words in collection [stem]         : %10ld\n", idh.num_of_words);
+  printf ("Words in stem                      : %10ld\n", idh.dict_size);
+  printf ("Indexed fragments                  : %10ld\n", idh.num_of_docs);
+  printf ("Total chars of stem words          : %10ld\n", idh.total_bytes);
   fclose (f);
 }
 
@@ -304,20 +260,6 @@ ProcessStem (char *name)
 
 
 
-/* [RPAP - Jan 97: Stem Index Change] */
-long 
-ProcessStemBlk (char *name)
-{
-  FILE *f;
-  struct stem_dict_header sdh;
-
-  if (!(f = open_file (name, INVF_DICT_BLOCKED_SUFFIX, "rb",
-		       MAGIC_STEM, MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
-    return 0;
-  fread ((char *) &sdh, sizeof (sdh), 1, f);
-  fclose (f);
-  return NTOHUL(sdh.indexed);  /* [RPAP - Jan 97: Endian Ordering] */
-}
 
 
 
@@ -339,7 +281,7 @@ process_file (char *name, char *ext, int exact)
   if (name)
     {
       char Name[256];
-      sprintf (Name, FILE_NAME_FORMAT, get_basepath (), name, ext);
+      sprintf (Name, "%s/%s%s", get_basepath (), name, ext);
       if (!stat (Name, &buf))
 	{
 	  char fname[256];
@@ -347,7 +289,7 @@ process_file (char *name, char *ext, int exact)
 	  nam = nam ? nam + 1 : name;
 	  sprintf (fname, "%s%s", nam, ext);
 
-	  if (inputbytes == 0.0)
+	  if (inputbytes)
 	    {
 	      if (exact)
 		printf ("%s%*s: %10ld bytes   %7.3f%%\n", fname,
@@ -381,7 +323,7 @@ process_file (char *name, char *ext, int exact)
     }
   else
     {
-      if (inputbytes == 0.0)
+      if (inputbytes)
 	{
 	  if (exact)
 	    printf ("%-34s : %10" ULL_FS " bytes   %7.3f%%\n", ext,

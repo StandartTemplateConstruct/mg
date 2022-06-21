@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_passes.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_passes.c,v 1.3 1994/10/20 03:56:57 tes Exp $
  *
  **************************************************************************/
 
@@ -26,7 +26,7 @@
 #ifdef HAVE_MALLINFO
 # include <malloc.h> 
 #endif
-#include <stdlib.h>
+
 #include "memlib.h"
 #include "messages.h"
 #include "timing.h"
@@ -39,47 +39,9 @@
 #include "text.h"
 #include "stemmer.h"
 
-#include "words.h"
 
 /*
-   $Log$
-   Revision 1.3  2004/11/29 03:15:13  kjdon
-   added some changes made by Emanuel Dejanu (Simple Words)
-
-   Revision 1.2  2004/04/25 23:01:18  kjdon
-   added a new -M option to mg_passes, allowing maxnumeric to be altered - made this change to keep gsdl3 mg inline with gsdl2 mg.
-
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.3  2001/09/21 12:46:42  kjm18
-   updated mg to be in line with mg_1.3f. Now uses long long for some variables
-   to enable indexing of very large collections.
-
-   Revision 1.2  2001/06/12 23:23:42  jrm21
-   fixed a bug where mg_passes segfaults when trying to print the usage message.
-
-   Revision 1.1  1999/08/10 21:18:12  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.3  1998/12/17 09:12:53  rjmcnab
-
-   Altered mg to process utf-8 encoded Unicode. The main changes
-   are in the parsing of the input, the casefolding, and the stemming.
-
-   Revision 1.2  1998/11/25 07:55:47  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:13  rjmcnab
-   *** empty log message ***
-
+   $Log: mg_passes.c,v $
    * Revision 1.3  1994/10/20  03:56:57  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -89,7 +51,7 @@
    *
  */
 
-static char *RCSID = "$Id: mg_passes.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg_passes.c,v 1.3 1994/10/20 03:56:57 tes Exp $";
 
 #define MAX_PASSES 5
 
@@ -112,7 +74,6 @@ FILE *Comp_Stats = NULL;
 int comp_stat_point = 0;
 mg_ullong bytes_processed = 0;
 mg_ullong bytes_received = 0;
-int stemmer_num = 0; /* default to the lovin stemmer */
 int stem_method = 0;
 
 static char Passes = 0;
@@ -160,8 +121,14 @@ static char *usage_str = "\nUSAGE:\n"
 "  %s [-h] [-G] [-D] [-1|-2|-3] [-T1] [-T2] [-I1] [-I2] [-N1]\n"
 "  %*s [-N2] [-W] [-S] [-b buffer-size] [-d dictionary-directory]\n"
 "  %*s [-t trace-point Mb] [-m invf-memory] [-c chunk-limit]\n"
-"  %*s [-n trace-name] [-C comp-stat-size] [-s stem_method]\n"
-"  %*s [-a stemmer] [-M max-numeric] -f doc-collection-name\n";
+"  %*s [-n trace-name] [-C comp-stat-size] [-s stem_method] -f doc-collection-name\n";
+
+
+
+
+
+
+
 
 
 static void 
@@ -170,8 +137,7 @@ usage (char *err)
   if (err)
     Message (err);
   fprintf (stderr, usage_str, msg_prefix, strlen (msg_prefix), "",
-	   strlen (msg_prefix), "",strlen (msg_prefix), "",
-	   strlen (msg_prefix),"");
+	   strlen (msg_prefix), "", strlen (msg_prefix), "");
   exit (1);
 }
 
@@ -246,7 +212,7 @@ driver (int in_fd, FILE * Trace, char *file_name)
 	struct tms tims;
 	times (&tims);
 	pd->init_time -= tims.tms_utime + tims.tms_stime;
-#elif defined(HAVE_GETRUSAGE)  /* [RPAP - Feb 97: WIN32 Port] */
+#else
 	struct rusage ru;
 
 	getrusage (RUSAGE_SELF, &ru);
@@ -259,7 +225,7 @@ driver (int in_fd, FILE * Trace, char *file_name)
 #ifdef HAVE_TIMES
 	times (&tims);
 	pd->init_time += tims.tms_utime + tims.tms_stime;
-#elif defined(HAVE_GETRUSAGE)  /* [RPAP - Feb 97: WIN32 Port] */
+#else
 	getrusage (RUSAGE_SELF, &ru);
 	pd->init_time.tv_sec += ru.ru_utime.tv_sec + ru.ru_stime.tv_sec;
 	pd->init_time.tv_usec += ru.ru_utime.tv_usec + ru.ru_stime.tv_usec;
@@ -288,8 +254,7 @@ driver (int in_fd, FILE * Trace, char *file_name)
 	    }
 	  if (buf_left)
 	    {
-    	      num = read (in_fd, end_pos, buf_left);
-	      if (num < 0) num = 0; /* RJM - quick hack :-) */
+	      num = read (in_fd, end_pos, buf_left);
 	      if (num == 0)
 		if ((in_fd = open_next_file (in_fd)) != -1)
 		  num = read (in_fd, end_pos, buf_left);
@@ -297,7 +262,7 @@ driver (int in_fd, FILE * Trace, char *file_name)
 	      buf_left -= num;
 	      end_pos += num;
 	    }
-	  while (look_pos < end_pos && *look_pos != TERMRECORD)
+	  while (look_pos != end_pos && *look_pos != TERMRECORD)
 	    look_pos++;
 	  if (buf_left == 0 && base == buffer && look_pos == end_pos)
 	    {
@@ -316,10 +281,8 @@ driver (int in_fd, FILE * Trace, char *file_name)
 
       bytes_processed += len;
 
-#ifndef QUIET
       if (!len)
 	Message ("Warning : Processing zero length document");
-#endif
 
       for (pass = 0; pass < MAX_PASSES; pass++)
 	if (Passes & (1 << pass))
@@ -330,7 +293,7 @@ driver (int in_fd, FILE * Trace, char *file_name)
 	    struct tms tims;
 	    times (&tims);
 	    pd->process_time -= tims.tms_utime + tims.tms_stime;
-#elif defined(HAVE_GETRUSAGE)  /* [RPAP - Feb 97: WIN32 Port] */
+#else
 	    struct rusage ru;
 	    register struct timeval *tv = &pd->process_time;
 
@@ -366,7 +329,7 @@ driver (int in_fd, FILE * Trace, char *file_name)
 #ifdef HAVE_TIMES
 	    times (&tims);
 	    pd->process_time += tims.tms_utime + tims.tms_stime;
-#elif defined(HAVE_GETRUSAGE)  /* [RPAP - Feb 97: WIN32 Port] */
+#else
 	    getrusage (RUSAGE_SELF, &ru);
 	    tv->tv_sec += ru.ru_utime.tv_sec + ru.ru_stime.tv_sec;
 	    tv->tv_usec += ru.ru_utime.tv_usec + ru.ru_stime.tv_usec;
@@ -413,7 +376,7 @@ driver (int in_fd, FILE * Trace, char *file_name)
 	struct tms tims;
 	times (&tims);
 	pd->done_time -= tims.tms_utime + tims.tms_stime;
-#elif defined(HAVE_GETRUSAGE)  /* [RPAP - Feb 97: WIN32 Port] */
+#else
 	struct rusage ru;
 
 	getrusage (RUSAGE_SELF, &ru);
@@ -426,7 +389,7 @@ driver (int in_fd, FILE * Trace, char *file_name)
 #ifdef HAVE_TIMES
 	times (&tims);
 	pd->done_time += tims.tms_utime + tims.tms_stime;
-#elif defined(HAVE_GETRUSAGE)  /* [RPAP - Feb 97: WIN32 Port] */
+#else
 	getrusage (RUSAGE_SELF, &ru);
 	pd->done_time.tv_sec += ru.ru_utime.tv_sec + ru.ru_stime.tv_sec;
 	pd->done_time.tv_usec += ru.ru_utime.tv_usec + ru.ru_stime.tv_usec;
@@ -483,7 +446,8 @@ driver (int in_fd, FILE * Trace, char *file_name)
 
 
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   int ch, in_fd;
   char *filename = NULL;
@@ -492,7 +456,7 @@ int main (int argc, char **argv)
   msg_prefix = argv[0];
 
   opterr = 0;
-  while ((ch = getopt (argc, argv, "hC:WGSD123f:d:b:T:I:t:m:N:c:n:s:a:M:")) != -1)
+  while ((ch = getopt (argc, argv, "hC:WGSD123f:d:b:T:I:t:m:N:c:n:s:")) != -1)
     {
       switch (ch)
 	{
@@ -525,9 +489,6 @@ int main (int argc, char **argv)
 	  break;
 	case 'd':
 	  set_basepath (optarg);
-	  break;
-	case 'a':
-	  stemmer_num = stemmernumber (optarg);
 	  break;
 	case 's':
 	  stem_method = atoi (optarg) & STEMMER_MASK;
@@ -563,9 +524,6 @@ int main (int argc, char **argv)
 	  break;
 	case 't':
 	  trace = (unsigned long) (atof (optarg) * 1024 * 1024);
-	  break;
-	case 'M':
-	  SetEnv ("maxnumeric", optarg, NULL);
 	  break;
 	case 'h':
 	case '?':
@@ -614,7 +572,7 @@ int main (int argc, char **argv)
   if (comp_stat_point)
     {
       char *name = make_name (filename, COMPRESSION_STATS_SUFFIX, NULL);
-      if (!(Comp_Stats = fopen (name, "wb")))  /* [RPAP - Feb 97: WIN32 Port] */
+      if (!(Comp_Stats = fopen (name, "w")))
 	Message ("Unable to open \"%s\". No comp. stats. will be generated.",
 		 name);
     }
@@ -637,5 +595,5 @@ int main (int argc, char **argv)
   if (Comp_Stats)
     fclose (Comp_Stats);
 
-  return 0;
+  exit (0);
 }

@@ -1,86 +1,64 @@
-# Main Makefile for MG
+# Main Makefile for GNU tar.
 # Copyright (C) 1994, 1995 Free Software Foundation, Inc.
-
+ 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2, or (at your option)
 # any later version.
-
+ 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+ 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
+ 
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
-
+ 
 @SET_MAKE@
 SHELL = /bin/sh
 VPATH = @srcdir@
 exec_prefix = @exec_prefix@
 prefix = @prefix@
 srcdir = @srcdir@
-
+ 
 
 CC = @CC@
-CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -fpic 
+CFLAGS = @CFLAGS@ 
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
-LDFLAGS = @LDFLAGS@ @COMPAT32BITFLAGS@ 
+LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@  
 TOUCH = echo timestamp >
-
+ 
 bindir = $(exec_prefix)/bin
 infodir = $(prefix)/info
 libexecdir = $(exec_prefix)/libexec
-
+ 
 MDEFINES = 
 #CC='$(CC)' CFLAGS='$(CFLAGS)' LDFLAGS='$(LDFLAGS)' LIBS='$(LIBS)' \
 #prefix='$(prefix)' exec_prefix='$(exec_prefix)' \
 #bindir='$(bindir)' libexecdir='$(libexecdir)' \
 #infodir='$(infodir)' infodir='$(infodir)' libexecdir='$(libexecdir)'
 
-#SUBDIRS = lib src/text src/images src/scripts 
-SUBDIRS = lib src/text
-JAVADIRS = java/org/greenstone/mg 
-JNIDIRS = jni
+SUBDIRS = lib src/text src/images src/scripts docs
+
+
 .SUFFIXES:
 
 all install uninstall execinstall execuninstall maninstall manuninstall: config.h
-	for subdir in $(SUBDIRS) $(JAVADIRS) $(JNIDIRS); do \
+	for subdir in $(SUBDIRS); do \
 	  echo making $@ in $$subdir; \
 	  (cd $$subdir && $(MAKE) $(MDEFINES) $@) || exit 1; \
 	done
 
-nojava: 
-	for subdir in $(SUBDIRS); do \
-	  echo making $@ in $$subdir; \
-	  (cd $$subdir && $(MAKE) $(MDEFINES) all) || exit 1; \
-	done
-
-install-nojava: 
-	for subdir in $(SUBDIRS); do \
-	  echo making $@ in $$subdir; \
-	  (cd $$subdir && $(MAKE) $(MDEFINES) install) || exit 1; \
-	done
-
-javaonly:
-	for subdir in $(JAVADIRS); do \
-	  echo making $@ in $$subdir; \
-	  (cd $$subdir && $(MAKE) $(MDEFINES) all) || exit 1; \
-	done
-
-install-javaonly:
-	for subdir in $(JAVADIRS); do \
-	  echo making $@ in $$subdir; \
-	  (cd $$subdir && $(MAKE) $(MDEFINES) install) || exit 1; \
-	done
-
+# Have not written any texinfo files for the documentation yet
+#info dvi:
+#	cd doc && $(MAKE) $@
 
 check: all
 	echo making $@ in ./test directory
@@ -92,23 +70,26 @@ mostlyclean: mostlyclean-recursive mostlyclean-local
 clean: clean-recursive clean-local
 
 distclean: distclean-recursive distclean-local
+	rm config.status
 
 maintainer-clean: maintainer-clean-recursive maintainer-clean-local
-	rm -f config.status
+	rm config.status
 
-mostlyclean-recursive clean-recursive distclean-recursive maintainer-clean-recursive:
-	for subdir in $(SUBDIRS) $(JAVADIRS) $(JNIDIRS); do \
+mostlyclean-recursive clean-recursive distclean-recursive \
+maintainer-clean-recursive:
+	for subdir in $(SUBDIRS); do \
 	  target=`echo $@ | sed 's/-recursive//'`; \
 	  echo making $$target in $$subdir; \
 	  (cd $$subdir && $(MAKE) $$target) || exit 1; \
 	done
+	(cd test && $(MAKE) clean) || exit 1;
 
 mostlyclean-local:
 
 clean-local: mostlyclean-local
 
 distclean-local: clean-local
-	rm -f Makefile stamp-h config.status config.h config.log
+	rm -f Makefile config.cache config.h config.log stamp-h
 
 maintainer-clean-local: distclean-local
 	@echo "This command is intended only for maintainers to use;"
@@ -169,11 +150,27 @@ dist: $(DISTFILES)
 #
 	# archive and compress
 	tar -chf - $(distdir) | gzip -9 > $(distname).tar.gz
-	tar -chf - $(distdir) | compress > $(distname).tar.Z
 #
 	# cleanup
 	rm -rf $(distdir)
 #-----------------------------------------------------------------
+
+# For an explanation of the following Makefile rules, see node
+# `Automatic Remaking' in GNU Autoconf documentation.
+Makefile: Makefile.in config.status
+	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
+config.status: configure
+	./config.status --recheck
+configure: configure.in aclocal.m4
+	cd $(srcdir) && autoconf
+
+config.h: stamp-h
+stamp-h: config.h.in config.status
+	CONFIG_FILES= CONFIG_HEADERS=config.h ./config.status
+config.h.in: stamp-h.in
+stamp-h.in: configure.in aclocal.m4 acconfig.h
+	cd $(srcdir) && autoheader
+	$(TOUCH) $(srcdir)/stamp-h.in
 
 # Tell versions [3.59,3.63) of GNU make not to export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: read_line.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: read_line.h,v 1.2 1994/09/20 04:42:06 tes Exp $
  *
  **************************************************************************/
 
@@ -25,7 +25,7 @@
 #ifndef READ_LINE_H
 #define READ_LINE_H
 
-#define MAXLINEBUFFERLEN  65535
+#define MAXLINEBUFFERLEN  1023
 
 void Init_ReadLine (void);
 void WritePrompt (void);

@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_m_mem.h,v 1.2 1994/09/20 04:19:52 tes Exp $
+ *
  **************************************************************************
  *
  *  This file contains macros for doing bitwise input and output on an array 
@@ -71,14 +73,14 @@ mem_bitio_state;
 
 #define ENCODE_BIT(b)							\
   do {									\
-    --__btg;								\
+    __btg--;								\
     if (b) __buff |= (1 << __btg);					\
     if (!__btg)								\
       {									\
 	if (__remaining)						\
 	  {								\
 	    *__pos++ = __buff;						\
-	    --__remaining;						\
+	    __remaining--;						\
 	  }  								\
 	__buff = 0;							\
 	__btg = sizeof(__buff)*8;					\
@@ -99,7 +101,7 @@ mem_bitio_state;
       if (__remaining)							\
 	{								\
           *__pos++ = __buff;						\
-          --__remaining;						\
+          __remaining--;						\
 	}  								\
     __btg = sizeof(__buff)*8;						\
   } while (0)
@@ -132,7 +134,7 @@ mem_bitio_state;
 	if (__remaining)						\
 	  {								\
   	    __buff = *__pos++;						\
-	    --__remaining;						\
+	    __remaining--;						\
 	  }								\
         else								\
           __buff = 0xff;						\
@@ -148,7 +150,7 @@ mem_bitio_state;
 	if (__remaining)						\
 	  {								\
   	    __buff = *__pos++;						\
-	    --__remaining;						\
+	    __remaining--;						\
 	  }								\
         else								\
           __buff = 0x00;						\

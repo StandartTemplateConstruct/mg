@@ -20,6 +20,9 @@
 #ifndef __REGEXP_LIBRARY_H__
 #define __REGEXP_LIBRARY_H__
 
+/* force compilation of BSD-4.2 routines [wew 16/7/97]*/
+#define _REGEX_RE_COMP
+
 /* POSIX says that <sys/types.h> must be included (by the caller) before
    <regex.h>.  */
 
@@ -464,6 +467,7 @@ extern void re_set_registers
   _RE_ARGS ((struct re_pattern_buffer *buffer, struct re_registers *regs,
              unsigned num_regs, regoff_t *starts, regoff_t *ends));
 
+/* wew---these will become the default [16/7/97] */
 #ifdef _REGEX_RE_COMP
 /* 4.2 bsd compatibility.  */
 extern char *re_comp _RE_ARGS ((const char *));

@@ -27,7 +27,7 @@
 #include "messages.h"
 #include "bool_tree.h"
 
-static char *RCSID = "$Id: bool_tree.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: bool_tree.c,v 1.2 1995/03/14 05:15:24 tes Exp $";
 
 
 /* =========================================================================
@@ -54,17 +54,14 @@ CreateBoolNode (N_Tag tag)
  * Output: 
  * ========================================================================= */
 bool_tree_node *
-CreateBoolTermNode (TermList ** tl, char *text, int Count, int word_num,
-		    u_long count, u_long doc_count, u_long invf_ptr, u_long invf_len,  /* [RPAP - Feb 97: Term Frequency] */
-		    int stemmer_num) 
+CreateBoolTermNode (TermList ** tl, char *text)
 {
   bool_tree_node *n = NULL;
 
   /* allocate bool_tree_node */
   n = CreateBoolNode (N_term);
 
-  BOOL_TERM (n) = AddTerm (tl, (u_char *) text, Count, word_num, count, doc_count, 
-			   invf_ptr, invf_len, stemmer_num);  /* [RPAP - Feb 97: Term Frequency] */
+  BOOL_TERM (n) = AddTerm (tl, (u_char *) text);
 
   return n;
 }

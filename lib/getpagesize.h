@@ -14,10 +14,7 @@
 #define getpagesize() sysconf(_SC_PAGESIZE)
 #else
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifndef __WIN32__
 #include <sys/param.h>
-#endif
 
 #ifdef EXEC_PAGESIZE
 #define getpagesize() EXEC_PAGESIZE

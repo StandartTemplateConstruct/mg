@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: text_get.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: text_get.h,v 1.3 1994/10/20 03:57:12 tes Exp $
  *
  **************************************************************************/
 

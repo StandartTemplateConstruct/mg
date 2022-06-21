@@ -1,6 +1,6 @@
 /**************************************************************************
  *
- * simple_sum.c -- byte summing program
+ * sum.c -- byte summing program
  * Copyright (C) 1995  Tim Shimmin
  *
  * This program is free software; you can redistribute it and/or modify
@@ -17,8 +17,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id$
  *
  **************************************************************************/
+
+/*
+$Log$
+*/
 
 /*
  * If given -l option then just prints the length.
@@ -50,7 +55,7 @@ FILE *output_file;
     fprintf(output_file, "%s: %ld %ld\n", fname, sum, num_bytes);
 }
 
-void
+int
 main(argc, argv)
 int argc;
 char *argv[];

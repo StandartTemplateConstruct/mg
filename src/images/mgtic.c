@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mgtic.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mgtic.c,v 1.2 1994/11/08 23:34:23 tes Exp $
  *
  **************************************************************************
  *
@@ -165,7 +165,7 @@ match_sequence (marklistptr list, marklistptr library, marklistptr * symbol_list
 
 
 
-void 
+int 
 main (int argc, char *args[])
 {
   int i, n, r, c, ch;
@@ -593,4 +593,6 @@ main (int argc, char *args[])
       pbm_writefile (stdout, recon, cols, rows);
       pbm_freearray (&recon, rows);
     }				/* end decoding */
+  exit(0);
 }
+

@@ -17,36 +17,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bool_tester.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: bool_tester.c,v 1.2 1995/03/14 05:15:23 tes Exp $
  *
  **************************************************************************/
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:23  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.2  2000/03/05 22:58:24  sjboddie
-   compiler complained about using stdin and stdout to do global
-   initialization - variables were never changed so they were
-   replaced with #defines
-
-   Revision 1.1  1999/08/10 21:17:45  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:41  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:34:29  rjmcnab
-   *** empty log message ***
-
+   $Log: bool_tester.c,v $
    * Revision 1.2  1995/03/14  05:15:23  tes
    * Updated the boolean query optimiser to do different types of optimisation.
    * A query environment variable "optimise_type" specifies which one is to be
@@ -65,7 +41,7 @@
    *
  */
 
-static char *RCSID = "$Id: bool_tester.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: bool_tester.c,v 1.2 1995/03/14 05:15:23 tes Exp $";
 
 #include "sysfuncs.h"
 
@@ -74,20 +50,12 @@ static char *RCSID = "$Id: bool_tester.c 16583 2008-07-29 10:20:36Z davidb $";
 #include "bool_tree.h"
 #include "bool_parser.h"
 #include "bool_optimiser.h"
-#include "query_term_list.h"  /* [RPAP - Feb 97: Term Frequency] */
 
 #define MAX_LINE_LEN  255
-#define STEMMER_NUM 0 /* Lovin's stemmer */
 #define STEM_METHOD 3
 
-/* Newer compilers complain when you use stdin and stdout to do global 
-initialization. Since they're static we'll just use #defines instead
-static FILE *file_in = stdin;
-static FILE *file_out = stdout;
-*/
-#define FILE_IN stdin
-#define FILE_OUT stdout
-
+static FILE *file_in;
+static FILE *file_out;
 static char line[MAX_LINE_LEN + 1];
 
 /* --- prototypes --- */
@@ -101,13 +69,15 @@ static char *prompt (char *str);
  * Output: 
  * ========================================================================= */
 
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
   bool_tree_node *tree = NULL;
   TermList *term_list = NULL;
-  QueryTermList *query_term_list = NULL;  /* [RPAP - Feb 97: Term Frequency] */
   int opt_type = 0;
 
+  file_in = stdin;
+  file_out = stdout;
   while (1)
     {
       int res = 0;
@@ -119,9 +89,7 @@ int main (int argc, char *argv[])
 
       len = strlen (line) - 1;	/* -1 => ignore the \n */
 
-      tree = ParseBool (line, len, &term_list, STEMMER_NUM, STEM_METHOD, &res,
-			NULL, 0,             /* [RPAP - Jan 97: Stem Index Change] */
-			&query_term_list);   /* [RPAP - Feb 97: Term Frequency] */
+      tree = ParseBool (line, len, &term_list, STEM_METHOD, &res);
 
       {
 	int done = 0;
@@ -157,17 +125,17 @@ int main (int argc, char *argv[])
 
       if (res == 0)
 	{
-	  fprintf (FILE_OUT, "\n***Parsed Expression***\n");
-	  PrintBoolTree (tree, FILE_OUT);
-	  fputc ('\n', FILE_OUT);
+	  fprintf (file_out, "\n***Parsed Expression***\n");
+	  PrintBoolTree (tree, file_out);
+	  fputc ('\n', file_out);
 	  OptimiseBoolTree (tree, term_list, opt_type);
-	  fprintf (FILE_OUT, "\n***Optimised Expression ***\n");
-	  PrintBoolTree (tree, FILE_OUT);
-	  fputc ('\n', FILE_OUT);
+	  fprintf (file_out, "\n***Optimised Expression ***\n");
+	  PrintBoolTree (tree, file_out);
+	  fputc ('\n', file_out);
 	}
 
     }
-  return 0;
+  exit(0);
 }
 
 /* =========================================================================
@@ -180,6 +148,6 @@ int main (int argc, char *argv[])
 static char *
 prompt (char *str)
 {
-  fprintf (FILE_OUT, "\n%s\n", str);
-  return fgets (line, MAX_LINE_LEN, FILE_IN);
+  fprintf (file_out, "\n%s\n", str);
+  return fgets (line, MAX_LINE_LEN, file_in);
 }

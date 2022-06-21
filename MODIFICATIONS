@@ -7,7 +7,7 @@ TYPE
 REPORT
   tim@cosc.canterbury.ac.nz - May 11th 1994
 FIX
-  tes@kbs.citri.edu.au - August 9th 1994
+  Tim Shimmin (no longer emailable) - August 9th 1994
 CLAIM
   Mg didn't handle long words properly; it crashed.
 PROBLEM
@@ -42,7 +42,7 @@ TYPE
 REPORT
   local - 1994
 FIX
-  linh@kbs.citri.edu.au - 1994
+  Linh Huynh (no longer emailable) - 1994
 CLAIM
   Stemming was done naively.
 PROBLEM
@@ -64,9 +64,9 @@ APPLICATION
 TYPE
   bug
 REPORT
-  tes@kbs.citri.edu.au - 23 Aug 1994
+  Tim Shimmin (no longer emailable) - 23 Aug 1994
 FIX
-  tes@kbs.citri.edu.au - 23 Aug 1994
+  Tim Shimmin (no longer emailable) - 23 Aug 1994
 CLAIM
   Boolean queries did not extract words/terms using the
   same method as is done at inverted-file creation and
@@ -107,9 +107,9 @@ APPLICATION
 TYPE
   extend
 REPORT
-  tes@kbs.citri.edu.au - Aug 94
+  Tim Shimmin (no longer emailable) - Aug 94
 FIX
-  tes@kbs.citri.edu.au - Sep 94
+  Tim Shimmin (no longer emailable) - Sep 94
 CLAIM
   Difficult to feel happy that the query-result returned is
   satisfying the query - need to look hard to find the queried words.
@@ -180,7 +180,7 @@ TYPE
 REPORT
   sosic@kurango.cit.gu.edu.au - 23 Sep 94
 FIX
-  tes@kbs.citri.edu.au - Oct 94
+  Tim Shimmin (no longer emailable) - Oct 94
 CLAIM
   "I am still getting core dump in "and" queries in mgquery, 
    where the first word does not exist, but the second one does."
@@ -247,9 +247,9 @@ APPLICATION
 TYPE
   improve
 REPORT
-  tes@kbs.citri.edu.au - 12/Dec/94
+  Tim Shimmin (no longer emailable) - 12/Dec/94
 FIX
-  tes@kbs.citri.edu.au - 21/Dec/94, 14/Mar/95
+  Tim Shimmin (no longer emailable) - 21/Dec/94, 14/Mar/95
 CLAIM
   Optimising by conversion to DNF is not necessarily such
   a good idea - can actually slow things down.
@@ -279,9 +279,9 @@ APPLICATION
 TYPE
   extend
 REPORT
-  jz@kbs.citri.edu.au/alistair - June 1994
+  jz@cs.rmit.edu.edu.au/alistair@cs.mu.oz.au - June 1994
 FIX
-  tes@kbs.citri.edu.au - July 1994 .. Feb 1995
+  Tim Shimmin (no longer emailable) - July 1994 .. Feb 1995
 CLAIM
   Can only use one type of similarity measure - the
   standard cosine measure.
@@ -324,9 +324,9 @@ APPLICATION
 TYPE
   extend
 REPORT
-  jz@kbs.citri.edu.au/alistair - June 1994
+  jz@cs.rmit.edu.edu.au/alistair@cs.mu.oz.au - June 1994
 FIX
-  tes@kbs.citri.edu.au - July 1994 .. Feb 1995
+  Tim Shimmin (no longer emailable) - July 1994 .. Feb 1995
 CLAIM
   "mgquery" needs to be altered to allow modification of
   the similarity measure. 
@@ -445,9 +445,9 @@ APPLICATION
 TYPE
   extend
 REPORT
-  jz@kbs.citri.edu.au/alistair - June 1994
+  jz@cs.rmit.edu.edu.au/alistair@cs.mu.oz.au - June 1994
 FIX
-  tes@kbs.citri.edu.au - July 1994 .. Feb 1995
+  Tim Shimmin (no longer emailable) - July 1994 .. Feb 1995
 CLAIM
   "mg_weights_build" needs to be altered to allow modification of
   the similarity measure.
@@ -489,7 +489,7 @@ TYPE
 REPORT
   beebe@math.utah.edu - 16 May 1994
 FIX
-  tes@kbs.citri.edu.au - 10 Aug 1994
+  Tim Shimmin (no longer emailable) - 10 Aug 1994
 CLAIM
   NaNs and Infinites would be printed out by mgstat
   if unable to open .text or .text.dict file.
@@ -517,11 +517,11 @@ APPLICATION
 TYPE
   extend
 REPORT
-  (i) tes@kbs.citri.edu.au - 28/Sep/94
-  (ii) tes@kbs.citri.edu.au - 12/Dec/94
+  (i) Tim Shimmin (no longer emailable) - 28/Sep/94
+  (ii) Tim Shimmin (no longer emailable) - 12/Dec/94
 FIX
-  (i) tes@kbs.citri.edu.au - 18/Oct/94
-  (ii) tes@kbs.citri.edu.au - 21/Dec/94
+  (i) Tim Shimmin (no longer emailable) - 18/Oct/94
+  (ii) Tim Shimmin (no longer emailable) - 21/Dec/94
 CLAIM
   The initial prompt for investigating the optimisation of
   boolean queries is noted in the mg-1 mod14.txt. 
@@ -597,7 +597,7 @@ TYPE
 REPORT
   cgn@totara.cs.waikato.ac.nz - 2/May/95
 FIX
-  tes@kbs.citri.edu.au - 2/May/95
+  Tim Shimmin (no longer emailable) - 2/May/95
 CLAIM
 "The big problem was that mgquery crashes when the HOME environment
  variable is not set, which is the case when it is run by the www server."
@@ -624,7 +624,7 @@ TYPE
 REPORT
   cgn@totara.cs.waikato.ac.nz - 2/May/95
 FIX
-  tes@kbs.citri.edu.au - 4/May/95
+  Tim Shimmin (no longer emailable) - 4/May/95
 CLAIM
  Surely something must override mquery's preference for ./bib. 
  If MGDATA is set correctly, I think it should prefer that collection, 
@@ -655,9 +655,9 @@ APPLICATION
 TYPE
   extend
 REPORT
-  tes@kbs.citri.edu.au - April 95
+  Tim Shimmin (no longer emailable) - April 95
 FIX
-  tes@kbs.citri.edu.au - April 95
+  Tim Shimmin (no longer emailable) - April 95
 CLAIM
   No easy way to find out the parsed and stemmed words
   used in the query. Would like to know these words
@@ -705,9 +705,9 @@ APPLICATION
 TYPE
   improve
 REPORT
-  tes@kbs.citri.edu.au - 26/May/95
+  Tim Shimmin (no longer emailable) - 26/May/95
 FIX
-  tes@kbs.citri.edu.au - 26/May/95
+  Tim Shimmin (no longer emailable) - 26/May/95
 CLAIM
   MG has problems dealing with trec docnos for trec disk 3.
 PROBLEM
@@ -730,7 +730,7 @@ TYPE
 REPORT
   triffid@iconz.co.nz - 20/7/95
 FIX
-  tes@kbs.citri.edu.au - 27/7/95
+  Tim Shimmin (no longer emailable) - 27/7/95
 CLAIM
   Complained about not-nodes. 
   e.g. complained about "croquet & !hedgehog"
@@ -752,7 +752,7 @@ TYPE
 REPORT
   many people - 94/95
 FIX
-  tes@kbs.citri.edu.au - Aug/95
+  Tim Shimmin (no longer emailable) - Aug/95
 CLAIM
   Portability is limited by setting up c-macros just for particular
   machines and operating systems.
@@ -802,7 +802,7 @@ TYPE
 REPORT
   beebe@math.utah.edu - 16 May 1994
 FIX
-  tes@kbs.citri.edu.au - 11 August 1994
+  Tim Shimmin (no longer emailable) - 11 August 1994
 CLAIM
   Inconsistent use of stdout/stderr in usage messages.
 PROBLEM
@@ -855,9 +855,9 @@ APPLICATION
 TYPE
   bug
 REPORT
-  tes@kbs.citri.edu.au - ?? August 1994
+  Tim Shimmin (no longer emailable) - ?? August 1994
 FIX
-  tes@kbs.citri.edu.au - 12 August 1994
+  Tim Shimmin (no longer emailable) - 12 August 1994
 CLAIM
   Mg was loading and uncompressing text when the
   query did not require the text.
@@ -924,7 +924,7 @@ TYPE
 REPORT
   beebe@math.utah.edu - 
 FIX
-  tes@kbs.citri.edu.au - 17 August 1994
+  Tim Shimmin (no longer emailable) - 17 August 1994
 CLAIM
   "Write new mg.1 file to give a brief overview of mg, with samples
    of how to use it.  Otherwise, users are likely to be completely
@@ -951,7 +951,7 @@ TYPE
 REPORT
   tim@cosc.canterbury.ac.nz - 2 Jun 94
 FIX
-  tes@kbs.citri.edu.au - 19 Aug 94
+  Tim Shimmin (no longer emailable) - 19 Aug 94
 CLAIM
   "These two queries 
    (which I typed in before I knew what I was doing!!)
@@ -994,7 +994,7 @@ APPLICATION
 TYPE
   bug
 REPORT
-  tes@kbs.citri.edu.au - July 1994
+  Tim Shimmin (no longer emailable) - July 1994
 FIX
   alistair@cs.mu.oz.au - July 1994
 CLAIM

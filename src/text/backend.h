@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: backend.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: backend.h,v 1.4 1994/11/29 00:31:56 tes Exp $
  *
  **************************************************************************/
 
@@ -30,7 +30,6 @@
 #include "timing.h"
 #include "lists.h"
 #include "term_lists.h"
-#include "query_term_list.h"  /* [RPAP - Feb 97: Term Frequency] */
 #include "mg.h"
 #include "invf.h"
 #include "text.h"
@@ -89,20 +88,6 @@ typedef struct compression_dict
   }
 compression_dict;
 
-
-typedef struct stemmed_idx   /* [RPAP - Jan 97: Stem Index Change] */
-  {
-    File *stem_idx_file;
-    struct stem_idx_header sih;
-    u_char **index;
-    unsigned long *pos;
-    int active;
-    u_char *buffer;
-    unsigned long MemForStemIdx;
-  }
-stemmed_idx;
-
-
 typedef struct stemmed_dict
   {
     File *stem_file;
@@ -112,13 +97,9 @@ typedef struct stemmed_dict
     int active;
     u_char *buffer;
     unsigned long MemForStemDict;
-
-    /* [RPAP - Jan 97: Stem Index Change] */
-    stemmed_idx *stem1;
-    stemmed_idx *stem2;
-    stemmed_idx *stem3;
   }
 stemmed_dict;
+
 
 
 typedef struct approx_weights_data
@@ -133,6 +114,7 @@ typedef struct approx_weights_data
     unsigned long num_of_docs;
   }
 approx_weights_data;
+
 
 
 typedef struct RankedQueryInfo
@@ -170,11 +152,7 @@ typedef struct query_data
     approx_weights_data *awd;
     invf_data *id;
     text_data *td;
-#if defined(PARADOCNUM) || defined(NZDL)
-    int *paragraph;
-#endif
     char *pathname;
-    char *textpathname; /* [RJM 06/97: text filename] */
     File *File_text;
     File *File_comp_dict;
     File *File_aux_dict;
@@ -182,12 +160,6 @@ typedef struct query_data
     File *File_text_idx_wgt;
     File *File_text_idx;
     File *File_stem;
-
-    /* [RPAP - Jan 97: Stem Index Change] */
-    File *File_stem1;
-    File *File_stem2;
-    File *File_stem3;
-
     File *File_invf;
     File *File_weight_approx;
     unsigned long mem_in_use, max_mem_in_use;
@@ -204,7 +176,7 @@ typedef struct query_data
     TermList *TL;		/* [TS:Oct/94] - so term list for query can easily be accessed */
     u_char *TextBuffer;
     int TextBufferLen;
-    QueryTermList *QTL;    /* [RPAP - Feb 97: Term Frequency] */
+
   }
 query_data;
 
@@ -222,8 +194,8 @@ typedef struct InitQueryTimes
 InitQueryTimes;
 
 
-/* [RJM 06/97: text filename] */
-query_data *InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt);
+
+query_data *InitQuerySystem (char *dir, char *name, InitQueryTimes * iqt);
 
 void ChangeMemInUse (query_data * qd, long delta);
 
@@ -233,10 +205,11 @@ void ResetFileStats (query_data * qd);
 
 void TransFileStats (query_data * qd);
 
+void ChangeMemInUse (query_data * qd, long delta);
+
 void RankedQuery (query_data * qd, char *Query, RankedQueryInfo * rqi);
 
-void BooleanQuery (query_data * qd, char *Query, BooleanQueryInfo * bqi,
-		   int stem_method);
+void BooleanQuery (query_data * qd, char *Query, BooleanQueryInfo * bqi);
 
 void DocnumsQuery (query_data * qd, char *QueryLine);
 

@@ -33,7 +33,7 @@ Cambridge, MA 02139, USA.
 #ifdef _MALLOC_INTERNAL
 
 #ifdef	HAVE_CONFIG_H
-#include <sysfuncs.h>
+#include <config.h>
 #endif
 
 #if	defined(_LIBC) || defined(STDC_HEADERS) || defined(USG)

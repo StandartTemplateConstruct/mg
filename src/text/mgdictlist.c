@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mgdictlist.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mgdictlist.c,v 1.4 1994/11/29 00:32:07 tes Exp $
  *
  **************************************************************************/
 
@@ -25,36 +25,16 @@
 
 #include "messages.h"
 #include "memlib.h"
-#include "local_strings.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg_files.h"
 #include "text.h"
 #include "invf.h"
 #include "locallib.h"
+#include "local_strings.h"
 #include "words.h"
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:17  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:49  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:24  rjmcnab
-   *** empty log message ***
-
+   $Log: mgdictlist.c,v $
    * Revision 1.4  1994/11/29  00:32:07  tes
    * Committing the new merged files and changes.
    *
@@ -67,7 +47,7 @@
    *
  */
 
-static char *RCSID = "$Id: mgdictlist.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mgdictlist.c,v 1.4 1994/11/29 00:32:07 tes Exp $";
 
 
 int quick = 0;
@@ -87,19 +67,6 @@ DumpStemDict (FILE * f)
   u_char prev[MAXSTEMLEN + 1];
 
   fread (&idh, sizeof (idh), 1, f);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(idh.lookback);
-  NTOHUL(idh.dict_size);
-  NTOHUL(idh.total_bytes);
-  NTOHUL(idh.index_string_bytes);
-  NTOHD(idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(idh.num_of_docs);
-  NTOHUL(idh.static_num_of_docs);
-  NTOHUL(idh.num_of_words);
-  NTOHUL(idh.stemmer_num);
-  NTOHUL(idh.stem_method);
-
   if (quick)
     printf ("%ld\n", idh.dict_size);
   else
@@ -108,7 +75,7 @@ DumpStemDict (FILE * f)
       printf ("# dict size          = %lu\n", idh.dict_size);
       printf ("# total bytes        = %lu\n", idh.total_bytes);
       printf ("# index string bytes = %lu\n", idh.index_string_bytes);
-      printf ("# input bytes        = %.0f\n", idh.input_bytes); /* [RJM 07/97: 4G limit] */
+      printf ("# input bytes        = %lu\n", idh.input_bytes);
       printf ("# num of docs        = %lu\n", idh.num_of_docs);
       printf ("# static num of docs = %lu\n", idh.static_num_of_docs);
       printf ("# num of words       = %lu\n", idh.num_of_words);
@@ -129,11 +96,6 @@ DumpStemDict (FILE * f)
       /* read other data, but no need to store it */
       fread (&fcnt, sizeof (fcnt), 1, f);
       fread (&wcnt, sizeof (wcnt), 1, f);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fcnt);
-      NTOHUL(wcnt);
-
       if (!quick)
 	{
 	  printf ("%d: %8ld ", i, wcnt);
@@ -332,10 +294,6 @@ DumpStatsDict (FILE * f)
 
       fread (&fsh, sizeof (fsh), 1, f);
 
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fsh.num_frags);
-      NTOHUL(fsh.mem_for_frags);
-
       if (!quick)
 	printf ("#\n# num %9s      = %lu\n#\n", i ? "words" : "non-words",
 		fsh.num_frags);
@@ -348,10 +306,6 @@ DumpStatsDict (FILE * f)
 	  fread (&freq, sizeof (freq), 1, f);
 	  fread (&occur_num, sizeof (occur_num), 1, f);
 
-	  /* [RPAP - Jan 97: Endian Ordering] */
-	  NTOHUL(freq);
-	  NTOHUL(occur_num);
-
 	  Word[0] = fgetc (f);
 	  fread (Word + 1, Word[0], 1, f);
 	  printf ("%d: %7ld : %7ld : \"%s\"\n", j, freq,
@@ -361,7 +315,8 @@ DumpStatsDict (FILE * f)
 }
 
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   FILE *fp;
   unsigned long magic = 0;
@@ -376,12 +331,10 @@ int main (int argc, char **argv)
 	FatalError (1, "A file name must be specified");
       dictname = argv[2];
     }
-  if (!(fp = fopen (dictname, "rb")))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(fp = fopen (dictname, "r")))
     FatalError (1, "Unable to open \"%s\"", dictname);
 
   fread (&magic, sizeof (magic), 1, fp);
-
-  NTOHUL(magic);  /* [RPAP - Jan 97: Endian Ordering] */
 
   switch (magic)
     {
@@ -404,5 +357,5 @@ int main (int argc, char **argv)
       FatalError (1, "Bad magic number. \"%s\" cannot be dumped", dictname);
     }
   fclose (fp);
-  return 0;
+  exit (0);
 }

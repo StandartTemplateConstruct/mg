@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mgbilevel.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mgbilevel.c,v 1.1.1.1 1994/08/11 03:26:12 tes Exp $
  *
  **************************************************************************/
 
@@ -72,7 +72,7 @@ usage ()
 
 #define BUF_SIZE 65536
 
-void 
+int 
 main (int argc, char *args[])
 {
   marktype d;
@@ -146,4 +146,6 @@ main (int argc, char *args[])
       setbuffer (stdout, buffer, BUF_SIZE);
       pbm_writefile (stdout, d.bitmap, d.w, d.h);
     }
+  exit(0);
 }
+

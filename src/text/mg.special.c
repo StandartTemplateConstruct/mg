@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg.special.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg.special.c,v 1.3 1994/10/20 03:56:53 tes Exp $
  *
  **************************************************************************/
 
@@ -28,16 +28,7 @@
 
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:03  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.1  1998/11/17 09:34:51  rjmcnab
-   *** empty log message ***
-
+   $Log: mg.special.c,v $
    * Revision 1.3  1994/10/20  03:56:53  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -47,7 +38,7 @@
    *
  */
 
-static char *RCSID = "$Id: mg.special.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg.special.c,v 1.3 1994/10/20 03:56:53 tes Exp $";
 
 
 FILE *fp;

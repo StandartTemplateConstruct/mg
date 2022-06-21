@@ -18,18 +18,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_text_merge.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id$
  * Last edited:  November 11 1994
  *
  **************************************************************************/
 
 #include "sysfuncs.h"
-
+#include "locallib.h"
 #include "messages.h"
 #include "timing.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
-#include "locallib.h"
 #include "mg.h"
 #include "mg_merge.h"
 #include "mg_files.h"
@@ -54,8 +52,8 @@ init_merge_text ()
 {
 
   /* open .text files */
-  text[OLD] = open_file (old_name, TEXT_SUFFIX, "r+b",
-			 MAGIC_TEXT, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  text[OLD] = open_file (old_name, TEXT_SUFFIX, "r+",
+			 MAGIC_TEXT, MG_ABORT);
   magicsize = ftell (text[OLD]);
   fread (&cth[OLD], sizeof (cth[OLD]), 1, text[OLD]);
 
@@ -68,23 +66,9 @@ init_merge_text ()
 			MAGIC_TEXI, MG_ABORT);
   fread (&cth[OLD], sizeof (cth[OLD]), 1, idx[OLD]);
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(cth[OLD].num_of_docs);
-  NTOHD(cth[OLD].num_of_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(cth[OLD].num_of_words);
-  NTOHUL(cth[OLD].length_of_longest_doc);
-  NTOHD(cth[OLD].ratio);
-
   idx[NEW] = open_file (new_name, TEXT_IDX_SUFFIX, "rb+",
 			MAGIC_TEXI, MG_ABORT);
   fread (&cth[NEW], sizeof (cth[NEW]), 1, idx[NEW]);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(cth[NEW].num_of_docs);
-  NTOHD(cth[NEW].num_of_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(cth[NEW].num_of_words);
-  NTOHUL(cth[NEW].length_of_longest_doc);
-  NTOHD(cth[NEW].ratio);
 
   idx[MERGE] = create_file (merge_name, TEXT_IDX_SUFFIX, "wb",
 			    MAGIC_TEXI, MG_ABORT);
@@ -116,14 +100,6 @@ process_merge_text (void)
   cth[MERGE].ratio = ((cth[OLD].num_of_bytes * cth[OLD].ratio) +
 		      (cth[NEW].num_of_bytes * cth[NEW].ratio))
     / cth[MERGE].num_of_bytes;
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(cth[MERGE].num_of_docs);
-  HTOND(cth[MERGE].num_of_bytes); /* [RJM 07/97: 4G limit] */
-  HTONUL(cth[MERGE].num_of_words);
-  HTONUL(cth[MERGE].length_of_longest_doc);
-  HTOND(cth[MERGE].ratio);
-
   fwrite (&cth[MERGE], sizeof (cth[MERGE]), 1, idx[MERGE]);
   fseek (text[OLD], magicsize, 0);
   fwrite (&cth[MERGE], sizeof (cth[MERGE]), 1, text[OLD]);
@@ -140,22 +116,17 @@ process_merge_text (void)
 
   /* offset is the amount to add to each entry from idx[NEW] */
   fread (&offset, sizeof (u_long), 1, idx[OLD]);
-  NTOHUL(offset);  /* [RPAP - Jan 97: Endian Ordering] */
   offset -= (4 + sizeof (cth[OLD]));	/* 4 for the magic number */
 
   for (i = 0; i < cth[NEW].num_of_docs; i++)
     {
       fread (&data, sizeof (u_long), 1, idx[NEW]);
-      NTOHUL(data);  /* [RPAP - Jan 97: Endian Ordering] */
       data += offset;
-      HTONUL(data);  /* [RPAP - Jan 97: Endian Ordering] */
       fwrite (&data, sizeof (u_long), 1, idx[MERGE]);
     }
   /* write last u_long in idx[MERGE] (= length of file) */
   fread (&data, sizeof (u_long), 1, idx[NEW]);
-  NTOHUL(data);  /* [RPAP - Jan 97: Endian Ordering] */
   data += offset;
-  HTONUL(data);  /* [RPAP - Jan 97: Endian Ordering] */
   fwrite (&data, sizeof (u_long), 1, idx[MERGE]);
 
 /******* update .text *******/
@@ -208,7 +179,8 @@ usage (char *progname)
 /*=======================================================================
  * main()
  *=======================================================================*/
-int main (int argc, char *argv[])
+int 
+main (int argc, char *argv[])
 {
   char *progname;
   ProgTime start;
@@ -245,5 +217,5 @@ int main (int argc, char *argv[])
   process_merge_text ();
   done_merge_text ();
   Message ("%s\n", ElapsedTime (&start, NULL));
-  return 0;
+  exit (0);
 }

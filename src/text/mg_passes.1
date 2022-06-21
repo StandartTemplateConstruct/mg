@@ -4,7 +4,7 @@
 .ds Rv \\$3
 .ds Dt \\$4
 ..
-.Id $Id: mg_passes.1 16583 2008-07-29 10:20:36Z davidb $
+.Id $Id: mg_passes.1,v 1.1 1994/09/19 06:03:05 tes Exp $
 .\"------------------------------------------------------------
 .TH mg_passes 1 \*(Dt CITRI
 .SH NAME
@@ -49,9 +49,6 @@ mg_passes \- builds mg databases
 .if n .ti +9n
 [
 .BI \-c " numchunks"
-]
-[
-.BI \-a " stemmer"
 ]
 [
 .BI \-s " stemmethod"
@@ -204,12 +201,6 @@ bit number 0 is the low-order (rightmost) bit.  Bit 0 does case
 folding, and bit 1 does simple stemming, so the value 3 for
 .I stemmethod
 does both case folding and stemming.
-.TP
-.BI \-a " stemmer"
-This specifies the stemmer to use when stemming words.  This
-is a description of the language the stemmer is intended for
-or a description of the stemmer.  Valid options include:
-english, lovin, french, and simplefrench.
 .TP
 .BI \-b " bufsize"
 Specify the size of the document buffer in kilobytes.  If any document

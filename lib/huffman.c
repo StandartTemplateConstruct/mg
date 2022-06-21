@@ -17,13 +17,23 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: huffman.c,v 1.1 1994/08/22 00:24:44 tes Exp $
+ *
  **************************************************************************/
+
+/*
+   $Log: huffman.c,v $
+   * Revision 1.1  1994/08/22  00:24:44  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: huffman.c,v 1.1 1994/08/22 00:24:44 tes Exp $";
 
 #include "sysfuncs.h"
 #include "memlib.h"
 #include "huffman.h"
 #include "messages.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 /* ->data on success,  
    NULL on error 
@@ -266,11 +276,6 @@ Calculate_Huffman_Size (int num, long *freqs, long *counts)
 int 
 Write_Huffman_Data (FILE * f, huff_data * hd)
 {
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONSI(hd->num_codes);
-  HTONSI(hd->mincodelen);
-  HTONSI(hd->maxcodelen);
-
   if (fwrite (&hd->num_codes, sizeof (hd->num_codes), 1, f) != 1)
     return -1;
 
@@ -280,24 +285,13 @@ Write_Huffman_Data (FILE * f, huff_data * hd)
   if (fwrite (&hd->maxcodelen, sizeof (hd->maxcodelen), 1, f) != 1)
     return -1;
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHSI(hd->num_codes);
-  NTOHSI(hd->mincodelen);
-  NTOHSI(hd->maxcodelen);
-
   if (hd->num_codes)
     {
-      /* [RPAP - Jan 97: Endian Ordering] */
-      int i;
-      for (i = hd->mincodelen; i < hd->maxcodelen + 1; i++)
-	HTONSI(hd->lencount[i]);
-      for (i = 0; i < hd->maxcodelen + 1; i++)
-	HTONUL(hd->min_code[i]);
-
       if (fwrite (hd->lencount + hd->mincodelen, sizeof (*hd->lencount),
 		  hd->maxcodelen - hd->mincodelen + 1, f) !=
 	  hd->maxcodelen - hd->mincodelen + 1)
 	return -1;
+
 
       if (fwrite (hd->min_code, sizeof (*hd->min_code), hd->maxcodelen + 1, f) !=
 	  hd->maxcodelen + 1)
@@ -305,12 +299,6 @@ Write_Huffman_Data (FILE * f, huff_data * hd)
 
       if (fwrite (hd->clens, sizeof (*hd->clens), hd->num_codes, f) != hd->num_codes)
 	return -1;
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      for (i = hd->mincodelen; i < hd->maxcodelen + 1; i++)
-	NTOHSI(hd->lencount[i]);
-      for (i = 0; i < hd->maxcodelen + 1; i++)
-	NTOHUL(hd->min_code[i]);
     }
   return 0;
 }
@@ -331,11 +319,6 @@ General_Read_Huffman_Data (size_t (*rd) (), void *f,
   if (rd (&hd->maxcodelen, sizeof (hd->maxcodelen), 1, f) != 1)
     return -1;
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHSI(hd->num_codes);
-  NTOHSI(hd->mincodelen);
-  NTOHSI(hd->maxcodelen);
-
   if (disk)
     (*disk) += sizeof (hd->num_codes) + sizeof (hd->mincodelen) +
       sizeof (hd->maxcodelen);
@@ -344,17 +327,11 @@ General_Read_Huffman_Data (size_t (*rd) (), void *f,
 
   if (hd->num_codes)
     {
-      int i;  /* [RPAP - Jan 97: Endian Ordering] */
-
       bzero ((char *) (hd->lencount), sizeof (hd->lencount));
       if (rd (hd->lencount + hd->mincodelen, sizeof (*hd->lencount),
 	      hd->maxcodelen - hd->mincodelen + 1, f) !=
 	  hd->maxcodelen - hd->mincodelen + 1)
 	return -1;
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      for (i = hd->mincodelen; i < hd->maxcodelen + 1; i++)
-	NTOHSI(hd->lencount[i]);
 
       if (disk)
 	(*disk) += sizeof (*hd->lencount) * (hd->maxcodelen - hd->mincodelen + 1);
@@ -364,10 +341,6 @@ General_Read_Huffman_Data (size_t (*rd) (), void *f,
       if (rd (hd->min_code, sizeof (*hd->min_code), hd->maxcodelen + 1, f) !=
 	  hd->maxcodelen + 1)
 	return -1;
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      for (i = 0; i < hd->maxcodelen + 1; i++)
-	NTOHUL(hd->min_code[i]);
 
       if (disk)
 	(*disk) += sizeof (*hd->min_code) * (hd->maxcodelen + 1);

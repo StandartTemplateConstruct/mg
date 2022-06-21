@@ -17,31 +17,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bool_tree.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: bool_tree.h,v 1.2 1995/03/14 05:15:25 tes Exp $
  *
  **************************************************************************/
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:23  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:17:46  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:42  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:34:31  rjmcnab
-   *** empty log message ***
-
+   $Log: bool_tree.h,v $
    * Revision 1.2  1995/03/14  05:15:25  tes
    * Updated the boolean query optimiser to do different types of optimisation.
    * A query environment variable "optimise_type" specifies which one is to be
@@ -100,9 +81,7 @@ bool_tree_node;
 
 bool_tree_node *CreateBoolNode (N_Tag tag);
 bool_tree_node *CopyBoolTree (bool_tree_node * tree);
-bool_tree_node *CreateBoolTermNode (TermList ** tl, char *text, int Count, int word_num,
-				    u_long count, u_long doc_count, u_long invf_ptr, 
-				    u_long invf_len, int stemmer_num);
+bool_tree_node *CreateBoolTermNode (TermList ** tl, char *text);
 bool_tree_node *CreateBoolTreeNode (N_Tag tag,
 			     bool_tree_node * left, bool_tree_node * right);
 void FreeBoolTree (bool_tree_node ** tree);

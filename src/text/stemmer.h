@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: stemmer.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: stemmer.h,v 1.3 1994/10/20 03:57:06 tes Exp $
  *
  **************************************************************************/
 
@@ -25,40 +25,16 @@
 #define STEMMER_H
 
 #include "sysfuncs.h"
+#include "stem.h"
 
 #define STEMMER_MASK 3
-#define MAX_STEM_DESCRIPTION_LEN 16
-
-/* stemmernumber will return the stemmer for
- * a description of the stemmer. Stemmer descriptions
- * are not case sensitive. Valid descriptions are:
- *
- *   'English'
- *   'Lovin'
- *   'French'
- *   'SimpleFrench'
- *
- * More than one description might result in the same
- * stemmer number (for example, for stemming 'English'
- * we currently use the 'Lovin' stemmer).
- *
- * stemmerdescription is a normal C, null-terminated,
- * string.
- *
- * stemmernumber will return -1 if it doesn't know the
- * stemmer description.
- */
-int stemmernumber (const u_char *stemmerdescription);
 
 /*
  * Method 0 - Do not stem or case fold.
  * Method 1 - Case fold.
  * Method 2 - Stem.
  * Method 3 - Case fold and stem.
- *
- * The stemmer number should be obtained using function
- * stemmernumber above.
  */
-void stemmer (int method, int stemmer, u_char * word);
+void stemmer (int method, u_char * word);
 
 #endif

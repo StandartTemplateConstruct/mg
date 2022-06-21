@@ -27,11 +27,7 @@
 #define _GNU_SOURCE
 
 #ifdef HAVE_CONFIG_H
-# ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-#  include <win32cfg.h>
-# else
-#  include <sysfuncs.h>
-# endif
+#include <config.h>
 #endif
 
 /* We need this for `regex.h', and perhaps for the Emacs include files.  */
@@ -56,7 +52,7 @@
 
 /* If we are not linking with Emacs proper,
    we can't use the relocating allocator
-   even if sysfuncs.h says that we can.  */
+   even if config.h says that we can.  */
 #undef REL_ALLOC
 
 #if defined (STDC_HEADERS) || defined (_LIBC)
@@ -158,12 +154,10 @@ init_syntax_once ()
    Defining isascii to 1 should let any compiler worth its salt
    eliminate the && through constant folding."  */
 
-#ifndef ISASCII
-#  if defined (STDC_HEADERS) || (!defined (isascii) && !defined (HAVE_ISASCII))
-#    define ISASCII(c) 1
-#  else
-#    define ISASCII(c) isascii(c)
-#  endif
+#if defined (STDC_HEADERS) || (!defined (isascii) && !defined (HAVE_ISASCII))
+#define ISASCII(c) 1
+#else
+#define ISASCII(c) isascii(c)
 #endif
 
 #ifdef isblank
@@ -959,7 +953,7 @@ static const char *re_error_msgid[] =
 #define MATCH_MAY_ALLOCATE
 
 /* When using GNU C, we are not REALLY using the C alloca, no matter
-   what sysfuncs.h may say.  So don't take precautions for it.  */
+   what config.h may say.  So don't take precautions for it.  */
 #ifdef __GNUC__
 #undef C_ALLOCA
 #endif

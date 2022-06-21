@@ -22,11 +22,7 @@
    your main control loop, etc. to force garbage collection.  */
 
 #ifdef HAVE_CONFIG_H
-# ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-#  include <win32cfg.h>
-# else
-#  include <sysfuncs.h>
-# endif
+#include <config.h>
 #endif
 
 #ifdef emacs

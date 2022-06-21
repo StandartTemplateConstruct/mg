@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: lstevent.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: lstevent.c,v 1.2 1994/09/20 04:41:40 tes Exp $
  *
  **************************************************************************/
 
@@ -27,22 +27,13 @@
 #include "model.h"
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:16:56  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:17:26  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.1  1998/11/17 09:33:37  rjmcnab
-   *** empty log message ***
-
+   $Log: lstevent.c,v $
    * Revision 1.2  1994/09/20  04:41:40  tes
    * For version 1.1
    *
  */
 
-static char *RCSID = "$Id: lstevent.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: lstevent.c,v 1.2 1994/09/20 04:41:40 tes Exp $";
 
 void
 write_method ()

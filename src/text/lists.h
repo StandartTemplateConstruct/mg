@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: lists.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: lists.h,v 1.3 1995/03/14 05:15:28 tes Exp $
  *
  **************************************************************************/
 
@@ -42,8 +42,6 @@ DocEntry;
 typedef struct DocList
   {
     int num;
-    int total_retrieved; /* valid if > 0 */
-    int is_approx;       /* whether total_retrieved is approximate */
     DocEntry DE[1];
   }
 DocList;

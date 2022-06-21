@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: invf_get.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: invf_get.h,v 1.3 1995/03/14 05:15:27 tes Exp $
  *
  **************************************************************************/
 

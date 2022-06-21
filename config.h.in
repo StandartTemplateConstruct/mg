@@ -87,6 +87,9 @@
 /* Define to 1 if GNU regex should be used instead of GNU rx.  */
 #undef WITH_REGEX
 
+/* Define to 1 if GNU readline should be used. */
+#undef WITH_GNU_READLINE
+
 /* Some braindead header files do not have the requ'd function declarations */
 #undef HAVE_FGETC_DECL
 #undef HAVE_FREAD_DECL
@@ -94,6 +97,12 @@
 /* See if have this field in the prstatus_t structure */
 /* It stores the size of the process heap */
 #undef HAVE_PR_BRKSIZE
+
+/* Define to 1 to override the automatic selection of "long long" */
+#undef DISABLE_LONG_LONG
+
+/* The number of bytes in a unsigned char *.  */
+#undef SIZEOF_UNSIGNED_CHAR_P
 
 /* Define if you have the ftime function.  */
 #undef HAVE_FTIME
@@ -120,7 +129,7 @@
 #undef HAVE_STRCASECMP
 
 /* Define if you have the strerror function.  */
-#define HAVE_STRERROR 1
+#undef HAVE_STRERROR
 
 /* Define if you have the strftime function.  */
 #undef HAVE_STRFTIME
@@ -172,6 +181,3 @@
 
 /* Define if you have the m library (-lm).  */
 #undef HAVE_LIBM
-
-/* Define if big endian */
-#undef WORDS_BIGENDIAN

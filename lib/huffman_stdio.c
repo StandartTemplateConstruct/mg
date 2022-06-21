@@ -17,7 +17,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: huffman_stdio.c,v 1.1 1994/08/22 00:24:46 tes Exp $
+ *
  **************************************************************************/
+
+/*
+   $Log: huffman_stdio.c,v $
+   * Revision 1.1  1994/08/22  00:24:46  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: huffman_stdio.c,v 1.1 1994/08/22 00:24:46 tes Exp $";
 
 #include "sysfuncs.h"
 

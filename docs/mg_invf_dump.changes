@@ -1,0 +1,10 @@
+Just a note about the mg_invf_dump utility.
+
+When writing mgmerge I found it useful to be able to dump
+out small inverted files in ascii format using mg_invf_dump
+with each actual term displayed as well.
+So I modified it adding a "-t" option that causes each term to be
+printed in quotes, provided the binary option isn't set.
+
+The changed source and man pages are in the tar file of
+changed/added mg code.

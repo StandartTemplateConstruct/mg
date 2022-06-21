@@ -17,7 +17,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: huffman_mem.c,v 1.1 1994/08/22 00:24:45 tes Exp $
+ *
  **************************************************************************/
+
+/*
+   $Log: huffman_mem.c,v $
+   * Revision 1.1  1994/08/22  00:24:45  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: huffman_mem.c,v 1.1 1994/08/22 00:24:45 tes Exp $";
 
 #include "sysfuncs.h"
 #include "bitio_m.h"

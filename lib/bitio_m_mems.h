@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_m_mems.h,v 1.2 1994/09/20 04:19:53 tes Exp $
+ *
  **************************************************************************
  *
  *  This file contains macros for doing bitwise input and output on an array 
@@ -56,7 +58,7 @@ mems_bitio_state;
       __base[__pos>>3] |= 0x80 >> (__pos&7);				\
     else								\
       __base[__pos>>3] &= 0xff7f >> (__pos&7);				\
-    ++__pos;								\
+    __pos++;								\
   } while(0)
 
 #define ENCODE_PAUSE(b)							\
@@ -85,7 +87,7 @@ mems_bitio_state;
 #define DECODE_ADD_FF(b)						\
   do {									\
     (b) += (b) + (__base[__pos>>3] & (0x80 >> (__pos&7)) != 0);		\
-    ++__pos;								\
+    __pos++;								\
   } while(0)
 
 #define DECODE_ADD_00(b) DECODE_ADD_FF(b)

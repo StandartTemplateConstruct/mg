@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: perf_hash.h,v 1.2 1994/09/20 04:20:08 tes Exp $
+ *
  **************************************************************************/
 
 #ifndef H_PERF_HASH

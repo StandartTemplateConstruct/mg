@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_perf_hash_build.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_perf_hash_build.c,v 1.3 1994/10/20 03:56:58 tes Exp $
  *
  **************************************************************************/
 
@@ -27,7 +27,6 @@
 #include "timing.h"
 #include "local_strings.h"
 #include "perf_hash.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg_files.h"
 #include "invf.h"
@@ -36,26 +35,7 @@
 #include "mg.h"
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:13  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:47  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:15  rjmcnab
-   *** empty log message ***
-
+   $Log: mg_perf_hash_build.c,v $
    * Revision 1.3  1994/10/20  03:56:58  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -65,7 +45,7 @@
    *
  */
 
-static char *RCSID = "$Id: mg_perf_hash_build.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg_perf_hash_build.c,v 1.3 1994/10/20 03:56:58 tes Exp $";
 
 
 
@@ -75,7 +55,8 @@ static void process_files (char *filename);
 
 int r = -1;
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   ProgTime start;
   char *file_name = "";
@@ -104,7 +85,7 @@ int main (int argc, char **argv)
   GetTime (&start);
   process_files (file_name);
   Message ("%s\n", ElapsedTime (&start, NULL));
-  return 0;
+  exit (0);
 }
 
 
@@ -124,25 +105,13 @@ process_files (char *filename)
   u_char **starts;
 
 
-  dict = open_file (filename, INVF_DICT_SUFFIX, "rb",
-		    MAGIC_STEM_BUILD, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  dict = open_file (filename, INVF_DICT_SUFFIX, "r",
+		    MAGIC_STEM_BUILD, MG_ABORT);
 
   fread ((char *) &idh, sizeof (idh), 1, dict);
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(idh.lookback);
-  NTOHUL(idh.dict_size);
-  NTOHUL(idh.total_bytes);
-  NTOHUL(idh.index_string_bytes);
-  NTOHD(idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(idh.num_of_docs);
-  NTOHUL(idh.static_num_of_docs);
-  NTOHUL(idh.num_of_words);
-  NTOHUL(idh.stemmer_num);
-  NTOHUL(idh.stem_method);
-
-  hash = create_file (filename, INVF_DICT_HASH_SUFFIX, "wb",
-		      MAGIC_HASH, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  hash = create_file (filename, INVF_DICT_HASH_SUFFIX, "w",
+		      MAGIC_HASH, MG_ABORT);
 
   if (!(pool = Xmalloc (POOL_SIZE)))
     FatalError (1, "Out of memory");
@@ -165,7 +134,6 @@ process_files (char *filename)
       /* read other data, but no need to store it */
       fread (&fcnt, sizeof (fcnt), 1, dict);
       fread (&wcnt, sizeof (wcnt), 1, dict);
-
       l = *prev + 1;
       if (pool_left < l)
 	{

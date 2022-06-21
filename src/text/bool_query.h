@@ -17,21 +17,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bool_query.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: bool_query.h,v 1.1 1994/10/20 03:56:36 tes Exp $
  *
  **************************************************************************/
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:23  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:17:45  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.1  1998/11/17 09:34:28  rjmcnab
-   *** empty log message ***
-
+   $Log: bool_query.h,v $
    * Revision 1.1  1994/10/20  03:56:36  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -49,7 +40,6 @@
 
 #include "backend.h"
 
-void BooleanQuery (query_data * qd, char *Query, BooleanQueryInfo * bqi,
-		   int stem_method);
+void BooleanQuery (query_data * qd, char *Query, BooleanQueryInfo * bqi);
 
 #endif

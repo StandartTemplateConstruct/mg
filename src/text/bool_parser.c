@@ -1,6 +1,6 @@
 
 /*  A Bison parser, made from bool_parser.y
- by  GNU Bison version 1.27
+ by  GNU Bison version 1.25.90
   */
 
 #define YYBISON 1  /* Identify Bison output.  */
@@ -19,12 +19,7 @@
 #include "stemmer.h"
 #include "term_lists.h"
 #include "bool_tree.h"
-/* [RPAP - Jan 97: Stem Index Change] */
-#include "backend.h"     /* for stemmed_dict def */
-#include "stem_search.h"
-
-#include "query_term_list.h"  /* [RPAP - Feb 97: Term Frequency] */
-
+ 
 /* --- routines --- */
 static int query_lex();
 static int yyerror(char *);
@@ -35,20 +30,9 @@ static char *ch_buf; /* ptr to the character query line buffer */
 static char *end_buf; /* ptr to the last character of the line buffer */
 static bool_tree_node *tree_base = NULL;
 static TermList **term_list;
-static int stemmer_num;
 static int stem_method;
-/* [RPAP - Jan 97: Stem Index Change] */
-stemmed_dict *p__sd;
-static int indexed;
-/* [RPAP - Feb 97: Term Frequency] */
-static QueryTermList **query_term_list;
-static int word_num;
-static u_long count;
-static u_long doc_count;
-static u_long invf_ptr;
-static u_long invf_len;
 
-#line 66 "bool_parser.y"
+#line 50 "bool_parser.y"
 typedef union {
   char *text;
   bool_tree_node *node;
@@ -115,8 +99,8 @@ static const short yyrhs[] = {    15,
 
 #if YYDEBUG != 0
 static const short yyrline[] = { 0,
-    76,    80,    81,    82,    83,    86,    87,    90,    91,    92,
-    95,    96
+    60,    64,    65,    66,    67,    70,    71,    74,    75,    76,
+    79,    80
 };
 #endif
 
@@ -172,8 +156,8 @@ static const short yycheck[] = {     5,
     -1,    -1,    -1,    10
 };
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
-#line 3 "/usr/lib/bison.simple"
-/* This file comes from bison-1.27.  */
+#line 3 "/usr/share/misc/bison.simple"
+/* This file comes from bison-1.25.90.  */
 
 /* Skeleton output parser for bison,
    Copyright (C) 1984, 1989, 1990 Free Software Foundation, Inc.
@@ -190,8 +174,7 @@ static const short yycheck[] = {     5,
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.  */
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* As a special exception, when this file is copied by Bison into a
    Bison output file, you may use that output file without restriction.
@@ -386,7 +369,7 @@ __yy_memcpy (char *to, char *from, unsigned int count)
 #endif
 #endif
 
-#line 216 "/usr/lib/bison.simple"
+#line 216 "/usr/share/misc/bison.simple"
 
 /* The user can define YYPARSE_PARAM as the name of an argument to be passed
    into yyparse.  The argument should have type void *.
@@ -715,44 +698,44 @@ yyreduce:
   switch (yyn) {
 
 case 1:
-#line 76 "bool_parser.y"
+#line 60 "bool_parser.y"
 { tree_base = yyvsp[0].node;;
     break;}
 case 2:
-#line 80 "bool_parser.y"
-{ yyval.node = CreateBoolTermNode(term_list, yyvsp[0].text, 1, word_num, count, doc_count, invf_ptr, invf_len, stemmer_num); ;
+#line 64 "bool_parser.y"
+{ yyval.node = CreateBoolTermNode(term_list, yyvsp[0].text); ;
     break;}
 case 3:
-#line 81 "bool_parser.y"
+#line 65 "bool_parser.y"
 { yyval.node = yyvsp[-1].node; ;
     break;}
 case 4:
-#line 82 "bool_parser.y"
+#line 66 "bool_parser.y"
 { yyval.node = CreateBoolTreeNode(N_all, NULL, NULL); ;
     break;}
 case 5:
-#line 83 "bool_parser.y"
+#line 67 "bool_parser.y"
 { yyval.node = CreateBoolTreeNode(N_none, NULL, NULL); ;
     break;}
 case 7:
-#line 87 "bool_parser.y"
+#line 71 "bool_parser.y"
 { yyval.node = CreateBoolTreeNode(N_not, yyvsp[0].node, NULL); ;
     break;}
 case 8:
-#line 90 "bool_parser.y"
+#line 74 "bool_parser.y"
 { yyval.node = CreateBoolTreeNode(N_and, yyvsp[-2].node, yyvsp[0].node); ;
     break;}
 case 9:
-#line 91 "bool_parser.y"
+#line 75 "bool_parser.y"
 { yyval.node = CreateBoolTreeNode(N_and, yyvsp[-1].node, yyvsp[0].node); ;
     break;}
 case 11:
-#line 95 "bool_parser.y"
+#line 79 "bool_parser.y"
 { yyval.node = CreateBoolTreeNode(N_or, yyvsp[-2].node, yyvsp[0].node); ;
     break;}
 }
    /* the action file gets copied in in place of this dollarsign */
-#line 542 "/usr/lib/bison.simple"
+#line 542 "/usr/share/misc/bison.simple"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -972,7 +955,7 @@ yyerrhandle:
     }
   return 1;
 }
-#line 99 "bool_parser.y"
+#line 83 "bool_parser.y"
 
  
 /* Bison on one mips machine defined "const" to be nothing but
@@ -997,144 +980,45 @@ yyerrhandle:
  *      does NOT produce WILD tokens at the moment
  * ========================================================================= */
  
-/* [RPAP - Jan 97: Stem Index Change]
-   state mode:
-      0 = Read next token
-      1 = Output word
-      2 = Output '|' or ')'
- */
 static int query_lex(char **ptr, const char *end)
 {
   char *buf_ptr = *ptr;
-  static int mode = 0;
-  static int termnum = 0;
-  static TermList *Terms = NULL;
 
-  if (mode == 0)
-    {
-      /* jump over whitespace */
-      buf_ptr = skipspace(buf_ptr, end);
+  /* jump over whitespace */
+  while (isspace(*buf_ptr))
+    buf_ptr++;
  
-      if (inaword(buf_ptr, end))
-	{
-	  static char word[MAXSTEMLEN + 1]; /* [RJM 07/98: Memory Leak] */
-	  char *sWord = Xmalloc(MAXSTEMLEN + 1);
-	  int stem_to_apply, method_using = -1;
-
-	  PARSE_STEM_WORD(word, buf_ptr, end);
-
-	  /* Extract any parameters */
-	  stem_to_apply = stem_method;
-	  while (buf_ptr <= end)
-	    {
-	      int stem_param, param_type;
-	      char param[MAXPARAMLEN + 1];
-
-	      param_type = 0;
-	      PARSE_OPT_TERM_PARAM (param, param_type, buf_ptr, end);
-	      if (!param_type)
-		break;
-
-	      if (param_type == STEMPARAM)
-		{
-		  stem_param = atoi (param);
-		  if (errno != ERANGE && indexed && stem_param >= 0 && stem_param <= 3)
-		    method_using = stem_to_apply = stem_param;
-		}
-	    }
-
-	  bcopy ((char *) word, (char *) sWord, *word + 1);
-	  stemmer (stem_to_apply, stemmer_num, sWord);
-
-	  if (stem_to_apply == 0 || !indexed || p__sd == NULL)
-	    {
-	      /* [RPAP - Feb 97: Term Frequency] */
-	      word_num = FindWord (p__sd, sWord, &count, &doc_count, &invf_ptr, &invf_len);
-	      if (word_num == -1)
-		count = doc_count = invf_ptr = invf_len = 0;
-	      AddQueryTerm (query_term_list, (u_char *) word, count, method_using);
-
-	      yylval.text = word;
-	      *ptr = buf_ptr; /* fix up ptr */
-	      Xfree (sWord);
-	      return TERM;
-	    }
-	  else
-	    {
-	      *ptr = buf_ptr; /* fix up ptr */
-	      termnum = 0;
-	      ResetTermList (&Terms);
-	      if (FindWords (p__sd, (u_char *) sWord, stem_to_apply, &Terms) > 0)
-		{
-		  /* [RPAP - Feb 97: Term Frequency] */ 
-		  int i, freq = 0;
-		  for (i = 0; i < Terms->num; i++)
-		    freq += Terms->TE[i].WE.count;
-		  AddQueryTerm (query_term_list, word, freq, method_using);
-
-		  Xfree (sWord);
-		  mode = 1;
-		  return '(';
-		}
-	      else
-		{
-		  /* Word does not exists - include in tree anyway */
-		  Xfree (sWord);
-
-		  /* [RPAP - Feb 97: Term Frequency] */
-		  word_num = -1;
-		  count = doc_count = invf_ptr = invf_len = 0;
-		  AddQueryTerm (query_term_list, (u_char *) word, count, method_using);
-
-		  yylval.text = word;
-		  return TERM;
-		}
-	    }
-	}
-      else /* NON-WORD */
-	{
-	  if (*buf_ptr == '\0')
-	    {
-	      /* return null-char if it is one */
-	      *ptr = buf_ptr; /* fix up ptr */
-	      return 0;
-	    }
-	  else
-	    {
-	      /* return 1st char, and delete from buffer */
-	      char c = *buf_ptr++;
-	      *ptr = buf_ptr; /* fix up ptr */
-	      return c;
-	    }
-	}
-    }
-  else if (mode == 1)
+  if (INAWORD(*buf_ptr))
     {
-      yylval.text = Terms->TE[termnum].Word;
+      char *word = Xmalloc(MAXSTEMLEN+1);
       
-      /* [RPAP - Feb 97: Term Frequency] */
-      word_num = Terms->TE[termnum].WE.word_num;
-      count = Terms->TE[termnum].WE.count;
-      doc_count = Terms->TE[termnum].WE.doc_count;
-      invf_ptr = Terms->TE[termnum].WE.invf_ptr;
-      invf_len = Terms->TE[termnum].WE.invf_len;
-
-      termnum++;
-      mode = 2;
+      if (!word)
+        FatalError(1, "Unable to allocate memory for boolean term");
+ 
+      PARSE_STEM_WORD(word, buf_ptr, end);
+ 
+      yylval.text = word;
+ 
+      stemmer(stem_method, (u_char*)yylval.text);
+ 
+      *ptr = buf_ptr; /* fix up ptr */
       return TERM;
     }
-  else  /* mode == 2 */
+  else /* NON-WORD */
     {
-      if (termnum >= Terms->num)
-	{
-	  mode = 0;
-	  return ')';
-	}
+      if (*buf_ptr == '\0')
+        {
+	  /* return null-char if it is one */
+          *ptr = buf_ptr; /* fix up ptr */
+	  return 0;
+        }
       else
-	{
-	  mode = 1;
-	  return '|';
-	}
+        {
+	  /* return 1st char, and delete from buffer */
+          char c = *buf_ptr++;
+          *ptr = buf_ptr; /* fix up ptr */
+          return c;
+        }
     }
 }/*query_lex*/
 
@@ -1166,25 +1050,17 @@ static int yyerror(char *s)
  
 bool_tree_node *
 ParseBool(char *query_line, int query_len,
-          TermList **the_term_list, int the_stemmer_num, int the_stem_method, int *res,
-	  stemmed_dict * the_sd, int is_indexed,   /* [RPAP - Jan 97: Stem Index Change] */
-	  QueryTermList **the_query_term_list)  /* [RPAP - Feb 97: Term Frequency] */
+          TermList **the_term_list, int the_stem_method, int *res)
 {
   /* global variables to be accessed by bison/yacc created parser */
   term_list = the_term_list;
-  stemmer_num = the_stemmer_num;
   stem_method = the_stem_method;
   ch_buf = query_line;
   end_buf = query_line + query_len;
-  p__sd = the_sd;   /* [RPAP - Jan 97: Stem Index Change] */
-  indexed = is_indexed;  /* [RPAP - Jan 97: Stem Index Change] */
-  query_term_list = the_query_term_list; /* [RPAP - Feb 97: Term Frequency] */
-
+ 
   FreeBoolTree(&(tree_base));
  
   ResetTermList(term_list);
-  ResetQueryTermList(query_term_list);  /* [RPAP - Feb 97: Term Frequency] */
-
   *res = yyparse();
  
   return tree_base;

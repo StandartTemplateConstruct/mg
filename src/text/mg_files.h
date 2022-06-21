@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_files.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_files.h,v 1.2 1994/09/20 04:41:48 tes Exp $
  *
  **************************************************************************/
 
@@ -49,10 +49,6 @@
 #define MAGIC_WGHT		GEN_MAGIC('M','G','W', 0 )
 #define MAGIC_WGHT_APPROX	GEN_MAGIC('M','G','w', 0 )
 #define MAGIC_PARAGRAPH		GEN_MAGIC('M','G','P', 0 )
-/* [RPAP - Jan 97: Stem Index Change] */
-#define MAGIC_STEM_1            GEN_MAGIC('M','G','s','1')
-#define MAGIC_STEM_2            GEN_MAGIC('M','G','s','2')
-#define MAGIC_STEM_3            GEN_MAGIC('M','G','s','3')
 
 #define IS_MAGIC(a) ((((u_long)(a)) & 0xffff0000) == MAGIC_XXXX)
 
@@ -127,7 +123,7 @@
 
 /* The dictionary of stemmed words build by stem.process */
 #ifdef SHORT_SUFFIX
-# define INVF_DICT_BLOCKED_SUFFIX ".idb"
+# define INVF_DICT_BLOCKED_SUFFIX ".invf.dict.blocked"
 #else
 # define INVF_DICT_BLOCKED_SUFFIX ".invf.dict.blocked"
 #endif
@@ -203,36 +199,9 @@
 # define COMPRESSION_STATS_SUFFIX ".compression.stats"
 #endif
 
-/* [RPAP - Jan 97: Stem Index Change] */
-/* The casefolded index into the stemmed dictionary */
-#ifdef SHORT_SUFFIX
-# define INVF_DICT_BLOCKED_1_SUFFIX ".ib1"
-#else
-# define INVF_DICT_BLOCKED_1_SUFFIX ".invf.dict.blocked.1"
-#endif
 
-/* [RPAP - Jan 97: Stem Index Change] */
-/* The stemmed index into the stemmed dictionary */
-#ifdef SHORT_SUFFIX
-# define INVF_DICT_BLOCKED_2_SUFFIX ".ib2"
-#else
-# define INVF_DICT_BLOCKED_2_SUFFIX ".invf.dict.blocked.2"
-#endif
 
-/* [RPAP - Jan 97: Stem Index Change] */
-/* The casefolded and stemmed  index into the stemmed dictionary */
-#ifdef SHORT_SUFFIX
-# define INVF_DICT_BLOCKED_3_SUFFIX ".ib3"
-#else
-# define INVF_DICT_BLOCKED_3_SUFFIX ".invf.dict.blocked.3"
-#endif
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-#define FILE_NAME_FORMAT "%s%s%s"
-#else
-#define FILE_NAME_FORMAT "%s/%s%s"
-#endif
 
 
 /* This sets the base path for all file operations */

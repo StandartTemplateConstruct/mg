@@ -17,7 +17,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_gen.c,v 1.1 1994/08/22 00:24:38 tes Exp $
+ *
  **************************************************************************/
+
+/*
+   $Log: bitio_gen.c,v $
+   * Revision 1.1  1994/08/22  00:24:38  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: bitio_gen.c,v 1.1 1994/08/22 00:24:38 tes Exp $";
 
 #include "sysfuncs.h"
 #include "bitio_m.h"
@@ -113,14 +124,11 @@ BIO_Bblock_Bound (int N, int p)
   return (BIO_Bblock_Bound_b (N, p, b));
 }
 
-
 /* adjustment is a hack to overcome inaccuracies in floating point,
    where (int)(ln4/ln2) can equal 1, not 2. */
-/* copied from mg-1.3f, 17-09-01 kjm18 */
 int 
 BIO_Gamma_Bound (int N, int p)
 {
-  /* return ((int) (p * (2 * log2 ((double) N / p) + 1))); */
   return ((int) (p * (2 * log2 (((double) N * 1.0001) / p) + 1)));
 }
 

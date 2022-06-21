@@ -18,11 +18,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_hilite_words.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_hilite_words.c,v 1.3 1995/04/21 01:35:30 tes Exp $
  *
  **************************************************************************/
 
-static char *RCSID = "$Id: mg_hilite_words.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg_hilite_words.c,v 1.3 1995/04/21 01:35:30 tes Exp $";
 
 #include "sysfuncs.h"
 
@@ -103,7 +103,6 @@ static char *hilite_tags[] =
 {"B", "", "I", "EM", "STRONG"};
 static short hilite_style = BOLD;
 static char *pager = "less";
-static int stemmer_num = 0;	/* Lovin's stemmer */
 static int stem_method = 3;	/* fold & stem */
 static char **word_list;
 static int num_of_words = 0;
@@ -189,7 +188,7 @@ set_create (int num_of_words)
   set = (WordSet) malloc (hash_size * sizeof (Word));
   if (!set)
     FatalError (1, "Runout of memory for word hashtable");
-  bzero ((char *) set, hash_size * sizeof (Word));  /* [RPAP - Feb 97: WIN32 Port] */
+  bzero ((char *) set, sizeof (Word) * hash_size);
 
   set_of_words = set;
 
@@ -444,7 +443,7 @@ process_buffer (u_char * s_in, int len, FILE * output_file)
   u_char *end = s_in + len - 1;
   u_char *s_start = NULL;
 
-  if (!inaword (s_in, end))
+  if (!INAWORD (*s_in))
     {
       s_start = s_in;
       PARSE_NON_STEM_WORD (s_in, end);
@@ -458,7 +457,7 @@ process_buffer (u_char * s_in, int len, FILE * output_file)
       s_start = s_in;
       PARSE_STEM_WORD (word, s_in, end);
 
-      stemmer (stem_method, stemmer_num, word);
+      stemmer (stem_method, word);
 
       if (set_member (word))	/* output with highlighting */
 	{
@@ -567,7 +566,6 @@ struct option long_opts[] =
   {"terminator", required_argument, 0, 't'},
   {"pager", required_argument, 0, 'p'},
   {"stem_method", required_argument, 0, 'm'},
-  {"stemmer", required_argument, 0, 'a'},
   {0, 0, 0, 0}
 };
 
@@ -578,7 +576,7 @@ process_args (int argc, char *argv[])
 
 
   opterr = 0;
-  while ((ch = getopt_long (argc, argv, "s:p:t:m:a:", long_opts, (int *) 0)) != -1)
+  while ((ch = getopt_long (argc, argv, "s:p:t:m:", long_opts, (int *) 0)) != -1)
     {
       switch (ch)
 	{
@@ -593,9 +591,6 @@ process_args (int argc, char *argv[])
 	      hilite_style = i;
 	  }
 	  break;
-	case 'a':
-	  stemmer_num = stemmernumber (optarg);
-	  break;
 	case 't':
 	  terminator = optarg;
 	  break;
@@ -608,7 +603,6 @@ process_args (int argc, char *argv[])
 	default:
 	  FatalError (1, "Usage: \n"
 		      "mg_hilite_words --stem_method [0-3]\n"
-	  "                --stemmer [english|lovin|french|simplefrench]\n"
 	  "                --style [bold|underline|italic|emphasis|strong]\n"
 		      "                --pager [less|more|html|???]\n");
 	}
@@ -642,12 +636,7 @@ main (int argc, char *argv[])
 
   /* set output file */
   if (output_type == PAGER)
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-    output = _popen (pager, "w");
-#else
     output = popen (pager, "w");
-#endif
   else
     output = stdout;
 
@@ -682,12 +671,7 @@ main (int argc, char *argv[])
     fprintf (output, "%s\n", terminator);
 
   if (output != stdout)
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-    _pclose (output);
-#else
     pclose (output);
-#endif
 
-  return 0;
+  exit(0);
 }

@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: text.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: text.h,v 1.2 1994/09/20 04:42:12 tes Exp $
  *
  **************************************************************************/
 
@@ -28,7 +28,7 @@
 
 #include "huffman.h"
 
-
+#include "longlong.h"
 
 
 
@@ -140,10 +140,13 @@ typedef struct compressed_text_header
   {
     u_long num_of_docs;
     u_long num_of_words;	/* number of words in collection */
-    double num_of_bytes; /* [RJM 07/97: 4G limit] */
-    double ratio;
     u_long length_of_longest_doc;	/* (characters) */
-    u_long dummy;    /* added to make the structure the same on different architectures */
+    u_long padding1;		/* padding to 8-byte multiple */
+    double ratio;
+    mg_ullong num_of_bytes;
+#ifndef USE_LONG_LONG
+    u_long padding2;
+#endif
   }
 compressed_text_header;
 
@@ -151,11 +154,9 @@ compressed_text_header;
 typedef struct compression_stats_header
   {
     u_long num_docs;
-    u_long dummy;   /* added to make the structure the same on different architectures */
-    double num_bytes; /* [RJM 07/97: 4G limit] */
+    u_long num_bytes;
   }
 compression_stats_header;
-
 
 typedef struct frags_stats_header
   {

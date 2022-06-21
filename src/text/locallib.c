@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: locallib.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: locallib.c,v 1.3 1994/10/20 03:56:51 tes Exp $
  *
  **************************************************************************/
 
@@ -26,22 +26,12 @@
 #include "memlib.h"
 #include "bitio_gen.h"
 #include "huffman.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "locallib.h"
 #include "text.h"
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:02  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.1  1998/11/17 09:34:49  rjmcnab
-   *** empty log message ***
-
+   $Log: locallib.c,v $
    * Revision 1.3  1994/10/20  03:56:51  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -51,7 +41,7 @@
    *
  */
 
-static char *RCSID = "$Id: locallib.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: locallib.c,v 1.3 1994/10/20 03:56:51 tes Exp $";
 
 
 int 
@@ -189,24 +179,7 @@ Read_cdh (FILE * f, compression_dict_header * cdh, u_long * mem,
 {
   if (disk)
     (*disk) += sizeof (*cdh);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  if (fread (cdh, sizeof (*cdh), 1, f) == 1)
-    {
-      int i;
-      NTOHUL(cdh->dict_type);
-      NTOHUL(cdh->novel_method);
-      for (i = 0; i < TEXT_PARAMS; i++)
-	NTOHUL(cdh->params[i]);
-      NTOHUL(cdh->num_words[0]);
-      NTOHUL(cdh->num_words[1]);
-      NTOHUL(cdh->num_word_chars[0]);
-      NTOHUL(cdh->num_word_chars[1]);
-      NTOHUL(cdh->lookback);
-      return 0;
-    }
-  else
-    return -1;
+  return (fread (cdh, sizeof (*cdh), 1, f) == 1) ? 0 : -1;
 }
 
 
@@ -216,38 +189,18 @@ F_Read_cdh (File * f, compression_dict_header * cdh, u_long * mem,
 {
   if (disk)
     (*disk) += sizeof (*cdh);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  if (Fread (cdh, sizeof (*cdh), 1, f) == 1)
-    {
-      int i;
-      NTOHUL(cdh->dict_type);
-      NTOHUL(cdh->novel_method);
-      for (i = 0; i < TEXT_PARAMS; i++)
-	NTOHUL(cdh->params[i]);
-      NTOHUL(cdh->num_words[0]);
-      NTOHUL(cdh->num_words[1]);
-      NTOHUL(cdh->num_word_chars[0]);
-      NTOHUL(cdh->num_word_chars[1]);
-      NTOHUL(cdh->lookback);
-      return 0;
-    }
-  else
-    return -1;
+  return (Fread (cdh, sizeof (*cdh), 1, f) == 1) ? 0 : -1;
 }
 
 
 int 
 Read_cfh (FILE * f, comp_frags_header * cfh, u_long * mem, u_long * disk)
 {
-  int i;  /* [RPAP - Jan 97: Endian Ordering] */
-
   if (Read_Huffman_Data (f, &cfh->hd, mem, disk) == -1)
     return -1;
   if (fread (&cfh->uncompressed_size,
 	     sizeof (cfh->uncompressed_size), 1, f) != 1)
     return -1;
-  NTOHUL(cfh->uncompressed_size);  /* [RPAP - Jan 97: Endian Ordering] */
 
   if (disk)
     (*disk) += sizeof (cfh->uncompressed_size);
@@ -260,10 +213,6 @@ Read_cfh (FILE * f, comp_frags_header * cfh, u_long * mem, u_long * disk)
       cfh->hd.maxcodelen - cfh->hd.mincodelen + 1)
     return -1;
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  for (i = cfh->hd.mincodelen; i < cfh->hd.maxcodelen + 1; i++)
-    NTOHUL(cfh->huff_words_size[i]);
-
   if (disk)
     (*disk) += sizeof (*cfh->huff_words_size) *
       (cfh->hd.maxcodelen - cfh->hd.mincodelen + 1);
@@ -275,14 +224,11 @@ Read_cfh (FILE * f, comp_frags_header * cfh, u_long * mem, u_long * disk)
 int 
 F_Read_cfh (File * f, comp_frags_header * cfh, u_long * mem, u_long * disk)
 {
-  int i;  /* [RPAP - Jan 97: Endian Ordering] */
-
   if (F_Read_Huffman_Data (f, &cfh->hd, mem, disk) == -1)
     return -1;
   if (Fread (&cfh->uncompressed_size,
 	     sizeof (cfh->uncompressed_size), 1, f) != 1)
     return -1;
-  NTOHUL(cfh->uncompressed_size);  /* [RPAP - Jan 97: Endian Ordering] */
 
   if (disk)
     (*disk) += sizeof (cfh->uncompressed_size);
@@ -294,10 +240,6 @@ F_Read_cfh (File * f, comp_frags_header * cfh, u_long * mem, u_long * disk)
 	     cfh->hd.maxcodelen - cfh->hd.mincodelen + 1, f) !=
       cfh->hd.maxcodelen - cfh->hd.mincodelen + 1)
     return -1;
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  for (i = cfh->hd.mincodelen; i < cfh->hd.maxcodelen + 1; i++)
-    NTOHUL(cfh->huff_words_size[i]);
 
   if (disk)
     (*disk) += sizeof (*cfh->huff_words_size) *

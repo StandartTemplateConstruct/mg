@@ -17,24 +17,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: environment.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: environment.c,v 1.5 1995/03/14 05:15:26 tes Exp $
  *
  **************************************************************************/
 
 /*
-   $Log$
-   Revision 1.2  2004/04/25 23:01:18  kjdon
-   added a new -M option to mg_passes, allowing maxnumeric to be altered - made this change to keep gsdl3 mg inline with gsdl2 mg.
-
-   Revision 1.1  2003/02/20 21:18:23  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:17:50  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.1  1998/11/17 09:34:37  rjmcnab
-   *** empty log message ***
-
+   $Log: environment.c,v $
    * Revision 1.5  1995/03/14  05:15:26  tes
    * Updated the boolean query optimiser to do different types of optimisation.
    * A query environment variable "optimise_type" specifies which one is to be
@@ -52,7 +40,7 @@
    *
  */
 
-static char *RCSID = "$Id: environment.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: environment.c,v 1.5 1995/03/14 05:15:26 tes Exp $";
 
 #include "sysfuncs.h"
 
@@ -63,12 +51,6 @@ static char *RCSID = "$Id: environment.c 16583 2008-07-29 10:20:36Z davidb $";
 
 #include "environment.h"
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-# define STRCASECMP      stricmp
-#else
-# define STRCASECMP      strcasecmp
-#endif
 
 typedef struct
   {
@@ -107,7 +89,7 @@ SetEnv (char *name, char *data, char *(*Constraint) (char *, char *))
     data = NULL;
 
   /* search for name in the environment */
-  for (i = 0; i < Base.NumEnv && STRCASECMP (name, env->Name); i++, env++);  /* [RPAP - Feb 97: WIN32 Port] */
+  for (i = 0; i < Base.NumEnv && strcasecmp (name, env->Name); i++, env++);
 
   /* if not found the increase the environment size */
   if (i >= Base.NumEnv)
@@ -167,7 +149,7 @@ GetEnv (char *name)
   int i;
   EEntry *env = Base.Environment;
   /* search for name in the environment */
-  for (i = 0; i < Base.NumEnv && STRCASECMP (name, env->Name); i++, env++);  /* [RPAP - Feb 97: WIN32 Port] */
+  for (i = 0; i < Base.NumEnv && strcasecmp (name, env->Name); i++, env++);
 
   if (i >= Base.NumEnv)
     return (NULL);
@@ -259,8 +241,7 @@ UnsetEnv (char *name, int Force)
   int i;
   EEntry *env = Base.Environment;
   /* search for name in the environment */
-  for (i = 0; i < Base.NumEnv && STRCASECMP (name, env->Name); i++, env++);  /* [RPAP - Feb 97: WIN32 Port] */
-
+  for (i = 0; i < Base.NumEnv && strcasecmp (name, env->Name); i++, env++);
   if (i >= Base.NumEnv ||
       (Base.Environment[i].Constraint && !Force))
     return (-1);
@@ -306,14 +287,14 @@ BooleanCons (char *Old, char *New)
   int old = -1, new = -1;
   if (Old)
     for (i = 0; i < sizeof (BooleanStrs) / sizeof (char *); i++)
-      if (!STRCASECMP (Old, BooleanStrs[i]))  /* [RPAP - Feb 97: WIN32 Port] */
+      if (!strcasecmp (Old, BooleanStrs[i]))
 	{
 	  old = i;
 	  break;
 	}
   if (New)
     for (i = 0; i < sizeof (BooleanStrs) / sizeof (char *); i++)
-      if (!STRCASECMP (New, BooleanStrs[i]))  /* [RPAP - Feb 97: WIN32 Port] */
+      if (!strcasecmp (New, BooleanStrs[i]))
 	{
 	  new = i;
 	  break;
@@ -337,7 +318,7 @@ BooleanEnv (char *data, int def)
   if (!data)
     return (def);
   for (i = 0; i < sizeof (BooleanStrs) / sizeof (char *); i++)
-    if (!STRCASECMP (data, BooleanStrs[i]))  /* [RPAP - Feb 97: WIN32 Port] */
+    if (!strcasecmp (data, BooleanStrs[i]))
       return (i & 1);
   return (def);
 }
@@ -380,7 +361,7 @@ NumberCmp (char *num, int min, int max)
 static char *
 MaxDocsCons (char *Old, char *New)
 {
-  if (!STRCASECMP (New, "all"))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!strcasecmp (New, "all"))
     return (New);
   return (NumberCmp (New, 1, ((unsigned) (~0)) >> 1));
 }
@@ -389,7 +370,7 @@ MaxDocsCons (char *Old, char *New)
 static char *
 MaxTermsCons (char *Old, char *New)
 {
-  if (!STRCASECMP (New, "all"))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!strcasecmp (New, "all"))
     return (New);
   return (NumberCmp (New, 1, ((unsigned) (~0)) >> 1));
 }
@@ -405,7 +386,7 @@ BufferCons (char *Old, char *New)
 static char *
 MaxNodesCons (char *Old, char *New)
 {
-  if (!STRCASECMP (New, "all"))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!strcasecmp (New, "all"))
     return (New);
   return (NumberCmp (New, 8, 256 * 1024 * 1024));
 }
@@ -438,12 +419,6 @@ OptimiseCons (char *Old, char *New)
   return (NumberCmp (New, 0, 2));
 }
 
-/* ARGSUSED */
-char *
-MaxNumericCons (char *Old, char *New)
-{
-  return (NumberCmp (New, 4, 512));
-}
 
 
 /*
@@ -462,7 +437,7 @@ QueryCons (char *Old, char *New)
   int new = -1;
   if (New)
     for (i = 0; i < sizeof (QueryStrs) / sizeof (char *); i++)
-      if (!STRCASECMP (New, QueryStrs[i]))  /* [RPAP - Feb 97: WIN32 Port] */
+      if (!strcasecmp (New, QueryStrs[i]))
 	{
 	  new = i;
 	  break;
@@ -488,7 +463,7 @@ AccumCons (char *Old, char *New)
   int new = -1;
   if (New)
     for (i = 0; i < sizeof (AccumStrs) / sizeof (char *); i++)
-      if (!STRCASECMP (New, AccumStrs[i]))  /* [RPAP - Feb 97: WIN32 Port] */
+      if (!strcasecmp (New, AccumStrs[i]))
 	{
 	  new = i;
 	  break;
@@ -522,7 +497,7 @@ OutputTypeCons (char *Old, char *New)
   int new = -1;
   if (New)
     for (i = 0; i < sizeof (OutputTypeStrs) / sizeof (char *); i++)
-      if (!STRCASECMP (New, OutputTypeStrs[i]))  /* [RPAP - Feb 97: WIN32 Port] */
+      if (!strcasecmp (New, OutputTypeStrs[i]))
 	{
 	  new = i;
 	  break;
@@ -551,7 +526,7 @@ HiliteStyleCons (char *Old, char *New)
   int new = -1;
   if (New)
     for (i = 0; i < sizeof (StyleStrs) / sizeof (char *); i++)
-      if (!STRCASECMP (New, StyleStrs[i]))  /* [RPAP - Feb 97: WIN32 Port] */
+      if (!strcasecmp (New, StyleStrs[i]))
 	{
 	  new = i;
 	  break;
@@ -674,10 +649,6 @@ InitEnv (void)
   SetEnv ("terminator", "", NULL);
   SetEnv ("heads_length", "50", MaxHeadsCons);
   SetEnv ("optimise_type", "1", OptimiseCons);	/*[TS:Mar/95] */
-  SetEnv ("casefold", "on", BooleanCons);  /* [RPAP - Jan 97: Stem Index Change] */
-  SetEnv ("stem", "on", BooleanCons);  /* [RPAP - Jan 97: Stem Index Change] */
-  SetEnv ("term_freq", "off", BooleanCons);  /* [RPAP - Feb 97: Term Frequency] */
-  SetEnv ("maxnumeric", "4", MaxNumericCons);  /* [sjboddie - Jun 2002: Max Numeric word length] */
 }
 
 

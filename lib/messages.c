@@ -17,7 +17,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: messages.c,v 1.1 1994/08/22 00:24:48 tes Exp $
+ *
  **************************************************************************/
+
+/*
+   $Log: messages.c,v $
+   * Revision 1.1  1994/08/22  00:24:48  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: messages.c,v 1.1 1994/08/22 00:24:48 tes Exp $";
 
 #include "sysfuncs.h"
 
@@ -57,11 +68,6 @@ Message (const char *fmt,...)
   char buf[1024];
   char *s, *pfx;
   va_list args;
-
-#ifdef QUIET
-  return; /* stop those messages!!!! */
-#endif  
-
   va_start (args, fmt);
   vsprintf (buf, fmt, args);
   s = strrchr (buf, '\n');

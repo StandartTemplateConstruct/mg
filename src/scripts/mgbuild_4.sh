@@ -92,14 +92,6 @@ endif
 #   Bit 1 = S stemmer
 set stem_method = 3
 
-
-# [RPAP - Jan 97: Stem Index Change]
-# If do_indexes == 1 then build collection with full indexes to blocked file
-# overriding stem_method (stem_method will be set to 0)
-# Otherwise don't build with indexes
-set do_indexes = 0
-
-
 # whether to build weights or not
 set do_weights = 1
 
@@ -162,14 +154,6 @@ set mcd = -C
 if ($?source) then
   source ${source}
 endif
-
-
-# [RPAP - Jan 97: Stem Index Change]
-# If do_indexes == 1 then set stem_method = 0
-if ("$do_indexes" == "1") then
-  set stem_method = 0
-endif
-
 
 # Generate the collection name.
 set coll_name = ${text}
@@ -362,29 +346,6 @@ if ($do_pass4) then
   echo "mg_invf_dict -f ${bname} -b 4096"
   $bindir/mg_invf_dict -f ${bname} -b 4096
   if ("$status" != "0") exit 1 
-  echo "-----------------------------------"
-endif
-
-# ******** build indexes to stem dict *********
-
-# [RPAP - Jan 97: Stem Index Change]
-if ($do_pass4 && "$do_indexes" == "1") then
-  echo "mg_stem_idx -f ${bname} -b 4096 -s1"
-  $bindir/mg_stem_idx -f ${bname} -b 4096 -s1
-  if ("$status" != "0") exit 1 
-
-  echo ""
-
-  echo "mg_stem_idx -f ${bname} -b 4096 -s2"
-  $bindir/mg_stem_idx -f ${bname} -b 4096 -s2
-  if ("$status" != "0") exit 1 
-
-  echo ""
-
-  echo "mg_stem_idx -f ${bname} -b 4096 -s3"
-  $bindir/mg_stem_idx -f ${bname} -b 4096 -s3
-  if ("$status" != "0") exit 1 
-
   echo "-----------------------------------"
 endif
 

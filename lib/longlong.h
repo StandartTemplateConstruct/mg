@@ -22,9 +22,7 @@
 #ifndef H_LONGLONG
 #define H_LONGLONG
 
-#ifndef __WIN32__
 #include "config.h"
-#endif
 
 /*
   Use GCC's "long long" integer types for certain variables, to avoid
@@ -42,10 +40,10 @@
         build.h
         mg_passes.c
         text.h
-	mgstat.c
+    
 */
 
-/*#define TESTING_OVERFLOW*/
+/* #define TESTING_OVERFLOW */
 
 #ifdef TESTING_OVERFLOW
 

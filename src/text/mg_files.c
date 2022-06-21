@@ -17,16 +17,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_files.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_files.c,v 1.1.1.1 1994/08/11 03:26:11 tes Exp $
  *
  **************************************************************************/
 
 #include "sysfuncs.h"
 #include "memlib.h"
 #include "messages.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg_files.h"
+
 
 
 /* This must contain a valid path without a trailing slash */
@@ -38,10 +38,6 @@ static char *basepath = NULL;
 void 
 set_basepath (const char *bp)
 {
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-  basepath = "";
-#else
   char *s;
   /* Free the memory for the base path if it has already been allocated */
   if (basepath)
@@ -64,7 +60,6 @@ set_basepath (const char *bp)
     }
   else
     basepath = Xstrdup (bp);
-#endif
 }
 
 
@@ -90,7 +85,7 @@ make_name (const char *name, const char *suffix, char *buffer)
     buffer = path;
   if (!basepath)
     set_basepath (getenv ("MGDATA"));
-  sprintf (buffer, FILE_NAME_FORMAT, basepath, name, suffix);  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (buffer, "%s/%s%s", basepath, name, suffix);
   return buffer;
 }
 
@@ -129,8 +124,6 @@ open_named_file (const char *name, const char *mode,
 	  err = "No magic number \"%s\"";
 	  goto error;
 	}
-
-      NTOHUL(magic);  /* [RPAP - Jan 97: Endian Ordering] */
 
       if (!IS_MAGIC (magic))
 	{
@@ -176,7 +169,7 @@ open_file (const char *name, const char *suffix, const char *mode,
   char path[512];
   if (!basepath)
     set_basepath (getenv ("MGDATA"));
-  sprintf (path, FILE_NAME_FORMAT, basepath, name, suffix);  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (path, "%s/%s%s", basepath, name, suffix);
   return open_named_file (path, mode, magic_num, err_mode);
 }
 
@@ -212,7 +205,6 @@ create_named_file (const char *name, const char *mode,
     }
 
   if (magic_num)
-    HTONUL(magic_num);  /* [RPAP - Jan 97: Endian Ordering] */
     if (fwrite (&magic_num, sizeof (magic_num), 1, f) != 1)
       {
 	err = "Couldn't write magic number \"%s\"";
@@ -256,6 +248,6 @@ create_file (const char *name, const char *suffix, const char *mode,
   char path[512];
   if (!basepath)
     set_basepath (getenv ("MGDATA"));
-  sprintf (path, FILE_NAME_FORMAT, basepath, name, suffix);  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (path, "%s/%s%s", basepath, name, suffix);
   return create_named_file (path, mode, magic_num, err_mode);
 }

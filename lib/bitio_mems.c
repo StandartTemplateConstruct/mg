@@ -17,7 +17,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_mems.c,v 1.1 1994/08/22 00:24:39 tes Exp $
+ *
  **************************************************************************/
+
+/*
+   $Log: bitio_mems.c,v $
+   * Revision 1.1  1994/08/22  00:24:39  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: bitio_mems.c,v 1.1 1994/08/22 00:24:39 tes Exp $";
+
 
 #include "sysfuncs.h"
 

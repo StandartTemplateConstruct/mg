@@ -17,31 +17,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: term_lists.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: term_lists.h,v 1.1 1994/10/20 03:57:08 tes Exp $
  *
  **************************************************************************/
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:24  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:52  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:44  rjmcnab
-   *** empty log message ***
-
+   $Log: term_lists.h,v $
    * Revision 1.1  1994/10/20  03:57:08  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -58,9 +39,8 @@
 typedef struct WordEntry
   {
     int word_num;		/* Unique number for each different word */
-    u_long count;		/* Number of times the word occurs in the text */
+    u_long count;		/* Number of time the word occurs in the text */
     u_long doc_count;		/* Number of documents that contain the word */
-    u_long max_doc_count;       /* [RPAP - Jan 97: Stem Index Change] */
     u_long invf_ptr;		/* This is a byte position of the  
 				   inverted file entry corresponding to the word */
     u_long invf_len;		/* This is the length of the inverted 
@@ -73,8 +53,6 @@ typedef struct TermEntry
     WordEntry WE;
     int Count;			/* The number of times the word occurs in the query */
     u_char *Word;		/* The word. */
-    u_char *Stem;               /* [RPAP - Jan 97: Stem Index Change] - The stemmed non-cf version of Word */
-    int require_match;          /* [RJM 07/97: Ranked Required Terms] 0=optional match, 1=must match */
   }
 TermEntry;
 
@@ -91,9 +69,7 @@ TermList;
 /* --- prototypes --- */
 void ConvertTermsToString (TermList * query_term_list, char *str);
 int AddTermEntry (TermList ** query_term_list, TermEntry * te);
-int AddTerm (TermList ** query_term_list, u_char * Word, int Count, int word_num,
-	     u_long count, u_long doc_count, u_long invf_ptr, u_long invf_len, /* [RPAP - Feb 97: Term Frequency] */
-	     int stemmer_num);  
+int AddTerm (TermList ** query_term_list, u_char * Word);
 void ResetTermList (TermList ** tl);
 void FreeTermList (TermList ** the_tl);
 void PrintWordEntry (WordEntry * we, FILE * file);

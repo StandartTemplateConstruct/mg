@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_m_random.h,v 1.2 1994/09/20 04:19:54 tes Exp $
+ *
  **************************************************************************
  *
  *  This file contains macros for doing bitwise input and output on an array 
@@ -52,10 +54,10 @@ random_bitio_state;
     register unsigned char *__buf;					\
     register unsigned long __pos = 0;					\
     register unsigned long __base = 0;					\
-    register unsigned long __is_used = 0;					\
+    register unsigned long __used = 0;					\
     register unsigned long __len = (l)-1;				\
     register unsigned long __sft = 0;					\
-    while (__len) { ++__sft; __len >>=1; }				\
+    while (__len) { __sft++; __len >>=1; }				\
     __len = 1<<__sft;							\
     __buf = Xmalloc(__len);						\
     fseek(__file, 0, 0);						\
@@ -67,21 +69,21 @@ random_bitio_state;
     register unsigned char *__buf = (b).Buf;				\
     register unsigned long __pos = (b).pos;				\
     register unsigned long __base = (b).Base;				\
-    register unsigned long __is_used = (b).Used;				\
+    register unsigned long __used = (b).Used;				\
     register unsigned long __len = (b).len;				\
     register unsigned long __sft = (b).sft;
 
 #define SEEK fprintf(stderr, "Seek to %d\n",__base)
 #define READ fprintf(stderr, "Read of %d\n",__len)
-#define WRITE fprintf(stderr, "Write of %d\n",__is_used)
+#define WRITE fprintf(stderr, "Write of %d\n",__used)
 
 #define WRITE_READ 							\
-	(__is_used ? (fseek(__file, __base, 0),				\
+	(__used ? (fseek(__file, __base, 0),				\
                    fwrite(__buf, 1, __len, __file)) : 0,		\
         __base += __len,						\
 	fseek(__file, __base, 0),					\
         fread(__buf, 1, __len, __file),					\
-	__pos = 0, __is_used = 0)
+	__pos = 0, __used = 0)
 
 #define ENCODE_BIT(b)							\
   do {									\
@@ -89,8 +91,8 @@ random_bitio_state;
       __buf[__pos>>3] |= 0x80 >> (__pos&7);				\
     else								\
       __buf[__pos>>3] &= 0xff7f >> (__pos&7);				\
-    __is_used = 1;								\
-    ++__pos;								\
+    __used = 1;								\
+    __pos++;								\
     if ((__pos>>3) >= __len)						\
       (void)WRITE_READ;							\
   } while(0)
@@ -100,17 +102,17 @@ random_bitio_state;
     (b).Buf = __buf;							\
     (b).pos = __pos;							\
     (b).Base = __base;							\
-    (b).Used = __is_used;							\
+    (b).Used = __used;							\
     (b).len = __len;							\
     (b).sft = __sft;							\
   }
 
 #define ENCODE_FLUSH							\
-  if (__is_used)								\
+  if (__used)								\
     {									\
       fseek(__file, __base, 0);						\
       fwrite(__buf, 1, __len, __file);					\
-      __is_used = 0;							\
+      __used = 0;							\
     }
 
 

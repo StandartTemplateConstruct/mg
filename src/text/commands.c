@@ -17,27 +17,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: commands.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: commands.c,v 1.2 1994/09/20 04:41:22 tes Exp $
  *
  **************************************************************************/
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:23  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:17:47  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.1  1998/11/17 09:34:32  rjmcnab
-   *** empty log message ***
-
+   $Log: commands.c,v $
    * Revision 1.2  1994/09/20  04:41:22  tes
    * For version 1.1
    *
  */
 
-static char *RCSID = "$Id: commands.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: commands.c,v 1.2 1994/09/20 04:41:22 tes Exp $";
 
 #include "sysfuncs.h"
 #include "memlib.h"
@@ -49,14 +40,6 @@ static char *RCSID = "$Id: commands.c 16583 2008-07-29 10:20:36Z davidb $";
 #include "backend.h"		/* for qd */
 #include "term_lists.h"		/* for MAXTERMSTRLEN */
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-# define OPENPIPE        _popen
-# define CLOSEPIPE       _pclose
-#else
-# define OPENPIPE        popen
-# define CLOSEPIPE       pclose
-#endif
 
 extern char *PathName;
 extern FILE *OutFile, *InFile;
@@ -100,16 +83,14 @@ CmdHelp (void)
 {
   FILE *more;
   int i;
-
-  if (!(more = OPENPIPE (GetDefEnv ("pager", "more"), "w")))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(more = popen (GetDefEnv ("pager", "more"), "w")))
     {
       fprintf (stderr, "ERROR : Unable to run more\n");
       return;
     }
   for (i = 0; i < sizeof (help_str) / sizeof (help_str[0]); i++)
     fputs (help_str[i], more);
-
-  CLOSEPIPE (more);  /* [RPAP - Feb 97: WIN32 Port] */
+  pclose (more);
 }
 
 
@@ -118,16 +99,14 @@ CmdWarranty (void)
 {
   FILE *more;
   int i;
-
-  if (!(more = OPENPIPE (GetDefEnv ("pager", "more"), "w")))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(more = popen (GetDefEnv ("pager", "more"), "w")))
     {
       fprintf (stderr, "ERROR : Unable to run more\n");
       return;
     }
   for (i = 0; i < sizeof (warranty_str) / sizeof (warranty_str[0]); i++)
     fputs (warranty_str[i], more);
-
-  CLOSEPIPE (more);  /* [RPAP - Feb 97: WIN32 Port] */
+  pclose (more);
 }
 
 
@@ -136,16 +115,14 @@ CmdConditions (void)
 {
   FILE *more;
   int i;
-
-  if (!(more = OPENPIPE (GetDefEnv ("pager", "more"), "w")))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(more = popen (GetDefEnv ("pager", "more"), "w")))
     {
       fprintf (stderr, "ERROR : Unable to run more\n");
       return;
     }
   for (i = 0; i < sizeof (cond_str) / sizeof (cond_str[0]); i++)
     fputs (cond_str[i], more);
-
-  CLOSEPIPE (more);
+  pclose (more);
 }
 
 static void 
@@ -258,7 +235,7 @@ CmdInput (char *param1, char *param2)
   else
     {
       if (InPipe)
-	CLOSEPIPE (InFile);  /* [RPAP - Feb 97: WIN32 Port] */
+	pclose (InFile);
       else if (InFile != stdin)
 	fclose (InFile);
       InPipe = 0;
@@ -275,12 +252,11 @@ CmdInput (char *param1, char *param2)
       if (mode == READ)
 	NewInput = fopen (s, "r");
       else
-	NewInput = OPENPIPE (s, "r");  /* [RPAP - Feb 97: WIN32 Port] */
-
+	NewInput = popen (s, "r");
       if (NewInput)
 	{
 	  if (InPipe)
-	    CLOSEPIPE (InFile);  /* [RPAP - Feb 97: WIN32 Port] */
+	    pclose (InFile);
 	  else if (InFile != stdin)
 	    fclose (InFile);
 	  InPipe = (mode == PIPEFROM);
@@ -292,7 +268,7 @@ CmdInput (char *param1, char *param2)
   else
     {
       if (InPipe)
-	CLOSEPIPE (InFile);  /* [RPAP - Feb 97: WIN32 Port] */
+	pclose (InFile);
       else if (InFile != stdin)
 	fclose (InFile);
       InPipe = 0;
@@ -340,7 +316,7 @@ CmdOutput (char *param1, char *param2)
   else
     {
       if (OutPipe)
-	CLOSEPIPE (OutFile);  /* [RPAP - Feb 97: WIN32 Port] */
+	pclose (OutFile);
       else if (OutFile != stdout)
 	fclose (OutFile);
       OutPipe = 0;
@@ -355,13 +331,13 @@ CmdOutput (char *param1, char *param2)
   if (*s)
     {
       if (mode == PIPETO)
-	NewOutput = OPENPIPE (s, "w");  /* [RPAP - Feb 97: WIN32 Port] */
+	NewOutput = popen (s, "w");
       else
 	NewOutput = fopen (s, mode == WRITE ? "w" : "a");
       if (NewOutput)
 	{
 	  if (OutPipe)
-	    CLOSEPIPE (OutFile);  /* [RPAP - Feb 97: WIN32 Port] */
+	    pclose (OutFile);
 	  else if (OutFile != stdout)
 	    fclose (OutFile);
 	  OutPipe = (mode == PIPETO);
@@ -373,7 +349,7 @@ CmdOutput (char *param1, char *param2)
   else
     {
       if (OutPipe)
-	CLOSEPIPE (OutFile);  /* [RPAP - Feb 97: WIN32 Port] */
+	pclose (OutFile);
       else if (OutFile != stdout)
 	fclose (OutFile);
       OutPipe = 0;
@@ -381,6 +357,8 @@ CmdOutput (char *param1, char *param2)
     }
   Xfree (buf);
 }
+
+
 
 
 

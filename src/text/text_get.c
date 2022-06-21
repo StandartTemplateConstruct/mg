@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: text_get.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: text_get.c,v 1.3 1994/10/20 03:57:11 tes Exp $
  *
  **************************************************************************/
 
@@ -27,7 +27,6 @@
 #include "filestats.h"
 #include "timing.h"
 #include "messages.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "huffman.h"
 #include "bitio_m_mem.h"
@@ -48,16 +47,7 @@
 
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:26  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.1  1998/11/17 09:35:48  rjmcnab
-   *** empty log message ***
-
+   $Log: text_get.c,v $
    * Revision 1.3  1994/10/20  03:57:11  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -67,7 +57,7 @@
    *
  */
 
-static char *RCSID = "$Id: text_get.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: text_get.c,v 1.3 1994/10/20 03:57:11 tes Exp $";
 
 
 
@@ -94,11 +84,6 @@ FetchDocStartLev1 (text_data * td, u_long DN,
 	 sizeof (compressed_text_header),	/* the header */
 	 0);
   Fread ((char *) &data, sizeof (data), 1, td->TextIdxFile);
-  
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(data[0]);
-  NTOHUL(data[1]);
-
   *seek_pos = data[0];
   *len = data[1] - data[0];
   return (1.0);
@@ -118,23 +103,13 @@ LoadIdx (text_data * td, unsigned long DN)
   if (td->current_pos == -1 || DN >= td->current_pos + MG_PAGE_SIZE - 1 ||
       DN < td->current_pos)
     {
-      int i, num;  /* [RPAP - Jan 97: Endian Ordering] */
-
       long rn = (long) DN - (MG_PAGE_SIZE >> 1);
       if (rn < 1)
 	rn = 1;
       Fseek (td->TextIdxWgtFile, (sizeof (unsigned long) + sizeof (float)) *
 	       (rn - 1) + sizeof (unsigned long), 0);
-      num = Fread ((char *) td->idx_data, sizeof (*(td->idx_data)), MG_PAGE_SIZE, /* [RPAP - Jan 97: Endian Ordering] */
-		   td->TextIdxWgtFile);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      for (i = 0; i < num; i++)
-	{
-	  NTOHUL(td->idx_data[i].Start);
-	  NTOHF(td->idx_data[i].Weight);
-	}
-
+      Fread ((char *) td->idx_data, sizeof (*(td->idx_data)) * MG_PAGE_SIZE,
+	     1, td->TextIdxWgtFile);
       td->current_pos = rn;
     }
   return DN - td->current_pos;
@@ -247,14 +222,6 @@ LoadTextData (File * text, File * text_idx_wgt, File * text_idx)
   td->current_pos = -1;
   td->idx_data = NULL;
   Fread (&td->cth, sizeof (td->cth), 1, text);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(td->cth.num_of_docs);
-  NTOHD(td->cth.num_of_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(td->cth.num_of_words);
-  NTOHUL(td->cth.length_of_longest_doc);
-  NTOHD(td->cth.ratio);
-
   return (td);
 }
 
@@ -407,10 +374,6 @@ LoadAuxDict (compression_dict * cd, File * text_aux_dict)
 
       Fread (&ad->afh[i], sizeof (aux_frags_header), 1, text_aux_dict);
 
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(ad->afh[i].num_frags);
-      NTOHUL(ad->afh[i].mem_for_frags);
-
       if (!(ad->word_data[i] = Xmalloc (ad->afh[i].mem_for_frags)))
 	{
 	  mg_errno = MG_NOMEM;
@@ -485,7 +448,8 @@ ReadInWords (File * dict, compression_dict * cd,
   if (!(values = Xmalloc ((MAX_HUFFCODE_LEN + 1) * sizeof (u_char **))))
     return (NULL);
 
-  if (!(next_word[0] = Xmalloc (mem_reqd))) return (NULL);
+  if (!(next_word[0] = Xmalloc (mem_reqd)))
+    return (NULL);
 
   cd->MemForCompDict += ptrs_reqd * sizeof (*vals) +
     (MAX_HUFFCODE_LEN + 1) * sizeof (u_char **) +
@@ -719,12 +683,8 @@ Load_Fast_Comp_Dict (File * text_fast_comp_dict)
   u_char *fixup;
   u_long mem;
   u_long fixup_mem;
-  int i;  /* [RPAP - Jan 97: Endian Ordering] */
-
   Fread (&mem, sizeof (mem), 1, text_fast_comp_dict);
-  NTOHUL(mem);  /* [RPAP - Jan 97: Endian Ordering] */
   Fread (&fixup_mem, sizeof (fixup_mem), 1, text_fast_comp_dict);
-  NTOHUL(fixup_mem);  /* [RPAP - Jan 97: Endian Ordering] */
   if (!(cd = Xmalloc (mem)))
     {
       mg_errno = MG_NOMEM;
@@ -744,60 +704,9 @@ Load_Fast_Comp_Dict (File * text_fast_comp_dict)
 
   for (p = (u_long *) cd; (u_long) p < (u_long) end; p++)
     if (IS_FIXUP (p))
-      {
-	NTOHUL(*p);  /* [RPAP - Jan 97: Endian Ordering] */
-	*p = *p + (u_long) cd;
-      }
+      *p = *p + (u_long) cd;
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  /* cdh */
-  NTOHUL(cd->cdh.dict_type);
-  NTOHUL(cd->cdh.novel_method);
-  for (i = 0; i < TEXT_PARAMS; i++)
-    NTOHUL(cd->cdh.params[i]);
-  NTOHUL(cd->cdh.num_words[0]);
-  NTOHUL(cd->cdh.num_words[1]);
-  NTOHUL(cd->cdh.num_word_chars[0]);
-  NTOHUL(cd->cdh.num_word_chars[1]);
-  NTOHUL(cd->cdh.lookback);
-  /* cfh */
-  for (i = 0; i <= 1; i++)
-    {
-      int j;
-
-      NTOHSI(cd->cfh[i]->hd.num_codes);
-      NTOHSI(cd->cfh[i]->hd.mincodelen);
-      NTOHSI(cd->cfh[i]->hd.maxcodelen);
-      for (j = 0; j < MAX_HUFFCODE_LEN + 1; j++)
-	{
-	  NTOHSI(cd->cfh[i]->hd.lencount[j]);
-	  NTOHUL(cd->cfh[i]->hd.min_code[j]);
-	}
-      NTOHUL(cd->cfh[i]->uncompressed_size);
-      for (j = 0; j < MAX_HUFFCODE_LEN + 1; j++)
-	NTOHUL(cd->cfh[i]->huff_words_size[j]);
-    }
-  NTOHUL(cd->MemForCompDict);
-  /* ad */
-  if (cd->cdh.novel_method == MG_NOVEL_BINARY ||
-      cd->cdh.novel_method == MG_NOVEL_DELTA ||
-      cd->cdh.novel_method == MG_NOVEL_HYBRID ||
-      cd->cdh.novel_method == MG_NOVEL_HYBRID_MTF)
-    for (i = 0; i <= 1; i++)
-      {
-	int j;
-	
-	NTOHUL(cd->ad->afh[i].num_frags);
-	NTOHUL(cd->ad->afh[i].mem_for_frags);
-	for (j = 0; j < 33; j++)
-	  {
-	    NTOHSI(cd->ad->blk_start[i][j]);
-	    NTOHSI(cd->ad->blk_end[i][j]);
-	  }
-      }
-  NTOHSI(cd->fast_loaded);
-
-  Xfree (fixup);
+  free (fixup);
   return (cd);
 }
 
@@ -823,7 +732,7 @@ FreeCompDict (compression_dict * cd)
   int which;
   if (cd->fast_loaded)
     {
-      Xfree (cd);
+      free (cd);
       return;
     }
   for (which = 0; which < 2; which++)
@@ -836,7 +745,6 @@ FreeCompDict (compression_dict * cd)
 	Xfree (cd->lens_huff[which]);
       if (cd->values[which])
 	{
-	  Xfree (cd->values[which][0][0]); /* [RJM 07/98: Memory Leak] */
 	  Xfree (cd->values[which][0]);
 	  Xfree (cd->values[which]);
 	}

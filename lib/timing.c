@@ -17,7 +17,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: timing.c,v 1.1 1994/08/22 00:24:53 tes Exp $
+ *
  **************************************************************************/
+
+/*
+   $Log: timing.c,v $
+   * Revision 1.1  1994/08/22  00:24:53  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: timing.c,v 1.1 1994/08/22 00:24:53 tes Exp $";
 
 #include "sysfuncs.h"
 #include "timing.h"
@@ -80,14 +91,7 @@ CPUTime (double *user, double *sys)
 
 #else
 
-  /* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-  if (user) *user = 0.0;
-  if (sys) *sys = 0.0;
-  return 0.0;
-#else
   -->Can NOT find a system time routine to use ! !!
-#endif  /* __WIN32__ */
 
 #endif
 
@@ -196,11 +200,7 @@ cputime_string (struct timeval *t)
  * =============================================================================== */
 
 #ifndef HAVE_TIMES
-
-#ifndef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-static 
-#endif
-void
+static void
 time_normalise (struct timeval *t)
 {
   while (t->tv_usec < 0)

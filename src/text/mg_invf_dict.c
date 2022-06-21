@@ -17,15 +17,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_invf_dict.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_invf_dict.c,v 1.4 1994/11/29 00:32:00 tes Exp $
  *
  **************************************************************************/
 
 #include "sysfuncs.h"
-
 #include "memlib.h"
 #include "messages.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg_files.h"
 #include "invf.h"
@@ -34,26 +32,7 @@
 #include "mg.h"
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:08  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:45  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:03  rjmcnab
-   *** empty log message ***
-
+   $Log: mg_invf_dict.c,v $
    * Revision 1.4  1994/11/29  00:32:00  tes
    * Committing the new merged files and changes.
    *
@@ -66,7 +45,7 @@
    *
  */
 
-static char *RCSID = "$Id: mg_invf_dict.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg_invf_dict.c,v 1.4 1994/11/29 00:32:00 tes Exp $";
 
 int block_size = 1024 * 4;
 
@@ -74,7 +53,8 @@ int force = 0;
 
 static void process_files (char *filename);
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   char *file_name = "";
   int ch;
@@ -104,7 +84,7 @@ int main (int argc, char **argv)
       }
 
   process_files (file_name);
-  return 0;
+  exit (0);
 }
 
 
@@ -125,33 +105,21 @@ process_files (char *filename)
   int buf_in_use;
   unsigned short ptrs_in_use, word_num;
 
-  id = open_file (filename, INVF_DICT_SUFFIX, "rb", MAGIC_STEM_BUILD, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  id = open_file (filename, INVF_DICT_SUFFIX, "r", MAGIC_STEM_BUILD, MG_ABORT);
 
-  ii = open_file (filename, INVF_IDX_SUFFIX, "rb", MAGIC_INVI, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  ii = open_file (filename, INVF_IDX_SUFFIX, "r", MAGIC_INVI, MG_ABORT);
 
-  idb = create_file (filename, INVF_DICT_BLOCKED_SUFFIX, "w+b", MAGIC_STEM,
-		     MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  idb = create_file (filename, INVF_DICT_BLOCKED_SUFFIX, "w+", MAGIC_STEM,
+		     MG_ABORT);
 
   FName = make_name (filename, ".tmp", NULL);
-  if (!(tmp = fopen (FName, "w+b")))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(tmp = fopen (FName, "w+")))
     FatalError (1, "Unable to open \"%s\".\n", FName);
 
   /* Delete the file now */
   unlink (FName);
 
   fread (&idh, sizeof (idh), 1, id);
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(idh.lookback);
-  NTOHUL(idh.dict_size);
-  NTOHUL(idh.total_bytes);
-  NTOHUL(idh.index_string_bytes);
-  NTOHD(idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(idh.num_of_docs);
-  NTOHUL(idh.static_num_of_docs);
-  NTOHUL(idh.num_of_words);
-  NTOHUL(idh.stemmer_num);
-  NTOHUL(idh.stem_method);
-
   sdh.lookback = idh.lookback;
   sdh.block_size = block_size;
   sdh.num_blocks = 0;
@@ -160,9 +128,7 @@ process_files (char *filename)
   sdh.num_of_docs = idh.num_of_docs;
   sdh.static_num_of_docs = idh.static_num_of_docs;
   sdh.num_of_words = idh.num_of_words;
-  sdh.stemmer_num = idh.stemmer_num;
   sdh.stem_method = idh.stem_method;
-  sdh.indexed = 0;  /* [RPAP - Jan 97: Stem Index Change] */
 
   fwrite (&sdh, sizeof (sdh), 1, idb);
 
@@ -191,13 +157,8 @@ process_files (char *filename)
       fread (&fcnt, sizeof (fcnt), 1, id);
       fread (&wcnt, sizeof (wcnt), 1, id);
 
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fcnt);
-      NTOHUL(wcnt);
-
       /* read in the inverted file position */
       fread (&invf_ptr, sizeof (invf_ptr), 1, ii);
-      NTOHUL(invf_ptr);  /* [RPAP - Jan 97: Endian Ordering] */
       if (word_num % idh.lookback == 0)
 	extra = copy + sizeof (*pointers);
       else
@@ -208,12 +169,6 @@ process_files (char *filename)
 	{
 	  int chunk;
 	  invf_len = invf_ptr - last_ptr;
-
-	  /* [RPAP - Jan 97: Endian Ordering] */
-	  HTONUL(First_word);
-	  HTONUL(invf_len);
-	  HTONUS(word_num);
-
 	  fwrite (&First_word, sizeof (First_word), 1, tmp);
 	  fwrite (&invf_len, sizeof (invf_len), 1, tmp);
 	  fwrite (&word_num, sizeof (word_num), 1, tmp);
@@ -238,7 +193,7 @@ process_files (char *filename)
 
       if (word_num % idh.lookback == 0)
 	{
-	  HTONUS2(buf_in_use, pointers[ptrs_in_use++]);  /* [RPAP - Jan 97: Endian Ordering] */
+	  pointers[ptrs_in_use++] = buf_in_use;
 	  suff += copy;
 	  copy = 0;
 	}
@@ -246,16 +201,12 @@ process_files (char *filename)
       buffer[buf_in_use++] = suff;
       bcopy ((char *) (prev + copy + 1), (char *) (buffer + buf_in_use), suff);
       buf_in_use += suff;
-      HTONUL(fcnt);  /* [RPAP - Jan 97: Endian Ordering] */
       bcopy ((char *) &fcnt, (char *) (buffer + buf_in_use), sizeof (fcnt));
       buf_in_use += sizeof (fcnt);
-      HTONUL(wcnt);  /* [RPAP - Jan 97: Endian Ordering] */
       bcopy ((char *) &wcnt, (char *) (buffer + buf_in_use), sizeof (wcnt));
       buf_in_use += sizeof (wcnt);
-      last_ptr = invf_ptr;
-      HTONUL(invf_ptr);  /* [RPAP - Jan 97: Endian Ordering] */
       bcopy ((char *) &invf_ptr, (char *) (buffer + buf_in_use), sizeof (invf_ptr));
-      NTOHUL(invf_ptr);  /* [RPAP - Jan 97: Endian Ordering] */
+      last_ptr = invf_ptr;
       buf_in_use += sizeof (invf_ptr);
       if (buf_in_use + ptrs_in_use * sizeof (*pointers) +
 	  sizeof (ptrs_in_use) > block_size)
@@ -263,9 +214,7 @@ process_files (char *filename)
       if (word_num == 0)
 	{
 	  fwrite (prev, sizeof (u_char), *prev + 1, idb);
-	  HTONUL(pos);  /* [RPAP - Jan 97: Endian Ordering] */
 	  fwrite (&pos, sizeof (pos), 1, idb);
-	  NTOHUL(pos);  /* [RPAP - Jan 97: Endian Ordering] */
 	  sdh.index_chars += *prev + 1;
 	  First_word = i;
 	}
@@ -275,13 +224,7 @@ process_files (char *filename)
     {
       int chunk;
       fread (&invf_ptr, sizeof (invf_ptr), 1, ii);
-      NTOHUL(invf_ptr);  /* [RPAP - Jan 97: Endian Ordering] */
       invf_len = invf_ptr - last_ptr;
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      HTONUL(First_word);
-      HTONUL(invf_len);
-      HTONUS(word_num);
 
       fwrite (&First_word, sizeof (First_word), 1, tmp);
       fwrite (&invf_len, sizeof (invf_len), 1, tmp);
@@ -324,24 +267,11 @@ process_files (char *filename)
   /* skip over the magic number */
   fseek (idb, sizeof (u_long), 0);
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(sdh.lookback);
-  HTONUL(sdh.block_size);
-  HTONUL(sdh.num_blocks);
-  HTONUL(sdh.blocks_start);
-  HTONUL(sdh.index_chars);
-  HTONUL(sdh.num_of_docs);
-  HTONUL(sdh.static_num_of_docs);
-  HTONUL(sdh.num_of_words);
-  HTONUL(sdh.stemmer_num);
-  HTONUL(sdh.stem_method);
-  HTONUL(sdh.indexed);
-
   fwrite (&sdh, sizeof (sdh), 1, idb);
   fclose (idb);
 
 
   Message ("Block size = %d\n", block_size);
-  Message ("Number of blocks written = %d\n", NTOHUL(sdh.num_blocks));
+  Message ("Number of blocks written = %d\n", sdh.num_blocks);
 
 }

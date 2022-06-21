@@ -17,14 +17,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: utils.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: utils.c,v 1.1.1.1 1994/08/11 03:26:14 tes Exp $
  *
  **************************************************************************/
 
 #include "sysfuncs.h"
-
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
-
 #include "utils.h"
 
 
@@ -62,8 +59,7 @@ getmagicno_short (FILE * fp)
     }
   ungetc (ch2, fp);
   ungetc (ch1, fp);
-
-  return ((ch1 << 8) | ch2);
+  return (ch1 << 8) | ch2;
 }
 
 int 
@@ -76,8 +72,7 @@ getmagicno_short_pop (FILE * fp)
   ch2 = getc (fp);
   if (ch2 == EOF)
     return 0;
-
-  return ((ch1 << 8) | ch2);  
+  return (ch1 << 8) | ch2;
 }
 
 int 
@@ -128,7 +123,7 @@ getmagicno_long (FILE * fp)
   ungetc (ch2, fp);
   ungetc (ch1, fp);
 
-  return ((ch1 << 24) | (ch2 << 16) | (ch3 << 8) | (ch4));
+  return (ch1 << 24) | (ch2 << 16) | (ch3 << 8) | (ch4);
 }
 
 
@@ -231,7 +226,6 @@ gethint (FILE * fp)
 void 
 magic_write (FILE * fp, u_long magic_num)
 {
-  HTONUL(magic_num);  /* [RPAP - Jan 97: Endian Ordering] */
   if (fwrite (&magic_num, sizeof (magic_num), 1, fp) != 1)
     error_msg ("magic num", "Couldn't write magic number.", "");
 }
@@ -241,7 +235,7 @@ void
 magic_check (FILE * fp, u_long magic_num)
 {
   u_long magic;
-  if (fread (&magic, sizeof (magic), 1, fp) != 1 || NTOHUL(magic) != magic_num)  /* [RPAP - Jan 97: Endian Ordering] */
+  if (fread (&magic, sizeof (magic), 1, fp) != 1 || magic != magic_num)
     error_msg ("magic num", "Incorrect magic number.", "");
 }
 
@@ -252,7 +246,7 @@ magic_read (FILE * fp)
   u_long magic;
   if (fread (&magic, sizeof (magic), 1, fp) != 1)
     error_msg ("magic num", "Couldn't read magic number.", "");
-  return NTOHUL(magic);  /* [RPAP - Jan 97: Endian Ordering] */
+  return magic;
 }
 
 

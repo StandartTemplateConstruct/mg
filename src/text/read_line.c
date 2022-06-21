@@ -17,19 +17,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: read_line.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: read_line.c,v 1.2 1997/08/04 02:43:27 wew Exp wew $
  *
  **************************************************************************/
 
 #include "sysfuncs.h"
 #include "memlib.h"
 
-#ifdef GNU_READLINE
-#include "readline.h"
-#include "chardefs.h"
-#include "history.h"
+#ifdef WITH_GNU_READLINE
+#include "readline/readline.h"
+#include "readline/chardefs.h"
+#if 0
+#include "readline/history.h"  /* dropped from recent versions of GNU readline */
 #endif
-
+#endif
 
 #include "globals.h"
 #include "environment.h"
@@ -37,7 +38,7 @@
 
 
 
-#ifdef GNU_READLINE
+#ifdef WITH_GNU_READLINE
 int rl_bind_key (int, int (*)());
 
 
@@ -48,9 +49,8 @@ Init_ReadLine (void)
   rl_bind_key (TAB, rl_insert);
 }
 #else
-
-static FILE *rl_instream = NULL;
-static FILE *rl_outstream = NULL;
+static FILE *rl_instream;
+static FILE *rl_outstream;
 
 void 
 Init_ReadLine (void)
@@ -58,6 +58,65 @@ Init_ReadLine (void)
   rl_instream = stdin;
   rl_outstream = stdout;
 }
+#endif
+
+
+
+
+/* WritePrompt() */
+/* Write out a prompt if user is a TTY */
+void 
+WritePrompt (void)
+{
+  if (isatty (fileno (InFile)))
+    {
+      if (!BooleanEnv (GetEnv ("expert"), 0))
+	fprintf (stderr, "Enter a command or query (.quit to terminate, .help for assistance).\n");
+    }
+}
+
+#ifdef WITH_GNU_READLINE
+static void memory_error_and_abort ();
+
+voidstar
+xmalloc (bytes)
+     size_t bytes;
+{
+  voidstar temp = (char *) Xmalloc (bytes);
+
+  if (!temp)
+    memory_error_and_abort ();
+  return (temp);
+}
+
+voidstar
+xrealloc (pointer, bytes)
+     voidstar pointer;
+     size_t bytes;
+{
+  voidstar temp;
+
+  if (!pointer)
+    temp = (voidstar) xmalloc (bytes);
+  else
+    temp = (voidstar) Xrealloc (pointer, bytes);
+
+  if (!temp)
+    memory_error_and_abort ();
+
+  return (temp);
+}
+
+static void
+memory_error_and_abort ()
+{
+  fprintf (stderr, "history: Out of virtual memory!\n");
+  abort ();
+}
+#endif
+
+
+#ifndef WITH_GNU_READLINE
 
 static char *
 readline (char *pmt)
@@ -76,59 +135,6 @@ readline (char *pmt)
   return s ? Xstrdup (s) : NULL;
 }
 #endif
-
-/* WritePrompt() */
-/* Write out a prompt if user is a TTY */
-void 
-WritePrompt (void)
-{
-  if (isatty (fileno (InFile)))
-    {
-      if (!BooleanEnv (GetEnv ("expert"), 0))
-	fprintf (stderr, "Enter a command or query (.quit to terminate, .help for assistance).\n");
-    }
-}
-
-#ifdef GNU_READLINE
-static void memory_error_and_abort ();
-
-char *
-xmalloc (bytes)
-     int bytes;
-{
-  char *temp = (char *) Xmalloc (bytes);
-
-  if (!temp)
-    memory_error_and_abort ();
-  return (temp);
-}
-
-char *
-xrealloc (pointer, bytes)
-     char *pointer;
-     int bytes;
-{
-  char *temp;
-
-  if (!pointer)
-    temp = (char *) xmalloc (bytes);
-  else
-    temp = (char *) Xrealloc (pointer, bytes);
-
-  if (!temp)
-    memory_error_and_abort ();
-
-  return (temp);
-}
-
-static void
-memory_error_and_abort ()
-{
-  fprintf (stderr, "history: Out of virtual memory!\n");
-  abort ();
-}
-#endif
-
 
 /*
  * This routine returns a pointer to the users entered line 
@@ -165,7 +171,7 @@ GetLine (char *pmt)
 	    fprintf (stderr, "%s%s\n", pmt, the_line);
 	}
     }
-#ifdef GNU_READLINE
+#ifdef WITH_GNU_READLINE
   if (the_line && *the_line)
     add_history (the_line);
 #endif

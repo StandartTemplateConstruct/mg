@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: local_strings.h,v 1.2 1994/07/05 01:17:15 tes Exp $
+ *
  **************************************************************************/
 
 #ifndef LOCAL_STRINGS_H
@@ -26,7 +28,6 @@
 
 int arg_atoi (char *str);
 int compare (u_char * s1, u_char * s2);
-int casecompare (u_char * s1, u_char * s2);   /* [RPAP - Jan 97: Stem Index Change] */
 u_char *copy_string (u_char * src_str);
 char *str255_to_string (u_char * str255, char *str);
 int prefixlen (u_char * s1, u_char * s2);

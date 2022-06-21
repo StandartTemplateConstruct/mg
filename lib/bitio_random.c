@@ -1,4 +1,4 @@
-/*************************************************************************
+/**************************************************************************
  *
  * bitio_random.c -- Functions for bitio to a file (random access)
  * Copyright (C) 1994  Neil Sharman
@@ -17,7 +17,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_random.c,v 1.1 1994/08/22 00:24:40 tes Exp $
+ *
+ *  Modified:
+ *   - long long seek and tell ops
+ *     (1999-08-03 Tim Bell <bhat@cs.mu.oz.au>)
+ *     Code provided by Owen de Kretser <oldk@cs.mu.oz.au>
  **************************************************************************/
+
+/*
+   $Log: bitio_random.c,v $
+   * Revision 1.1  1994/08/22  00:24:40  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: bitio_random.c,v 1.1 1994/08/22 00:24:40 tes Exp $";
+
+
 
 #include "sysfuncs.h"
 #include "memlib.h"
@@ -302,4 +319,4 @@ BIO_Random_Tell_LL (random_bitio_state * bs)
   return(t);  
 }
 
-#endif
+#endif /* USE_LONG_LONG */

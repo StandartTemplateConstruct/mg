@@ -16,11 +16,7 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifdef HAVE_CONFIG_H
-# ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-#  include <win32cfg.h>
-# else
-#  include <sysfuncs.h>
-# endif
+#include <config.h>
 #endif
 
 #if __STDC__
@@ -55,14 +51,10 @@ void free ();
    The caller may set it to some other value.  */
 int xmalloc_exit_failure = EXIT_FAILURE;
 
-#if defined(__WIN32__)
-void error (int, int, const char *, ...);
-#else
 #if __STDC__ && (HAVE_VPRINTF || HAVE_DOPRNT)
 void error (int, int, const char *, ...);
 #else
-void error (int, int, char *, char *, char *, char *, char *, char *, char *, char *, char *);
-#endif
+void error ();
 #endif
 
 static VOID *

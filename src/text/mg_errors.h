@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_errors.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_errors.h,v 1.2 1994/09/20 04:41:46 tes Exp $
  *
  **************************************************************************/
 
@@ -36,4 +36,3 @@ extern char *mg_errorstrs[];
 #define MG_INVERSION 6
 
 void MgErrorData (char *s);
-void MgErrorDeinit (void);

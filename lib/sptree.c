@@ -17,11 +17,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: sptree.c,v 1.1 1994/08/22 00:24:50 tes Exp $
+ *
  **************************************************************************/
 
 
 #include	"sysfuncs.h"
 #include	"sptree.h"
+
+/*
+   $Log: sptree.c,v $
+   * Revision 1.1  1994/08/22  00:24:50  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: sptree.c,v 1.1 1994/08/22 00:24:50 tes Exp $";
 
 #define TRACE(w)
 

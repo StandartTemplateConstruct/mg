@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: invf_get.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: invf_get.c,v 1.4 1995/03/14 05:15:26 tes Exp $
  *
  **************************************************************************/
 
@@ -31,7 +31,6 @@
 #include "bitio_m.h"
 #include "sptree.h"
 #include "messages.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg.h"
 #include "invf.h"
@@ -339,9 +338,6 @@ LT_add (query_data * qd, List_Table * LT,
 	unsigned long DN, float Sum)
 {
   Invf_Doc_Entry *ide;
-
-  /* increase the size of the list if there is not enough */
-  /* room for this entry */
   if (LT->num == LT->max)
     {
       int old, new, max_entries;
@@ -356,13 +352,10 @@ LT_add (query_data * qd, List_Table * LT,
       ChangeMemInUse (qd, new - old);
       LT->max = max_entries;
     }
-
-  /* add the entry to the end of the list */
   ide = &LT->IDE[LT->num];
   ide->DocNum = DN;
   ide->Sum = Sum;
   LT->num++;
-
   return LT;
 }
 
@@ -391,27 +384,22 @@ LT_sort (List_Table * LT)
   qsort (LT->IDE, LT->num, sizeof (Invf_Doc_Entry), IDE_comp);
 }
 
-
-/* [RJM 07/97: Ranked Required Terms] */
-/* accumulators with a sum less than or equal to 0.0 are to be deleted */
 static void 
 LT_pack (List_Table * LT)
 {
   int s, d = 0;
-  for (s = 0; s < LT->num; s++) {
-      if (LT->IDE[s].Sum <= 0.0) {
-	/* ignore this accumulator */
-
-      } else if (d > 0 && LT->IDE[s].DocNum == LT->IDE[d-1].DocNum) {
-	LT->IDE[d-1].Sum += LT->IDE[s].Sum;
-
-      } else {
-	if (d != s) LT->IDE[d] = LT->IDE[s];
-	d++;
-      }
-  }
-
-  if (LT->num) LT->num = d;
+  for (s = 1; s < LT->num; s++)
+    {
+      if (LT->IDE[s].DocNum == LT->IDE[d].DocNum)
+	LT->IDE[d].Sum += LT->IDE[s].Sum;
+      else
+	{
+	  d++;
+	  LT->IDE[d] = LT->IDE[s];
+	}
+    }
+  if (LT->num)
+    LT->num = d + 1;
 }
 
 
@@ -432,17 +420,6 @@ InitInvfFile (File * InvfFile, stemmed_dict * sd)
   id->InvfFile = InvfFile;
 
   Fread (&id->ifh, sizeof (id->ifh), 1, InvfFile);
-  /* [RPAP - Jan 97: Endian Ordering] */
-  {
-    int i;
-    
-    NTOHUL(id->ifh.no_of_words);
-    NTOHUL(id->ifh.no_of_ptrs);
-    NTOHUL(id->ifh.skip_mode);
-    for (i = 0; i < 16; i++)
-      NTOHUL(id->ifh.params[i]);
-    NTOHUL(id->ifh.InvfLevel);
-  }
 
   id->N = sd->sdh.num_of_docs;
   id->Nstatic = sd->sdh.static_num_of_docs;
@@ -732,7 +709,6 @@ CosineDecode (query_data * qd, TermList * Terms, RankedQueryInfo * rqi)
 {
   float *AccumulatedWeights;
   int j, num_docs, num_terms;
-  int seen_must_match = 0; /* [RJM 07/97: Ranked Required Terms] says whether to 'and' queries or not */
 
   num_docs = qd->sd->sdh.num_of_docs;
   /* Create the array for the documents */
@@ -755,13 +731,10 @@ CosineDecode (query_data * qd, TermList * Terms, RankedQueryInfo * rqi)
       int i, kd;
       unsigned long next_mjr_dn = 0;
       unsigned long CurrDocNum = 0;	/* NOTE: Document numbers start at 1 */
-      unsigned long LastDocNum = 0; /* [RJM 07/97: Ranked Required Terms] */
-      unsigned long TempDocNum = 0; /* [RJM 07/97: Ranked Required Terms] */
       double Wqt, WordLog;
       int dn_blk = 0, len_blk = 0, k;
       int blk;			/* bblock control parameter */
       int p;			/* The number of documents the word occurs in */
-      int require_match = Terms->TE[j].require_match; /* [RJM 07/97: Ranked Required Terms] */
       WordEntry *we = &Terms->TE[j].WE;
       CalcBlks (qd, we, &blk, &dn_blk, &len_blk, &k, &p);
       if (!(buffer = Xmalloc (we->invf_len)))
@@ -775,7 +748,7 @@ CosineDecode (query_data * qd, TermList * Terms, RankedQueryInfo * rqi)
       /* Read from the buffer */
       DECODE_START (buffer, we->invf_len);
 
-      WordLog = log ((double) num_docs / (double) we->max_doc_count);  /* [RPAP - Jan 97: Stem Index Change] */
+      WordLog = log ((double) num_docs / (double) we->doc_count);
 
       Wqt = (rqi->QueryFreqs ? Terms->TE[j].Count : 1) * WordLog;
 
@@ -784,7 +757,7 @@ CosineDecode (query_data * qd, TermList * Terms, RankedQueryInfo * rqi)
       kd = 0;
       for (i = 0; i < p; i++, kd++)
 	{
-	  int Count;		/* The number of times the word occurs in a document */
+	  int Count;		/* The number of times the occurs in a document */
 	  double Wdt;
 	  unsigned long diff;
 	  if (kd == k)
@@ -811,37 +784,14 @@ CosineDecode (query_data * qd, TermList * Terms, RankedQueryInfo * rqi)
 	  else
 	    Count = (double) we->count / p;
 	  Wdt = Count * WordLog;
-
-	  /* [RJM 07/97: Ranked Required Terms] */
-	  /* zero the weights of intermediate documents if this term is required to match */
-	  if (require_match == 1) {
-	    for (TempDocNum = LastDocNum+1; TempDocNum < CurrDocNum; TempDocNum++)
-	      AccumulatedWeights[TempDocNum - 1] = 0.0;
-	  }
-
-	  /* [RJM 07/97: Ranked Required Terms] */
-	  /* if a term has been required to match before, the weight we are */
-	  /* adding to must be non-zero */
-	  if (!seen_must_match || (AccumulatedWeights[CurrDocNum - 1] > 0.0)) {
-	      AccumulatedWeights[CurrDocNum - 1] += Wqt * Wdt;
-	  }
-
+	  AccumulatedWeights[CurrDocNum - 1] += Wqt * Wdt;
 	  qd->num_of_ptrs++;
-	  LastDocNum = CurrDocNum; /* [RJM 07/97: Ranked Required Terms] */
 	}
 
       DECODE_DONE
 
 	Xfree (buffer);
       ChangeMemInUse (qd, -we->invf_len);
-
-      /* [RJM 07/97: Ranked Required Terms] */
-      /* zero the remaining weights if this term is required to match */
-      if (require_match == 1) {
-	for (TempDocNum = LastDocNum+1; TempDocNum <= num_docs; TempDocNum++)
-	  AccumulatedWeights[TempDocNum - 1] = 0.0;
-	seen_must_match = 1;
-      }
     }
   return AccumulatedWeights;
 }
@@ -990,7 +940,7 @@ CosineDecodeSplay (query_data * qd, TermList * Terms,
       /* Read from the buffer */
       DECODE_START (buffer, we->invf_len);
 
-      WordLog = log ((double) num_docs / (double) we->max_doc_count);  /* [RPAP - Jan 97: Stem Index Change] */
+      WordLog = log ((double) num_docs / (double) we->doc_count);
 
       Wqt = (rqi->QueryFreqs ? Terms->TE[j].Count : 1) * WordLog;
 
@@ -1220,7 +1170,7 @@ CosineDecodeHash (query_data * qd, TermList * Terms,
       /* Read from the buffer */
       DECODE_START (buffer, we->invf_len);
 
-      WordLog = log ((double) num_docs / (double) we->max_doc_count);  /* [RPAP - Jan 97: Stem Index Change] */
+      WordLog = log ((double) num_docs / (double) we->doc_count);
 
       Wqt = (rqi->QueryFreqs ? Terms->TE[j].Count : 1) * WordLog;
 
@@ -1381,7 +1331,6 @@ CosineDecodeList (query_data * qd, TermList * Terms,
   List_Table *LT;
   int Anding = 0;
   int Sorted = 0;
-  int has_grown = 0; /* [RJM 07/97: Ranked Required Match] whether elements have been added lately */
   FILE *sk = open_skip (rqi->skip_dump);
   u_char indent = 0;
   if (sk)
@@ -1410,8 +1359,7 @@ CosineDecodeList (query_data * qd, TermList * Terms,
     }
 
   num_docs = qd->sd->sdh.num_of_docs;
-
-  /* Create the list for the documents */
+  /* Create the array for the documents */
   LT = LT_create (qd, rqi->MaxAccums);
   if (!LT)
     return NULL;
@@ -1431,20 +1379,16 @@ CosineDecodeList (query_data * qd, TermList * Terms,
       int pos;
       int i, n = 0;
       unsigned long CurrDocNum = 0;	/* NOTE: Document numbers start at 1 */
-      unsigned long LastDocNum = 0;	/* [RJM 07/97: Ranked Required Match] */
-      int this_item = 0; /* [RJM 07/97: Ranked Required Match] points to the next possible LT to delete */
       double Wqt, WordLog;
       int dn_blk = 0, len_blk = 0, k, kd;
       int blk;			/* bblock control parameter */
       int p;			/* The number of documents the word occurs in */
-      int require_match = Terms->TE[j].require_match; /* [RJM 07/97: Ranked Required Match] */
       WordEntry *we = &Terms->TE[j].WE;
       Invf_Doc_Entry *next = NULL;
       int next_i, next_doc_num, next_start;
       int skips_taken = 0, ptrs_dec = 0;
       double total_added = 0.0;
       int hits = 0;
-
       if (sk)
 	{
 	  fprintf (sk, "%3d : %8ld %6ld \"%.*s\"%*s", j, we->count,
@@ -1467,7 +1411,7 @@ CosineDecodeList (query_data * qd, TermList * Terms,
       /* Read from the buffer */
       DECODE_START (buffer, we->invf_len);
 
-      WordLog = log ((double) num_docs / (double) we->max_doc_count);  /* [RPAP - Jan 97: Stem Index Change] */
+      WordLog = log ((double) num_docs / (double) we->doc_count);
 
       Wqt = (rqi->QueryFreqs ? Terms->TE[j].Count : 1) * WordLog;
 
@@ -1479,30 +1423,15 @@ CosineDecodeList (query_data * qd, TermList * Terms,
       if ((rqi->MaxAccums != -1 && LT->num >= rqi->MaxAccums) || Anding)
 	{
 	  Anding = 1;
-	  if (!Sorted || has_grown)
+	  if (!Sorted)
 	    {
 	      LT_sort (LT);
 	      LT_pack (LT);
 	      Sorted = 1;
-	      has_grown = 0;
 	    }
 	  next = LT->IDE;
 	  n = 0;
 	}
-
-      /* [RJM 07/97: Ranked Required Terms] */
-      /* make sure that the document list is set up correctly for */
-      /* requiring a term to match */
-      if (require_match == 1) {
-	if (!Sorted || has_grown) {
-	  LT_sort (LT);
-	  LT_pack (LT);
-	  Sorted = 1;
-	  has_grown = 0;
-	}
-	/* this_item is already set to zero */
-      }
-
       i = pos = 0;
       next_i = next_start = next_doc_num = 0;
       kd = k - 1;
@@ -1512,11 +1441,8 @@ CosineDecodeList (query_data * qd, TermList * Terms,
 	  double Wdt;
 	  unsigned long diff;
 	  Invf_Doc_Entry *mem;
-
-	  /* deal with skipping */
 	  if (k)
 	    {
-	      /* see if we should take a skip */
 	      if (Anding && i + k < p && next->DocNum > next_doc_num &&
 		  next_doc_num >= 0)
 		{
@@ -1540,8 +1466,6 @@ CosineDecodeList (query_data * qd, TermList * Terms,
 		  }
 		else
 		  next_doc_num = -1;
-
-	      /* should we take another skip? */
 	      if (Anding && i + k < p && next->DocNum > next_doc_num &&
 		  next_doc_num >= 0)
 		continue;
@@ -1565,16 +1489,6 @@ CosineDecodeList (query_data * qd, TermList * Terms,
 	    kd = k - 1;
 	  Wdt = Count * WordLog;
 
-	  /* [RJM 07/97: Ranked Required Terms] */
-	  /* if this is a required match we must remove all accumulators */
-	  /* of intermediate documents */
-	  if (require_match == 1) {
-	    while (this_item < LT->num && LT->IDE[this_item].DocNum < CurrDocNum - 1) {
-	      if (LastDocNum==0 ||(LT->IDE[this_item].DocNum > LastDocNum - 1))
-		LT->IDE[this_item].Sum = -1000.0; /* mark for deletion */
-	      this_item++;
-	    }
-	  }
 
 	  if (Anding)
 	    {
@@ -1607,10 +1521,6 @@ CosineDecodeList (query_data * qd, TermList * Terms,
 		  Abort = 1;
 		  goto FastAbort;
 		}
-
-	      /* the list of accumulators just got bigger */
-	      has_grown = 1;
-
 	      if (rqi->MaxAccums != -1 && LT->num >= rqi->MaxAccums &&
 		  rqi->StopAtMaxAccum)
 		Abort = 1;
@@ -1625,8 +1535,7 @@ CosineDecodeList (query_data * qd, TermList * Terms,
 	    }
 
 	NextDocNum:
-
-	  LastDocNum = CurrDocNum;
+	  ;
 	}
 
     FastAbort:
@@ -1644,22 +1553,7 @@ CosineDecodeList (query_data * qd, TermList * Terms,
 	}
       if (Abort)
 	break;
-
-      /* [RJM 07/97: Ranked Required Terms] */
-      /* remove the remaining accumulators if this term is required to match */
-      if (require_match == 1) {
-	while (this_item < LT->num) {
-	  if (LT->IDE[this_item].DocNum > LastDocNum - 1)
-	    LT->IDE[this_item].Sum = -1000.0; /* mark for deletion */
-	  this_item++;
-	}
-	Anding = 1; /* no more documents should be added */
-
-	/* Get rid of any documents which have been deleted */
-	LT_pack (LT);
-      }
     }
-
   if (sk)
     fclose (sk);
   return LT;

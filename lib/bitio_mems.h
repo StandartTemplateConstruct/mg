@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_mems.h,v 1.2 1994/09/20 04:19:57 tes Exp $
+ *
  **************************************************************************
  *
  *  This file contains function definitions for doing bitwise input and output

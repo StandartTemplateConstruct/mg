@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_text_estimate.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_text_estimate.c,v 1.3 1994/10/20 03:56:59 tes Exp $
  *
  **************************************************************************/
 
@@ -30,8 +30,7 @@
 #include "bitio_m.h"
 #include "bitio_m_stdio.h"
 #include "timing.h"
-#include "mgheap.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
+#include "heap.h"
 
 #include "mg_files.h"
 #include "locallib.h"
@@ -47,36 +46,7 @@
 
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:14  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.4  1999/01/15 03:05:51  rjmcnab
-
-   Renamed lib/heap to be lib/mgheap (it was causing some problems with
-   some versions of the STL libraries which contained a heap.h)
-
-   Revision 1.3  1998/12/17 09:12:53  rjmcnab
-
-   Altered mg to process utf-8 encoded Unicode. The main changes
-   are in the parsing of the input, the casefolding, and the stemming.
-
-   Revision 1.2  1998/11/25 07:55:48  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:19  rjmcnab
-   *** empty log message ***
-
+   $Log: mg_text_estimate.c,v $
    * Revision 1.3  1994/10/20  03:56:59  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -86,7 +56,7 @@
    *
  */
 
-static char *RCSID = "$Id: mg_text_estimate.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg_text_estimate.c,v 1.3 1994/10/20 03:56:59 tes Exp $";
 
 typedef struct stats_t
   {
@@ -101,21 +71,20 @@ static u_long escape_count = 0;
 
 char mode = 'H';
 
-/* [RJM 07/97: 4G limit] */
-static double ReadInWordsStandard (char *name, double *num_bytes);
-static double ReadInWordsSpecial (char *name, double *num_bytes,
-				  double *num_extra_bytes,
-				  u_long *aux_compressed);
+static double ReadInWordsStandard (char *name, u_long * num_bytes);
+static double ReadInWordsSpecial (char *name, u_long * num_bytes,
+				  u_long * num_extra_bytes,
+				  u_long * aux_compressed);
 
 
 
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   char *stats_dict = NULL, *comp_dict = NULL;
   ProgTime StartTime;
-  double num_bytes, num_extra_bytes = 0; /* [RJM 07/97: 4G limit] */
-  u_long aux_compressed;
+  u_long num_bytes, num_extra_bytes = 0, aux_compressed;
   int ch;
   double bytes;
   opterr = 0;
@@ -173,7 +142,7 @@ int main (int argc, char **argv)
 
 
   Message ("Compressed Text %.2f Mb ( %.0f bytes   %0.3f %%)",
-	   bytes / 1024.0 / 1024, bytes, bytes * 100 / num_bytes);
+	   bytes / 1024 / 1024, bytes, bytes * 100 / num_bytes);
   Message ("Words portion of the dictionary %.2f Mb ( %.0f bytes   %0.3f %%)",
 	   Words_disk / 1024.0 / 1024, Words_disk * 1.0,
 	   (Words_disk * 100.0) / num_bytes);
@@ -194,7 +163,8 @@ int main (int argc, char **argv)
   Message ("Words and non-words coded by escapes %u ( %0.3f %%)", escape_count,
 	   escape_count * 100.0 / huff_count);
   Message ("%s", ElapsedTime (&StartTime, NULL));
-  return 0;
+
+  exit(0);
 }
 
 
@@ -202,31 +172,22 @@ int main (int argc, char **argv)
 
 
 static double 
-ReadInWordsStandard (char *name, double *num_bytes)
+ReadInWordsStandard (char *name, u_long * num_bytes)
 {
   compression_stats_header csh;
   FILE *f;
   u_long which;
   double bytes, bits = 0;
 
-  f = open_named_file (name, "rb", MAGIC_STATS_DICT, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  f = open_named_file (name, "r", MAGIC_STATS_DICT, MG_ABORT);
 
   fread (&csh, sizeof (csh), 1, f);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(csh.num_docs);
-  NTOHD(csh.num_bytes); /* [RJM 07/97: 4G limit] */
 
   for (which = 0; which < 2; which++)
     {
       frags_stats_header fsh;
       int j;
       fread (&fsh, sizeof (fsh), 1, f);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fsh.num_frags);
-      NTOHUL(fsh.mem_for_frags);
-
       for (j = 0; j < fsh.num_frags; j++)
 	{
 	  int len, freq, res, occur_num;
@@ -234,10 +195,6 @@ ReadInWordsStandard (char *name, double *num_bytes)
 	  fread (&freq, sizeof (freq), 1, f);
 	  fread (&occur_num, sizeof (occur_num), 1, f);
 	  len = fgetc (f);
-
-	  /* [RPAP - Jan 97: Endian Ordering] */
-	  NTOHSI(freq);
-	  NTOHSI(occur_num);
 
 	  Word[0] = len;
 	  fread (Word + 1, len, 1, f);
@@ -353,9 +310,9 @@ stats_comp (const void *a, const void *b)
 
 
 static double 
-ReadInWordsSpecial (char *name, double *num_bytes,
-		    double *num_extra_bytes,
-		    u_long *aux_compressed)
+ReadInWordsSpecial (char *name, u_long * num_bytes,
+		    u_long * num_extra_bytes,
+		    u_long * aux_compressed)
 {
   compression_stats_header csh;
   FILE *f;
@@ -363,22 +320,16 @@ ReadInWordsSpecial (char *name, double *num_bytes,
   double bytes, bits = 0;
   double size[2];
 
-  if (!(f = fopen (name, "rb")))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(f = fopen (name, "r")))
     FatalError (1, "Unable to open file \"%s\"\n", name);
 
   if (fread (&magic, sizeof (magic), 1, f) != 1)
     FatalError (1, "Unable to read magic number");
 
-  NTOHUL(magic);  /* [RPAP - Jan 97: Endian Ordering] */
-
   if (magic != MAGIC_STATS_DICT)
     FatalError (1, "Bad magic number");
 
   fread (&csh, sizeof (csh), 1, f);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(csh.num_docs);
-  NTOHD(csh.num_bytes); /* [RJM 07/97: 4G limit] */
 
   for (which = 0; which < 2; which++)
     {
@@ -392,10 +343,6 @@ ReadInWordsSpecial (char *name, double *num_bytes,
 
       fread (&fsh, sizeof (fsh), 1, f);
 
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fsh.num_frags);
-      NTOHUL(fsh.mem_for_frags);
-
       stats = Xmalloc (fsh.num_frags * sizeof (*stats));
       if (!stats)
 	FatalError (1, "Unable to allocate memory for stats");
@@ -406,11 +353,6 @@ ReadInWordsSpecial (char *name, double *num_bytes,
 	  fread (&stats[num].freq, sizeof (stats[num].freq), 1, f);
 	  fread (&stats[num].occur, sizeof (stats[num].occur), 1, f);
 	  len = fgetc (f);
-
-	  /* [RPAP - Jan 97: Endian Ordering] */
-	  NTOHSI(stats[num].freq);
-	  NTOHSI(stats[num].occur);
-
 	  stats[num].len = len + 1;
 
 	  Word[0] = len;
@@ -491,7 +433,7 @@ ReadInWordsSpecial (char *name, double *num_bytes,
 	long flens[16], fchars[256];
 
 	for (j = 0; j < 256; j++)
-	  if (!chars[j] && PESINAWORD (j) == which)
+	  if (!chars[j] && INAWORD (j) == which)
 	    fchars[j] = 1;
 	  else
 	    fchars[j] = chars[j];

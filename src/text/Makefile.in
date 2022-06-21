@@ -23,55 +23,46 @@
 
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
-
+ 
 SHELL = /bin/sh
 VPATH = @srcdir@
 exec_prefix = @exec_prefix@
 prefix = @prefix@
-bindir = @bindir@
 srcdir = @srcdir@
 subdir = src/text
 top_srcdir = @top_srcdir@
 transform = @program_transform_name@
-
-
-AR = ar
+ 
 CC = @CC@
-CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -fpic
+CFLAGS = @CFLAGS@
+CPPFLAGS = @CPPFLAGS@
 DEFS = @DEFS@
-RANLIB = @RANLIB@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
-LDFLAGS = @LDFLAGS@ @COMPAT32BITFLAGS@
-LIBS = ../../lib/libmglib.a @LIBS@
+LDFLAGS = @LDFLAGS@
+LIBS = ../../lib/libmg.a @LIBS@
 TOUCH = echo timestamp >
 AWK = @AWK@
-YACC = @YACC@
-
-##########################################
-# Uncomment for compiling for the nzdl project
-#
-CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -fpic -DNZDL -DQUIET -DSHORT_SUFFIX -DPARADOCNUM
-##########################################
-
+ 
+bindir = $(exec_prefix)/bin
 datadir = $(prefix)/share
 libexecdir = $(exec_prefix)/libexec
 localedir = $(datadir)/locale
 mandir = $(prefix)/man/man1
-
-COMPILE = $(CC) -c $(DEFS) $(TREC_MODE) $(READLINE) $(INCLUDES) $(CFLAGS)
+ 
+COMPILE = $(CC) -c $(DEFS) $(TREC_MODE) $(READLINE) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS) -o $@
 
 .SUFFIXES:
 .SUFFIXES: .c .o
 .c.o:
 	$(COMPILE) $<
-
+ 
 
 ANSI2KNR = @ANSI2KNR@
 o = .@U@o
-
+ 
 .SUFFIXES: ._c ._o
 .c._c:
 	./ansi2knr $< > $*.tmp && mv $*.tmp $@
@@ -84,8 +75,8 @@ o = .@U@o
 	@echo $(COMPILE) $*._c
 	@rm -f _$*.c
 	@ln $*._c _$*.c && $(COMPILE) _$*.c && mv _$*.o $@ && rm _$*.c
-
-INCLUDES = -I../../../.. -I../.. -I../../lib -I.
+ 
+INCLUDES = -I../.. -I../../lib -I.
 
 #############################################################################
 #
@@ -95,6 +86,8 @@ INCLUDES = -I../../../.. -I../.. -I../../lib -I.
 #READLINE = -DGNU_READLINE -I/opt/gnu/include/readline -L/opt/gnu/lib
 #READLINE_LIBS = -lreadline -ltermcap
 #
+# (wew 4/8/97 - this should now be done with the
+#  '--with-gnu-readline' option to configure)
 #
 #############################################################################
 
@@ -108,22 +101,21 @@ INCLUDES = -I../../../.. -I../.. -I../../lib -I.
 #############################################################################
 
 SOURCES = \
-  backend.c               locallib.c              mg_weights_build.c   \
-  bool_optimiser.c        mg.special.c            mgdictlist.c         \
-  bool_parser.c           mg_compression_dict.c   mgquery.c            \
-  bool_query.c            mg_errors.c             mgstat.c             \
-  bool_tester.c           mg_fast_comp_dict.c     mg_decompress_text.c \
-  bool_tree.c             mg_files.c              query.docnums.c      \
-  commands.c              mg_hilite_words.c       query.ranked.c       \
-  comp_dict.c             mg_invf_dict.c          read_line.c          \
-  environment.c           mg_invf_dump.c          stem_search.c        \
-  mg_invf_merge.c         stemmer.c               mg_stem_idx.c        \
-  mg_invf_rebuild.c       term_lists.c            mgstemidxlist.c      \
-  invf_get.c              mg_passes.c             text.pass1.c         \
-  ivf.pass1.c             mg_perf_hash_build.c    text.pass2.c         \
-  ivf.pass2.c             mg_text_estimate.c      text_get.c           \
-  lists.c                 mg_text_merge.c         weights.c            \
-  query_term_list.c       words.c                 mg_passes_4jni.c
+  backend.c               locallib.c              mg_weights_build.c \
+  bool_optimiser.c        mg.special.c            mgdictlist.c       \
+  bool_parser.c           mg_compression_dict.c   mgquery.c          \
+  bool_query.c            mg_errors.c             mgstat.c           \
+  bool_tester.c           mg_fast_comp_dict.c                        \
+  bool_tree.c             mg_files.c              query.docnums.c    \
+  commands.c              mg_hilite_words.c       query.ranked.c     \
+  comp_dict.c             mg_invf_dict.c          read_line.c        \
+  environment.c           mg_invf_dump.c          stem_search.c      \
+  mg_invf_merge.c         stemmer.c          \
+  mg_invf_rebuild.c       term_lists.c       \
+  invf_get.c              mg_passes.c             text.pass1.c       \
+  ivf.pass1.c             mg_perf_hash_build.c    text.pass2.c       \
+  ivf.pass2.c             mg_text_estimate.c      text_get.c         \
+  lists.c                 mg_text_merge.c         weights.c          
 
 HEADERS = \
   backend.h          conditions.h       locallib.h         term_lists.h \
@@ -133,8 +125,7 @@ HEADERS = \
   bool_tree.h        help.mg.h          mg_merge.h         weights.h    \
   build.h            invf.h             read_line.h        words.h      \
   commands.h         invf_get.h         stem_search.h                   \
-  comp_dict.h        lists.h            stemmer.h                       \
-  query_term_list.h
+  comp_dict.h        lists.h            stemmer.h
 
 
 MISC          = Makefile.in help.mg.src bool_parser.y warranty.src conditions.src
@@ -146,19 +137,17 @@ DISTFILES     = $(ALLFILES)
 EXEC          = mgquery mg_weights_build mgstat mg_invf_dump mg_invf_dict \
                 mg_invf_rebuild mgdictlist mg_passes mg_perf_hash_build \
                 mg_compression_dict mg_text_estimate mg_fast_comp_dict \
-                mg_hilite_words mg_invf_merge mg_text_merge bool_tester \
-                mg_stem_idx mgstemidxlist mg_decompress_text 
+                mg_hilite_words mg_invf_merge mg_text_merge bool_tester
 
 MAN           = mgquery.1 mg_weights_build.1 mgstat.1 mg_invf_dump.1 mg_invf_dict.1 \
                 mg_invf_rebuild.1 mgdictlist.1 mg_passes.1 mg_perf_hash_build.1 \
                 mg_compression_dict.1 mg_text_estimate.1 mg_fast_comp_dict.1 \
-                mg_hilite_words.1 mg_invf_merge.1 mg_text_merge.1 \
-                mg_stem_idx.1 mgstemidxlist.1 mg_decompress_text.1 
+                mg_hilite_words.1 mg_invf_merge.1 mg_text_merge.1 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-all:	$(EXEC) libmgtext.a libmgpass.a
+all:	$(EXEC)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -175,7 +164,7 @@ conditions.h : conditions.src
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-HILITE_OBJS = mg_hilite_words$o stemmer$o locallib$o words$o environment$o
+HILITE_OBJS = mg_hilite_words$o stemmer$o locallib$o
 
 mg_hilite_words: $(HILITE_OBJS)
 	$(LINK) $(HILITE_OBJS) $(LIBS)
@@ -186,9 +175,8 @@ bool_parser.c: bool_parser.y
 	$(YACC) $?
 	mv y.tab.c $@
 
-BOOL_OBJS = bool_tester$o bool_tree$o bool_parser$o bool_optimiser$o  \
-            term_lists$o stemmer$o stem_search$o mg_errors$o query_term_list$o \
-	    words$o environment$o
+BOOL_OBJS = bool_tree$o bool_parser$o bool_optimiser$o bool_tester$o \
+            term_lists$o stemmer$o
 
 bool_tester: $(BOOL_OBJS)
 	$(LINK) $(BOOL_OBJS) $(LIBS)
@@ -200,8 +188,7 @@ QUERY_OBJS = \
 	query.ranked$o query.docnums$o stem_search$o \
 	environment$o commands$o weights$o text_get$o stemmer$o \
 	read_line$o mg_errors$o backend$o invf_get$o \
-	term_lists$o bool_tree$o bool_parser$o bool_optimiser$o bool_query$o \
-	query_term_list$o words$o
+	term_lists$o bool_tree$o bool_parser$o bool_optimiser$o bool_query$o
 
 mgquery: $(QUERY_OBJS)	
 	$(LINK) $(READLINE) $(QUERY_OBJS) $(READLINE_LIBS) $(LIBS)
@@ -213,8 +200,8 @@ commands$o : help.mg.h warranty.h conditions.h
 PASSES_OBJS = \
 	mg_passes$o text.pass1$o comp_dict$o stemmer$o \
 	text.pass2$o locallib$o \
-	ivf.pass1$o ivf.pass2$o mg.special$o mg_files$o \
-	words$o environment$o
+	ivf.pass1$o ivf.pass2$o mg.special$o mg_files$o
+
 
 mg_passes: $(PASSES_OBJS)
 	$(LINK) $(PASSES_OBJS) $(LIBS) 
@@ -271,26 +258,6 @@ PERF_HASH_OBJS = mg_perf_hash_build$o mg_files$o
 mg_perf_hash_build: $(PERF_HASH_OBJS)
 	$(LINK) $(PERF_HASH_OBJS) $(LIBS)
 
-STEM_IDX_OBJS = \
-                mg_stem_idx$o mg_files$o stemmer$o locallib$o \
-                mg_errors$o term_lists$o
-
-mg_stem_idx: $(STEM_IDX_OBJS)
-	$(LINK) $(STEM_IDX_OBJS) $(LIBS)
-
-STEM_IDX_LIST_OBJS = mgstemidxlist$o mg_files$o
-
-mgstemidxlist: $(STEM_IDX_LIST_OBJS)
-	$(LINK) $(STEM_IDX_LIST_OBJS) $(LIBS)
-
-DECOMPRESS_TEXT_OBJS = \
-                mg_decompress_text.o query_term_list.o mg_files.o mg_errors.o \
-                text_get.o locallib.o backend.o stem_search.o \
-                term_lists.o stemmer.o weights.o invf_get.o lists.o
-
-mg_decompress_text: $(DECOMPRESS_TEXT_OBJS)
-	$(LINK) $(DECOMPRESS_TEXT_OBJS) $(LIBS)
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 TEXT_MERGE_OBJS = mg_text_merge$o mg_files$o locallib$o
@@ -308,7 +275,7 @@ mg_invf_merge: $(INVF_MERGE_OBJS)
 ansi2knr: ansi2knr.o
 	$(LINK) ansi2knr.o $(LIBS)
 
-install: execinstall #maninstall
+install: execinstall maninstall
 uninstall: execuninstall manuninstall
 
 execinstall: $(EXEC)
@@ -334,55 +301,31 @@ manuninstall: $(MAN)
 	  rm -f $(mandir)/$$f ;\
 	done
 
-LIB_OBJS = \
-	query_term_list$o \
-	locallib$o lists$o \
-	query.ranked$o query.docnums$o stem_search$o \
-	environment$o commands$o weights$o text_get$o stemmer$o \
-	read_line$o mg_errors$o backend$o invf_get$o \
-	term_lists$o bool_tree$o bool_parser$o bool_optimiser$o \
-	bool_query$o words$o
-
-libmgtext.a: $(LIB_OBJS)
-	rm -f libmgtext.a
-	$(AR) cru libmgtext.a $(LIB_OBJS)
-	$(RANLIB) libmgtext.a
-
-JNI_LIB_OBJS = \
-	mg_passes_4jni$o text.pass1$o comp_dict$o stemmer$o \
-	text.pass2$o locallib$o  words$o environment$o\
-	ivf.pass1$o ivf.pass2$o mg.special$o mg_files$o 
-
-libmgpass.a: $(JNI_LIB_OBJS)
-	rm -f libmgpass.a
-	$(AR) cru libmgpass.a $(JNI_LIB_OBJS)
-	$(RANLIB) libmgpass.a
 
 mostlyclean:
 	rm -f *$o _*.c _*.o *._c *._o core core.*
-
+ 
 clean: mostlyclean
-	rm -f $(EXEC) libmgtext.a libmgpass.a
-
+	rm -f $(EXEC)
+	rm -f bool_parser.c
+ 
 distclean: clean
 	rm -f ansi2knr
 	rm -f Makefile
-
+ 
 maintainer-clean: distclean
 	@echo "This command is intended only for maintainers to use;"
 	@echo "rebuilding the deleted files may require special tools."
-
+ 
 dist: $(DISTFILES)
 	for file in $(DISTFILES); do \
 	  ln $(srcdir)/$$file $(distdir) 2> /dev/null \
 	  || cp -p $(srcdir)/$$file $(distdir); \
 	done
-
+ 
+Makefile: Makefile.in ../../config.status
+	cd ../.. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+ 
 # Tell versions [3.59,3.63) of GNU make not to export all variables.
-# Otherwise a system limit (for SysV at least) may be exc
-
-
-
-
-
-
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

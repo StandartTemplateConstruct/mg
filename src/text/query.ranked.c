@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: query.ranked.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: query.ranked.c,v 1.4 1994/11/25 03:47:46 tes Exp $
  *
  **************************************************************************/
 
@@ -44,29 +44,9 @@
 #include "environment.h"
 #include "term_lists.h"
 #include "local_strings.h"
-#include "query_term_list.h"  /* [RPAP - Feb 97: Term Frequency] */
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:20  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:50  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:34  rjmcnab
-   *** empty log message ***
-
+   $Log: query.ranked.c,v $
    * Revision 1.4  1994/11/25  03:47:46  tes
    * Committing files before adding the merge stuff.
    *
@@ -79,7 +59,7 @@
    *
  */
 
-static char *RCSID = "$Id: query.ranked.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: query.ranked.c,v 1.4 1994/11/25 03:47:46 tes Exp $";
 
 /*************************************************************************/
 
@@ -266,195 +246,78 @@ doc_count_comp (const void *A, const void *B)
  *      A list of terms.
  * ========================================================================= */
 
-/* [RPAP - Jan 97: Stem Index Change] */
+
 static TermList *
-ParseRankedQuery (stemmed_dict * sd, char *QueryLine, int Sort, int indexed,
-		  QueryTermList **query_term_list)  /* [RPAP - Feb 97: Term Frequency] */
+ParseRankedQuery (stemmed_dict * sd, char *QueryLine, int Sort)
 {
   u_char Word[MAXSTEMLEN + 1];
-  u_char sWord[MAXSTEMLEN + 1];
   u_char *end, *s_in;
-  int default_stem_method = 0;
-  TermList *Terms = MakeTermList(0);
-
+  TermList *Terms = MakeTermList (0);
   s_in = (u_char *) QueryLine;
   end = s_in + strlen ((char *) s_in) - 1;
-  *query_term_list = MakeQueryTermList(0);  /* [RPAP - Feb 97: Term Frequency] */
 
-  if (indexed)
-    default_stem_method = BooleanEnv (GetEnv ("casefold"), 0) | (BooleanEnv (GetEnv ("stem"), 0) << 1);
-  else
-    default_stem_method = sd->sdh.stem_method;
+
+  /* find the start of the first word */
+  if (!INAWORD (*s_in))
+    PARSE_NON_STEM_WORD (s_in, end);
 
   while (s_in <= end)
     {
       int j;
-      long num_entries, word_num;
+      long word_num;
       unsigned long count, doc_count, invf_ptr, invf_len;
-      int weight_to_apply, stem_to_apply;
-      int method_using = -1;
-
-      /* 0=optional, 1=mustmatch */
-      int require_match = 0; /* [RJM 07/97: Ranked Required Terms] */
-
-      /* Skip over the non word separator taking note of any parameters */
-      PARSE_RANKED_NON_STEM_WORD (require_match, s_in, end); /* [RJM 07/97: Ranked Required Terms] */
-      if (s_in > end) break;
 
       /* Get a word and stem it */
       PARSE_STEM_WORD (Word, s_in, end);
+      stemmer (sd->sdh.stem_method, Word);
 
-      /* Extract any parameters */
-      weight_to_apply = 1;
-      stem_to_apply = default_stem_method;
-      while (s_in <= end)
-	{
-	  int stem_param, weight_param, param_type;
-	  char param[MAXPARAMLEN + 1];
+      /* Skip over the non word separator */
+      PARSE_NON_STEM_WORD (s_in, end);
 
-	  param_type = 0;
-	  PARSE_OPT_TERM_PARAM (param, param_type, s_in, end);
-	  if (!param_type)
-	    break;
+      /* Look for the word in the already identified terms */
+      for (j = 0; j < Terms->num; j++)
+	if (compare (Terms->TE[j].Word, Word) == 0)
+	  break;
 
-	  switch (param_type)
-	    {
-	    case (WEIGHTPARAM):
-	      weight_param = atoi (param);
-	      if (errno != ERANGE && weight_param > 0)
-		weight_to_apply = weight_param;
-	      break;
-
-	    case (STEMPARAM):
-	      stem_param = atoi (param);
-	      if (errno != ERANGE && indexed && stem_param >= 0 && stem_param <= 3)
-		method_using = stem_to_apply = stem_param;
-	      break;
-	    }
-	}
-
-      bcopy ((char *) Word, (char *) sWord, *Word + 1);
-      stemmer (stem_to_apply, sd->sdh.stemmer_num, sWord);
-
-      if (!indexed || stem_to_apply == 0)
-	{
-	  /* Look for the word in the already identified terms */
-	  for (j = 0; j < Terms->num; j++)
-	    if (compare (Terms->TE[j].Word, Word) == 0)
-	      break;
-
-	  /* Increment the weight if the word is in the list */
-	  /* Update the require match attribute */
-	  if (j < Terms->num)
-	    {
-	      Terms->TE[j].Count = ((Terms->TE[j].Count + weight_to_apply > INT_MAX) ?
-				    INT_MAX : (Terms->TE[j].Count + weight_to_apply));
-	      Terms->TE[j].require_match = require_match; /* [RJM 07/97: Ranked Require match] */
-	      AddQueryTerm (query_term_list, Word, Terms->TE[j].WE.count, method_using);  /* [RPAP - Feb 97: Term Frequency] */
-	    }
-	  else
-	    {
-	      /* Look for it in the stemmed dictionary */
-	      if ((word_num = FindWord (sd, sWord, &count, &doc_count,
-					&invf_ptr, &invf_len)) != -1)
-		{
-		  /* Search the list for the word */
-		  for (j = 0; j < Terms->num; j++)
-		    if (Terms->TE[j].WE.word_num == word_num)
-		      break;
-
-		  /* Increment the weight if the word is in the list */
-		  if (j < Terms->num)
-		    {
-		      Terms->TE[j].Count = ((Terms->TE[j].Count + weight_to_apply > INT_MAX) ?
-					    INT_MAX : (Terms->TE[j].Count + weight_to_apply));
-		      Terms->TE[j].require_match = require_match; /* [RJM 07/97: Ranked Require match] */
-		      AddQueryTerm (query_term_list, Word, Terms->TE[j].WE.count, method_using);  /* [RPAP - Feb 97: Term Frequency] */
-		    }
-		  else
-		    {
-		      /* Create a new entry in the list for the new word */
-		      TermEntry te;
-
-		      te.WE.word_num = word_num;
-		      te.WE.count = count;
-		      te.WE.doc_count = doc_count;
-		      te.WE.max_doc_count = doc_count;
-		      te.WE.invf_ptr = invf_ptr;
-		      te.WE.invf_len = invf_len;
-		      te.Count = weight_to_apply;
-		      te.Word = copy_string (Word);
-		      if (!te.Word)
-			FatalError (1, "Could NOT create memory to add term");
-		      te.Stem = NULL;
-		      te.require_match = require_match;
-
-		      AddTermEntry (&Terms, &te);
-
-		      /* [RPAP - Feb 97: Term Frequency] */
-		      AddQueryTerm (query_term_list, Word, count, method_using);
-		    }
-		}
-	      /* [RPAP - Feb 97: Term Frequency] */
-	      else
-		AddQueryTerm (query_term_list, Word, 0, method_using);
-	    }
-	}
+      /* Increment the weight if the word is in the list */
+      if (j < Terms->num)
+	Terms->TE[j].Count++;
       else
 	{
-	  int total_count = 0;  /* [RPAP - Feb 97: Term Frequency] */
-	  TermList *tempList = MakeTermList (0);
-	  if ((num_entries = FindWords (sd, sWord, stem_to_apply, &tempList)) > 0)
+
+	  /* Look for it in the stemmed dictionary */
+	  if ((word_num = FindWord (sd, Word, &count, &doc_count,
+				    &invf_ptr, &invf_len)) != -1)
 	    {
-	      int i;
-	      u_long max_doc_count = 0;
+	      /* Search the list for the word */
+	      for (j = 0; j < Terms->num; j++)
+		if (Terms->TE[j].WE.word_num == word_num)
+		  break;
 
-	      /* get the maximum doc count */
-	      for (i = 0; i < tempList->num; i++)
+	      /* Increment the weight if the word is in the list */
+	      if (j < Terms->num)
+		Terms->TE[j].Count++;
+	      else
+		/* Create a new entry in the list for the new word */
 		{
-		  if (tempList->TE[i].WE.doc_count > max_doc_count)
-		    max_doc_count = tempList->TE[i].WE.doc_count;
-		  total_count += tempList->TE[i].WE.count;  /* [RPAP - Feb 97: Term Frequency] */
-		}
+		  /* Create a new entry in the list for the new word */
+		  TermEntry te;
 
-	      for (i = 0; i < tempList->num; i++)
-		{
-		  /* Look for the word(s) in the already identified terms */
-		  for (j = 0; j < Terms->num; j++) 
-		    {
-		      if (compare (Terms->TE[j].Word, tempList->TE[i].Word) == 0)
-			{
-			  /* found the word */
-			  /* Modify weight */
-			  Terms->TE[j].Count = ((Terms->TE[j].Count + weight_to_apply > INT_MAX) ?
-						INT_MAX : (Terms->TE[j].Count + weight_to_apply));
-			  if (Terms->TE[j].WE.max_doc_count < max_doc_count)
-			    Terms->TE[j].WE.max_doc_count = max_doc_count;
-			  break;
-			}
-		    }
+		  te.WE.word_num = word_num;
+		  te.WE.count = count;
+		  te.WE.doc_count = doc_count;
+		  te.WE.invf_ptr = invf_ptr;
+		  te.WE.invf_len = invf_len;
+		  te.Count = 1;
+		  te.Word = copy_string (Word);
+		  if (!te.Word)
+		    FatalError (1, "Could NOT create memory to add term");
 
-		  if (j == Terms->num)
-		    {
-		      /* word was not found */
-		      tempList->TE[i].WE.max_doc_count = max_doc_count;
-		      tempList->TE[i].Count = weight_to_apply;
-
-		      /* We cannot require a term to match if it is expanded */
-		      /* into multiple terms :-( */
-		      tempList->TE[i].require_match = 0; /* [RJM 07/97: Ranked Required Terms] */
-
-		      AddTermEntry (&Terms, &tempList->TE[i]);
-		    }
+		  AddTermEntry (&Terms, &te);
 		}
 	    }
-	  /* [RPAP - Feb 97: Term Frequency] */
-	  AddQueryTerm (query_term_list, Word, total_count, method_using);
-
-	  if (tempList != NULL) Xfree(tempList); /* [RJM 07/98: Memory Leak] */
-	} /* end indexed */
-    } /* end while */
-
+	}
+    }
   if (Sort)
     /* Sort the terms in ascending order by doc_count */
     qsort (Terms->TE, Terms->num, sizeof (TermEntry), doc_count_comp);
@@ -482,7 +345,9 @@ DE_comp (void *a, void *b)
  * If MaxDocs == -1 then it means all 
  */
 static DocList *
-CosineGet (query_data * qd, TermList * Terms, RankedQueryInfo * rqi) {
+CosineGet (query_data * qd, TermList * Terms,
+	   RankedQueryInfo * rqi)
+{
   DocList *Docs;
   float *AccumulatedWeights = NULL;
   Splay_Tree *ST = NULL;
@@ -957,7 +822,6 @@ CosineGet (query_data * qd, TermList * Terms, RankedQueryInfo * rqi) {
   if (LT)
     LT_free (qd, LT);
 
-  if (H) Xfree (H); /* [RJM 07/98: Memory Leak] */
 
   return (Docs);
 }
@@ -965,23 +829,16 @@ CosineGet (query_data * qd, TermList * Terms, RankedQueryInfo * rqi) {
 
 
 
-/* if MaxDocs == -1 it means all */
+/* if MaxDocs == -1 the it means all */
 void 
-RankedQuery (query_data *qd, char *Query, RankedQueryInfo *rqi)
+RankedQuery (query_data * qd, char *Query, RankedQueryInfo * rqi)
 {
   DocList *dl;
 
   if (qd->TL)
     FreeTermList (&(qd->TL));
 
-  /* [RPAP - Feb 97: Term Frequency] */
-  if (qd->QTL)
-    FreeQueryTermList (&(qd->QTL));
-
-  qd->TL = ParseRankedQuery (qd->sd, Query, rqi->Sort, qd->sd->sdh.indexed,  /* [RPAP - Jan 97: Stem Index Change] */
-			     &(qd->QTL));  /* [RPAP - Feb 97: Term Frequency] */
-
-  /*  PrintTermList (qd->TL, stderr); */
+  qd->TL = ParseRankedQuery (qd->sd, Query, rqi->Sort);
 
   dl = CosineGet (qd, qd->TL, rqi);
 

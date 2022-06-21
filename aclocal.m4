@@ -131,287 +131,95 @@ AC_ARG_WITH(regex,
   ac_with_regex=1
   AC_MSG_RESULT(regex)
   AC_DEFINE(WITH_REGEX)
-  AC_LIBOBJ([regex])
+  LIBOBJS="$LIBOBJS regex.o"
 fi])
 if test -z "$ac_with_regex"; then
   AC_MSG_RESULT(rx)
-  AC_CHECK_FUNC(re_rx_search, , [AC_LIBOBJ([rx])])
+  AC_CHECK_FUNC(re_rx_search, , 
+   [AC_CHECK_SIZEOF(unsigned char *, unsigned char *)  
+    if test "$ac_cv_sizeof_unsigned_char_p" = 8
+    then
+      AC_MSG_WARN(I'm forcing you to use regex because I can't 
+        find a local rx library and the one included with this 
+        distribution doesn't work on 64-bit machines like yours)
+      [LIBOBJS="$LIBOBJS regex.o"]
+    else
+      [LIBOBJS="$LIBOBJS rx.o"]
+    fi]
+  )
 fi
+AC_SUBST(LIBOBJS)dnl
 ])
-dnl @synopsis AC_PROG_JAVAC
-dnl
-dnl AC_PROG_JAVAC tests an existing Java compiler. It uses the
-dnl environment variable JAVAC then tests in sequence various common
-dnl Java compilers. For political reasons, it starts with the free
-dnl ones.
-dnl
-dnl If you want to force a specific compiler:
-dnl
-dnl - at the configure.in level, set JAVAC=yourcompiler before calling
-dnl AC_PROG_JAVAC
-dnl
-dnl - at the configure level, setenv JAVAC
-dnl
-dnl You can use the JAVAC variable in your Makefile.in, with @JAVAC@.
-dnl
-dnl *Warning*: its success or failure can depend on a proper setting of
-dnl the CLASSPATH env. variable.
-dnl
-dnl TODO: allow to exclude compilers (rationale: most Java programs
-dnl cannot compile with some compilers like guavac).
-dnl
-dnl Note: This is part of the set of autoconf M4 macros for Java
-dnl programs. It is VERY IMPORTANT that you download the whole set,
-dnl some macros depend on other. Unfortunately, the autoconf archive
-dnl does not support the concept of set of macros, so I had to break it
-dnl for submission. The general documentation, as well as the sample
-dnl configure.in, is included in the AC_PROG_JAVA macro.
-dnl
-dnl @category Java
-dnl @author Stephane Bortzmeyer <bortzmeyer@pasteur.fr>
-dnl @version 2000-07-19
-dnl @license GPLWithACException
 
-AC_DEFUN([AC_PROG_JAVAC],[
-if test "x$JAVAC" = x ; then
-  AC_REQUIRE([AC_EXEEXT])dnl
-  if test "x$JAVAPREFIX" = x; then
-    test "x$JAVAC" = x && AC_CHECK_PROGS(JAVAC, javac$EXEEXT)
-  else
-    test "x$JAVAC" = x && AC_CHECK_PROGS(JAVAC, javac$EXEEXT, $JAVAPREFIX)
+
+## --------------------------------------- ##
+## Check if --with-gnu-readline was given. ##
+## --------------------------------------- ##
+
+AC_DEFUN(fp_WITH_GNU_READLINE,
+[AC_MSG_CHECKING(whether GNU readline requested)
+  AC_ARG_WITH(gnu_readline,
+    [  --with-gnu-readline     compile with GNU readline support],
+    [if test "$withval" = yes; then
+      AC_MSG_RESULT(yes)
+      ac_with_gnu_readline=1
+    else
+      AC_MSG_RESULT(no)
+    fi],
+    AC_MSG_RESULT(no))
+
+  if test -n "$ac_with_gnu_readline"; then
+    AC_CHECK_HEADER(readline/readline.h, ac_mg_readline_header_found=1,
+	AC_MSG_WARN(Can't find GNU readline headers; configuring without \
+GNU readline support))
+    if test -n "$ac_mg_readline_header_found"; then
+      # first check whether we can find the readline library itself
+      AC_CHECK_LIB(readline, main, 
+        [ac_mg_readline_lib_found=1
+         AC_DEFINE(WITH_GNU_READLINE)
+         LIBS="$LIBS -lreadline"],
+        AC_MSG_WARN(Can't find GNU readline library; configuring without \
+GNU readline support))
+      if test -n "$ac_mg_readline_lib_found"; then
+        # on some systems, readline needs curses.  It is difficult to 
+        #  determine whether this is necessary on the current system,
+        #  since other undefined symbols can be turned up by an
+        #  AC_CHECK_LIB(readline, readline) test that are actually defined
+	#  by mg itself (e.g. xmalloc, xrealloc).  So, if we find libcurses,
+	#  we just bung it on and hope for the best.
+	AC_CHECK_LIB(curses, main,
+	  LIBS="$LIBS -lcurses")
+      fi
+    fi
   fi
-  test "x$JAVAC" = x && AC_MSG_ERROR([no acceptable Java compiler found in \$PATH])
-else
-  echo "Checking for javac... $JAVAC"
-fi
-AC_SUBST(JAVAC)
-AC_PROG_JAVAC_WORKS
-AC_PROVIDE([$0])dnl
-])
+])	
 
-dnl @synopsis AC_PROG_JAVAC_WORKS
-dnl
-dnl Internal use ONLY.
-dnl
-dnl Note: This is part of the set of autoconf M4 macros for Java
-dnl programs. It is VERY IMPORTANT that you download the whole set,
-dnl some macros depend on other. Unfortunately, the autoconf archive
-dnl does not support the concept of set of macros, so I had to break it
-dnl for submission. The general documentation, as well as the sample
-dnl configure.in, is included in the AC_PROG_JAVA macro.
-dnl
-dnl @category Java
-dnl @author Stephane Bortzmeyer <bortzmeyer@pasteur.fr>
-dnl @version 2000-07-19
-dnl @license GPLWithACException
 
-AC_DEFUN([AC_PROG_JAVAC_WORKS],[
-AC_CACHE_CHECK([if $JAVAC works], ac_cv_prog_javac_works, [
-JAVA_TEST=Test.java
-CLASS_TEST=Test.class
-cat << \EOF > $JAVA_TEST
-/* [#]line __oline__ "configure" */
-public class Test {
-}
-EOF
-if AC_TRY_COMMAND($JAVAC $JAVACFLAGS $JAVA_TEST) >/dev/null 2>&1; then
-  ac_cv_prog_javac_works=yes
-else
-  AC_MSG_ERROR([The Java compiler $JAVAC failed (see config.log, check the CLASSPATH?)])
-  echo "configure: failed program was:" >&AC_FD_CC
-  cat $JAVA_TEST >&AC_FD_CC
-fi
-rm -f $JAVA_TEST $CLASS_TEST
-])
-AC_PROVIDE([$0])dnl
-if test "x$JAVACFLAGS" = x ; then
-  JAVACFLAGS="-source 1.4 -target 1.4"
-fi
-AC_SUBST(JAVACFLAGS)
-])
 
-dnl @synopsis AC_PROG_JAVA
-dnl
-dnl Here is a summary of the main macros:
-dnl
-dnl AC_PROG_JAVAC: finds a Java compiler.
-dnl
-dnl AC_PROG_JAVA: finds a Java virtual machine.
-dnl
-dnl AC_CHECK_CLASS: finds if we have the given class (beware of
-dnl CLASSPATH!).
-dnl
-dnl AC_CHECK_RQRD_CLASS: finds if we have the given class and stops
-dnl otherwise.
-dnl
-dnl AC_TRY_COMPILE_JAVA: attempt to compile user given source.
-dnl
-dnl AC_TRY_RUN_JAVA: attempt to compile and run user given source.
-dnl
-dnl AC_JAVA_OPTIONS: adds Java configure options.
-dnl
-dnl AC_PROG_JAVA tests an existing Java virtual machine. It uses the
-dnl environment variable JAVA then tests in sequence various common
-dnl Java virtual machines. For political reasons, it starts with the
-dnl free ones. You *must* call [AC_PROG_JAVAC] before.
-dnl
-dnl If you want to force a specific VM:
-dnl
-dnl - at the configure.in level, set JAVA=yourvm before calling
-dnl AC_PROG_JAVA
-dnl
-dnl   (but after AC_INIT)
-dnl
-dnl - at the configure level, setenv JAVA
-dnl
-dnl You can use the JAVA variable in your Makefile.in, with @JAVA@.
-dnl
-dnl *Warning*: its success or failure can depend on a proper setting of
-dnl the CLASSPATH env. variable.
-dnl
-dnl TODO: allow to exclude virtual machines (rationale: most Java
-dnl programs cannot run with some VM like kaffe).
-dnl
-dnl Note: This is part of the set of autoconf M4 macros for Java
-dnl programs. It is VERY IMPORTANT that you download the whole set,
-dnl some macros depend on other. Unfortunately, the autoconf archive
-dnl does not support the concept of set of macros, so I had to break it
-dnl for submission.
-dnl
-dnl A Web page, with a link to the latest CVS snapshot is at
-dnl <http://www.internatif.org/bortzmeyer/autoconf-Java/>.
-dnl
-dnl This is a sample configure.in Process this file with autoconf to
-dnl produce a configure script.
-dnl
-dnl    AC_INIT(UnTag.java)
-dnl
-dnl    dnl Checks for programs.
-dnl    AC_CHECK_CLASSPATH
-dnl    AC_PROG_JAVAC
-dnl    AC_PROG_JAVA
-dnl
-dnl    dnl Checks for classes
-dnl    AC_CHECK_RQRD_CLASS(org.xml.sax.Parser)
-dnl    AC_CHECK_RQRD_CLASS(com.jclark.xml.sax.Driver)
-dnl
-dnl    AC_OUTPUT(Makefile)
-dnl
-dnl @category Java
-dnl @author Stephane Bortzmeyer <bortzmeyer@pasteur.fr>
-dnl @version 2000-07-19
-dnl @license GPLWithACException
-
-AC_DEFUN([AC_PROG_JAVA],[
-if test "x$JAVA" = x ; then
-	AC_REQUIRE([AC_EXEEXT])dnl
-	if test x$JAVAPREFIX = x; then
-        test x$JAVA = x && AC_CHECK_PROGS(JAVA, java$EXEEXT)
-	else
-        test x$JAVA = x && AC_CHECK_PROGS(JAVA, java$EXEEXT, $JAVAPREFIX)
-	fi
-	test x$JAVA = x && AC_MSG_ERROR([no acceptable Java virtual machine found in \$PATH])
-fi
-AC_SUBST(JAVA)
-AC_PROG_JAVA_WORKS
-AC_PROVIDE([$0])dnl
-])
-
-dnl @synopsis AC_PROG_JAVA_WORKS
-dnl
-dnl Internal use ONLY.
-dnl
-dnl Note: This is part of the set of autoconf M4 macros for Java
-dnl programs. It is VERY IMPORTANT that you download the whole set,
-dnl some macros depend on other. Unfortunately, the autoconf archive
-dnl does not support the concept of set of macros, so I had to break it
-dnl for submission. The general documentation, as well as the sample
-dnl configure.in, is included in the AC_PROG_JAVA macro.
-dnl
-dnl @category Java
-dnl @author Stephane Bortzmeyer <bortzmeyer@pasteur.fr>
-dnl @version 2000-07-19
-dnl @license GPLWithACException
-
-AC_DEFUN([AC_PROG_JAVA_WORKS], [
-AC_CHECK_PROG(uudecode, uudecode$EXEEXT, yes)
-if test x$uudecode = xyes; then
-AC_CACHE_CHECK([if uudecode can decode base 64 file], ac_cv_prog_uudecode_base64, [
-dnl /**
-dnl  * Test.java: used to test if java compiler works.
-dnl  */
-dnl public class Test
-dnl {
-dnl
-dnl public static void
-dnl main( String[] argv )
-dnl {
-dnl     System.exit (0);
-dnl }
-dnl
-dnl }
-cat << \EOF > Test.uue
-begin-base64 644 Test.class
-yv66vgADAC0AFQcAAgEABFRlc3QHAAQBABBqYXZhL2xhbmcvT2JqZWN0AQAE
-bWFpbgEAFihbTGphdmEvbGFuZy9TdHJpbmc7KVYBAARDb2RlAQAPTGluZU51
-bWJlclRhYmxlDAAKAAsBAARleGl0AQAEKEkpVgoADQAJBwAOAQAQamF2YS9s
-YW5nL1N5c3RlbQEABjxpbml0PgEAAygpVgwADwAQCgADABEBAApTb3VyY2VG
-aWxlAQAJVGVzdC5qYXZhACEAAQADAAAAAAACAAkABQAGAAEABwAAACEAAQAB
-AAAABQO4AAyxAAAAAQAIAAAACgACAAAACgAEAAsAAQAPABAAAQAHAAAAIQAB
-AAEAAAAFKrcAErEAAAABAAgAAAAKAAIAAAAEAAQABAABABMAAAACABQ=
-====
-EOF
-if uudecode$EXEEXT Test.uue; then
-        ac_cv_prog_uudecode_base64=yes
-else
-        echo "configure: __oline__: uudecode had trouble decoding base 64 file 'Test.uue'" >&AC_FD_CC
-        echo "configure: failed file was:" >&AC_FD_CC
-        cat Test.uue >&AC_FD_CC
-        ac_cv_prog_uudecode_base64=no
-fi
-rm -f Test.uue])
-fi
-if test x$ac_cv_prog_uudecode_base64 != xyes; then
-        rm -f Test.class
-        AC_MSG_WARN([I have to compile Test.class from scratch])
-        if test x$ac_cv_prog_javac_works = xno; then
-                AC_MSG_ERROR([Cannot compile java source. $JAVAC does not work properly])
-        fi
-        if test x$ac_cv_prog_javac_works = x; then
-                AC_PROG_JAVAC
-        fi
-fi
-AC_CACHE_CHECK(if $JAVA works, ac_cv_prog_java_works, [
-JAVA_TEST=Test.java
-CLASS_TEST=Test.class
-TEST=Test
-changequote(, )dnl
-cat << \EOF > $JAVA_TEST
-/* [#]line __oline__ "configure" */
-public class Test {
-public static void main (String args[]) {
-        System.exit (0);
-} }
-EOF
-changequote([, ])dnl
-if test x$ac_cv_prog_uudecode_base64 != xyes; then
-        if AC_TRY_COMMAND($JAVAC $JAVACFLAGS $JAVA_TEST) && test -s $CLASS_TEST; then
-                :
-        else
-          echo "configure: failed program was:" >&AC_FD_CC
-          cat $JAVA_TEST >&AC_FD_CC
-          AC_MSG_ERROR(The Java compiler $JAVAC failed (see config.log, check the CLASSPATH?))
-        fi
-fi
-if AC_TRY_COMMAND($JAVA $JAVAFLAGS $TEST) >/dev/null 2>&1; then
-  ac_cv_prog_java_works=yes
-else
-  echo "configure: failed program was:" >&AC_FD_CC
-  cat $JAVA_TEST >&AC_FD_CC
-  AC_MSG_ERROR(The Java VM $JAVA failed (see config.log, check the CLASSPATH?))
-fi
-rm -fr $JAVA_TEST $CLASS_TEST Test.uue
-])
-AC_PROVIDE([$0])dnl
-]
-)
+#AC_DEFUN(fp_WITH_GNU_READLINE,
+#[AC_MSG_CHECKING(whether GNU readline requested)
+#  AC_ARG_WITH(gnu-readline,
+#    [  --with-gnu-readline   compile with GNU readline support],
+#    [if test "$withval" = yes; then
+#      AC_MSG_RESULT(yes)
+#      ac_with_gnu_readline=1
+#    else
+#      AC_MSG_RESULT(no)
+#    fi],
+#    AC_MSG_RESULT(no))
+#  if test -n "$ac_with_gnu_readline"; then
+#    AC_CHECK_LIB(readline, main, 
+#      AC_CHECK_HEADER(readline/readline.h,
+#	[AC_DEFINE(WITH_GNU_READLINE)
+## curses required on some systems (DEC OSF/1), but not on others (GNU/Linux,
+##  Solaris 2.6).  Forcing its inclusion is unsophisticated; if it causes 
+##  any actual problems on any UNIX platforms, let the maintainer know.
+#	LIBS="$LIBS -lreadline -lcurses"],
+#        AC_MSG_WARN(Can't find GNU readline headers: configuring \
+#without GNU readline support)
+#      ),
+#      AC_MSG_WARN(Can't find GNU readline library: configuring \
+#without GNU readline support)
+#    )
+#  fi 
+#])

@@ -17,18 +17,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_invf_dump.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_invf_dump.c,v 1.3 1994/11/29 00:32:01 tes Exp $
  *
  **************************************************************************/
 
 #include "sysfuncs.h"
-
 #include "messages.h"
 #include "timing.h"
 #include "bitio_m.h"
 #include "bitio_m_stdio.h"
 #include "bitio_gen.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg_files.h"
 #include "locallib.h"
@@ -38,29 +36,7 @@
 extern unsigned long S_btg;
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.2  2001/06/12 01:41:39  kjm18
-   changed the help message
-
-   Revision 1.1  1999/08/10 21:18:09  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:46  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:05  rjmcnab
-   *** empty log message ***
-
+   $Log: mg_invf_dump.c,v $
    * Revision 1.3  1994/11/29  00:32:01  tes
    * Committing the new merged files and changes.
    *
@@ -69,7 +45,7 @@ extern unsigned long S_btg;
    *
  */
 
-static char *RCSID = "$Id: mg_invf_dump.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg_invf_dump.c,v 1.3 1994/11/29 00:32:01 tes Exp $";
 
 
 
@@ -80,7 +56,8 @@ int word_counts = 0;
 int term_dump = 0;
 
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   ProgTime start;
   char *dir_name, *file_name = "";
@@ -110,14 +87,13 @@ int main (int argc, char **argv)
       case 'h':
       case '?':
 	fprintf (stderr, "usage: %s [-h] [-b] [-w] [-t] [-f input_file]"
-		 "[-d data directory]\n"
-		 "(b - binary mode, w - wordcount, t - term dump)\n", argv[0]);
+		 "[-d data directory]\n", argv[0]);
 	exit (1);
       }
   GetTime (&start);
   process_files (file_name);
   Message ("%s\n", ElapsedTime (&start, NULL));
-  return 0;
+  exit (0);
 }
 
 static void 
@@ -128,37 +104,16 @@ process_files (char *name)
   FILE *invf;
   struct invf_dict_header idh;
   struct invf_file_header ifh;
-  int i;  /* [RPAP - Jan 97: Endian Ordering] */
 
-  dict = open_file (name, INVF_DICT_SUFFIX, "rb", MAGIC_STEM_BUILD, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+
+  dict = open_file (name, INVF_DICT_SUFFIX, "r", MAGIC_STEM_BUILD, MG_ABORT);
 
   fread ((char *) &idh, sizeof (idh), 1, dict);
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(idh.lookback);
-  NTOHUL(idh.dict_size);
-  NTOHUL(idh.total_bytes);
-  NTOHUL(idh.index_string_bytes);
-  NTOHD(idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(idh.num_of_docs);
-  NTOHUL(idh.static_num_of_docs);
-  NTOHUL(idh.num_of_words);
-  NTOHUL(idh.stemmer_num);
-  NTOHUL(idh.stem_method);
-
-  if (!(invf = open_file (name, INVF_SUFFIX ".ORG", "rb", MAGIC_INVF, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
-    invf = open_file (name, INVF_SUFFIX, "rb", MAGIC_INVF, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(invf = open_file (name, INVF_SUFFIX ".ORG", "r", MAGIC_INVF, MG_CONTINUE)))
+    invf = open_file (name, INVF_SUFFIX, "r", MAGIC_INVF, MG_ABORT);
 
   fread ((char *) &ifh, sizeof (ifh), 1, invf);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(ifh.no_of_words);
-  NTOHUL(ifh.no_of_ptrs);
-  NTOHUL(ifh.skip_mode);
-  for (i = 0; i < 16; i++)
-    NTOHUL(ifh.params[i]);
-  NTOHUL(ifh.InvfLevel);
-
   if (ifh.skip_mode != 0)
     FatalError (1, "The invf file contains skips. Unable to dump.");
 
@@ -185,10 +140,6 @@ process_files (char *name)
       fread ((char *) &fcnt, sizeof (fcnt), 1, dict);
       fread ((char *) &wcnt, sizeof (wcnt), 1, dict);
       term[prefix + suff] = '\0';
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fcnt);
-      NTOHUL(wcnt);
 
       if (binary)
 	fwrite ((char *) &fcnt, sizeof (fcnt), 1, stdout);

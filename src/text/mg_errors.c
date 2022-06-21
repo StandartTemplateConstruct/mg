@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_errors.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_errors.c,v 1.1.1.1 1994/08/11 03:26:11 tes Exp $
  *
  **************************************************************************/
 
@@ -30,6 +30,8 @@
 
 int mg_errno = MG_NOERROR;
 
+char *mg_error_data = NULL;
+
 char *mg_errorstrs[] =
 {
   "No error",
@@ -41,33 +43,19 @@ char *mg_errorstrs[] =
   "Files required for level 2 and 3 inversion are missing"};
 
 
-/* [RJM 07/98: Memory Leak] -- rest of file */
 
 static char null_data[] = "";
-char *mg_error_data = null_data;
 
 
-void MgErrorData (char *s)
+
+void 
+MgErrorData (char *s)
 {
-  /* free the current error string, unless it is the null string */
-  if ((mg_error_data != NULL) && (mg_error_data != null_data)) {
+  if (mg_error_data)
     Xfree (mg_error_data);
-    mg_error_data = null_data;
-  }
 
-  /* make a copy of the string */
   mg_error_data = Xstrdup (s);
 
-  /* if the alloc failed set the error to the null string */
-  if (!mg_error_data) mg_error_data = null_data;
-}
-
-
-void MgErrorDeinit (void)
-{
-  /* free the current error string, unless it is the null string */
-  if ((mg_error_data != NULL) && (mg_error_data != null_data)) {
-    Xfree (mg_error_data);
+  if (!mg_error_data)
     mg_error_data = null_data;
-  }
 }

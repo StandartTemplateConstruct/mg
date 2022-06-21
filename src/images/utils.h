@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: utils.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: utils.h,v 1.2 1994/09/20 04:42:17 tes Exp $
  *
  **************************************************************************/
 
@@ -30,12 +30,8 @@ extern int V;
 
 #define DEBUG
 
-#ifndef min
 #define min(a,b) ((a)<(b) ? (a) : (b))
-#endif
-#ifndef max
 #define max(a,b) ((a)>(b) ? (a) : (b))
-#endif
 
 #define GEN_MAGIC(a,b,c,d) ((unsigned long)(((a)<<24) + ((b)<<16) + \
                                             ((c)<<8) + (d)))

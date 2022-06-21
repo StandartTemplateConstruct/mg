@@ -4,7 +4,7 @@
 .ds Rv \\$3
 .ds Dt \\$4
 ..
-.Id $Id: mg_hilite_words.1 16583 2008-07-29 10:20:36Z davidb $
+.Id $Id: mg_hilite_words.1,v 1.1 1995/06/06 01:59:45 tes Exp $
 .\"------------------------------------------------------------
 .TH mg_hilite_words 1 \*(Dt CITRI
 .SH NAME
@@ -14,10 +14,6 @@ mg_hilite_words \- display text and highlight particular words which it contains
 .if n .ti +9n
 [
 .B --stem_method [0-3]
-]
-.if n .ti +9n
-[
-.B --stemmer [english|lovin|french|simplefrench]
 ]
 .if n .ti +9n
 [
@@ -50,10 +46,6 @@ This option allows one to set the stemming method for the extraction of
 the words from the incoming text.
 This should match the way the inverted file index was created.
 The default is 3, which is fold and stem.
-.TP
-.B --stemmer [english|lovin|french|simplefrench]
-This option allows you to select the stemmer to use.  The
-default is the English stemmer.
 .TP
 .B --style [bold|underline|italic|emphasis|strong]
 This option sets the highlighting style.

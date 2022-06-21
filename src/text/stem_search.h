@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: stem_search.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: stem_search.h,v 1.3 1994/10/20 03:57:05 tes Exp $
  *
  **************************************************************************/
 
@@ -26,18 +26,10 @@
 
 stemmed_dict *ReadStemDictBlk (File * stem_file);
 
-stemmed_idx *ReadStemIdxBlk (File * stem_idx_file);
-
 int FindWord (stemmed_dict * sd, u_char * Word, unsigned long *count,
 	      unsigned long *doc_count, unsigned long *invf_ptr,
 	      unsigned long *invf_len);
 
-/* [RPAP - Jan 97: Stem Index Change] */
-int FindWords (stemmed_dict * sd, u_char * sWord, int stem_method, TermList ** tl);
-
 void FreeStemDict (stemmed_dict * sd);
-
-/* [RPAP - Jan 97: Stem Index Change] */
-void FreeStemIdx (stemmed_idx * si);
 
 #endif

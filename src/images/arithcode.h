@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: arithcode.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: arithcode.h,v 1.2 1994/09/20 04:41:14 tes Exp $
  *
  **************************************************************************/
 

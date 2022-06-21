@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: perf_hash.c,v 1.2 1997/07/24 01:48:13 wew Exp wew $
+ *
  **************************************************************************
  *
  * 1994 Neil Sharman
@@ -25,7 +27,32 @@
  *
  **************************************************************************/
 
+/*
+   $Log: perf_hash.c,v $
+ * Revision 1.2  1997/07/24  01:48:13  wew
+ * add prototype for irandm() (implicit return of int loses on 64-bit
+ * machines)
+ *
+ * Revision 1.1  1997/07/24  01:23:18  wew
+ * Initial revision
+ *
+   * Revision 1.2  1994/08/22  00:26:30  tes
+   * Made perf_hash take the ceiling of 1.23 * num
+   * in lieu of the floor.
+   * This was done so that perf_hash works ok on
+   * a small number of keys.
+   *
+   * Revision 1.1  1994/08/22  00:24:49  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: perf_hash.c,v 1.2 1997/07/24 01:48:13 wew Exp wew $";
+
+
 #define STRUCT
+
+#include <time.h>  /* for call to time () in SEED_RANDOM() */
 
 #include "sysfuncs.h"
 
@@ -33,7 +60,7 @@
 #include "memlib.h"
 #include "messages.h"
 #include "perf_hash.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
+
 
 #define FALSE 0
 #define TRUE  1
@@ -41,6 +68,9 @@
 #define STATIC 0
 
 /* Random Number stuff */
+
+long irandm (long is[2]);  /* from random.c */
+
 static long seed[] = {0, 0};
 #define RANDOM() irandm(seed)
 #define SEED_RANDOM(the_seed) do{ seed[0] = the_seed; }while(0)
@@ -60,9 +90,7 @@ static int MAX_L;
 #define c     1.23
 static int MAX_N;
 
-/* An arbitrary amount to add to both MAX_N and n for building tree/acyclic
-   graph -- John McPherson - jrm21 (22-02-2001) */
-#define MAX_N_HEADROOM  100
+
 
 
 static u_char *translate;
@@ -319,22 +347,20 @@ tree_builder (int num, u_char ** keys, int *n)
 
   do
     {
-      /* Added variable - need to increase MAX_N on allocate as well */
-      *n = (int) (num * c + MAX_N_HEADROOM); /* john mcpherson 22-02-2001 */
-
+      *n = (int) (num * c + 1);
       /* initialize tables of random integers */
       for (i = 0; i < MAX_CH; i++)
 	for (j = 0; j < MAX_L; j++)
 	  {
 #ifndef STRUCT
-	    tb0[i][j] = RANDOM () % *n;
-	    tb1[i][j] = RANDOM () % *n;
-	    tb2[i][j] = RANDOM () % *n;
+	    tb0[i][j] = RANDOM () % (long) *n;
+	    tb1[i][j] = RANDOM () % (long) *n;
+	    tb2[i][j] = RANDOM () % (long) *n;
 #else
 	    struct tb_entry *tbp = &tb[i][j];
-	    tbp->tb0 = RANDOM () % *n;
-	    tbp->tb1 = RANDOM () % *n;
-	    tbp->tb2 = RANDOM () % *n;
+	    tbp->tb0 = RANDOM () % (long) *n;
+	    tbp->tb1 = RANDOM () % (long) *n;
+	    tbp->tb2 = RANDOM () % (long) *n;
 #endif
 	  }
 
@@ -608,9 +634,9 @@ make_trans_func (int num, u_char ** keys)
   for (i = 0; i < num; i++)
     {
       unsigned len = keys[i][0];
-      u_char *s = keys[i] + 1;
+      char *s = (char *) (keys[i] + 1);
       for (; len; len--, s++)
-	translate[*s] = 1;
+	translate[(unsigned) *s] = 1;
       if (i)
 	{
 	  int l;
@@ -739,7 +765,6 @@ gen_hash_func (int num, u_char ** keys, int r)
   int n;
   perf_hash_data *phd;
   translate = Xmalloc (sizeof (u_char) * 256);
-  bzero ((char *) translate, sizeof (u_char) * 256);  /* [RPAP - Feb 97: WIN32 Port] */
   make_trans_func (num, keys);
 
   if (r <= 0)
@@ -749,12 +774,7 @@ gen_hash_func (int num, u_char ** keys, int r)
 
   MAX_M = num + 1;
 
-  /* For extremely small lexicons (<4 words), this isn't good enough! 
-   -- John McPherson jrm21 22-02-2001 */
-  /* MAX_N = MAX_M + MAX_M / 4; */
-  MAX_N = (int)(ceil (1.25 * MAX_M)); 
-  /* Add some space for "experimentation" of n in tree_builder() */
-  MAX_N += MAX_N_HEADROOM;
+  MAX_N = MAX_M + MAX_M / 4;
 
   if (allocate_memory () == -1)
     return (NULL);
@@ -793,85 +813,26 @@ int
 write_perf_hash_data (FILE * f, perf_hash_data * phd)
 {
   int tot, i;
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONSI(phd->MAX_L);
-  HTONSI(phd->MAX_N);
-  HTONSI(phd->MAX_M);
-  HTONSI(phd->MAX_CH);
-
   tot = fwrite ((char *) &phd->MAX_L, sizeof (int), 1, f) * sizeof (int);
   tot += fwrite ((char *) &phd->MAX_N, sizeof (int), 1, f) * sizeof (int);
   tot += fwrite ((char *) &phd->MAX_M, sizeof (int), 1, f) * sizeof (int);
   tot += fwrite ((char *) &phd->MAX_CH, sizeof (int), 1, f) * sizeof (int);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHSI(phd->MAX_L);
-  NTOHSI(phd->MAX_N);
-  NTOHSI(phd->MAX_M);
-  NTOHSI(phd->MAX_CH);
-
   tot += fwrite ((char *) phd->translate, sizeof (u_char), 256, f);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  for (i = 0; i < phd->MAX_N + 1; i++)
-    HTONSI(phd->g[i]);
-
   tot += fwrite ((char *) phd->g, sizeof (int), phd->MAX_N + 1, f) * sizeof (int);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  for (i = 0; i < phd->MAX_N + 1; i++)
-    NTOHSI(phd->g[i]);
-
 #ifndef STRUCT
   for (i = 0; i < phd->MAX_CH; i++)
     {
-      /* [RPAP - Jan 97: Endian Ordering] */
-      int j;
-      for (j = 0; j < phd->MAX_L; j++)
-	{
-	  HTONSI(phd->tb0[i][j]);
-	  HTONSI(phd->tb1[i][j]);
-	  HTONSI(phd->tb2[i][j]);
-	}
-
       tot += fwrite ((char *) phd->tb0[i], sizeof (int), phd->MAX_L, f) *
         sizeof (int);
       tot += fwrite ((char *) phd->tb1[i], sizeof (int), phd->MAX_L, f) *
         sizeof (int);
       tot += fwrite ((char *) phd->tb2[i], sizeof (int), phd->MAX_L, f) *
         sizeof (int);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      for (j = 0; j < phd->MAX_L; j++)
-	{
-	  NTOHSI(phd->tb0[i][j]);
-	  NTOHSI(phd->tb1[i][j]);
-	  NTOHSI(phd->tb2[i][j]);
-	}
     }
 #else
   for (i = 0; i < phd->MAX_CH; i++)
-    {
-      /* [RPAP - Jan 97: Endian Ordering] */
-      int j;
-      for (j = 0; j < phd->MAX_L; j++)
-	{
-	  HTONSL(phd->tb[i][j].tb0);
-	  HTONSL(phd->tb[i][j].tb1);
-	  HTONSL(phd->tb[i][j].tb2);
-	}
-
-      tot += fwrite ((char *) phd->tb[i], sizeof (struct tb_entry), phd->MAX_L, f) *
-	sizeof (struct tb_entry);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      for (j = 0; j < phd->MAX_L; j++)
-	{
-	  NTOHSL(phd->tb[i][j].tb0);
-	  NTOHSL(phd->tb[i][j].tb1);
-	  NTOHSL(phd->tb[i][j].tb2);
-	}
-    }
+    tot += fwrite ((char *) phd->tb[i], sizeof (struct tb_entry), phd->MAX_L, f) *
+      sizeof (struct tb_entry);
 #endif
   return (tot);
 }
@@ -888,13 +849,6 @@ read_perf_hash_data (FILE * f)
   tot += fread ((char *) &phd->MAX_N, sizeof (int), 1, f) * sizeof (int);
   tot += fread ((char *) &phd->MAX_M, sizeof (int), 1, f) * sizeof (int);
   tot += fread ((char *) &phd->MAX_CH, sizeof (int), 1, f) * sizeof (int);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHSI(phd->MAX_L);
-  NTOHSI(phd->MAX_N);
-  NTOHSI(phd->MAX_M);
-  NTOHSI(phd->MAX_CH);
-
   if (tot != 4 * sizeof (int))
       return (NULL);
   phd->translate = Xmalloc (sizeof (u_char) * 256);
@@ -941,29 +895,14 @@ read_perf_hash_data (FILE * f)
     }
   tot += fread ((char *) phd->translate, sizeof (u_char), 256, f);
   tot += fread ((char *) phd->g, sizeof (int), phd->MAX_N + 1, f) * sizeof (int);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  for (i = 0; i < phd->MAX_N + 1; i++)
-    NTOHSI(phd->g[i]);
-
   for (i = 0; i < phd->MAX_CH; i++)
     {
-      int j;
-
       tot += fread ((char *) phd->tb0[i], sizeof (long), phd->MAX_L, f) *
         sizeof (int);
       tot += fread ((char *) phd->tb1[i], sizeof (long), phd->MAX_L, f) *
         sizeof (int);
       tot += fread ((char *) phd->tb2[i], sizeof (long), phd->MAX_L, f) *
         sizeof (int);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      for (j = 0; j < phd->MAX_L; j++)
-	{
-	  NTOHSI(phd->tb0[i][j]);
-	  NTOHSI(phd->tb1[i][j]);
-	  NTOHSI(phd->tb2[i][j]);
-	}
     }
 #else
   phd->tb = Xmalloc (sizeof (struct tb_entry *) * phd->MAX_CH);
@@ -987,26 +926,9 @@ read_perf_hash_data (FILE * f)
     }
   tot += fread ((char *) phd->translate, sizeof (u_char), 256, f);
   tot += fread ((char *) phd->g, sizeof (int), phd->MAX_N + 1, f) * sizeof (int);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  for (i = 0; i < phd->MAX_N + 1; i++)
-    NTOHSI(phd->g[i]);
-
   for (i = 0; i < phd->MAX_CH; i++)
-    {
-      int j;
-
-      tot += fread ((char *) phd->tb[i], sizeof (struct tb_entry), phd->MAX_L, f) *
-	sizeof (struct tb_entry);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      for (j = 0; j < phd->MAX_L; j++)
-	{
-	  NTOHSL(phd->tb[i][j].tb0);
-	  NTOHSL(phd->tb[i][j].tb1);
-	  NTOHSL(phd->tb[i][j].tb2);
-	}
-    }
+    tot += fread ((char *) phd->tb[i], sizeof (struct tb_entry), phd->MAX_L, f) *
+      sizeof (struct tb_entry);
 #endif
   return (phd);
 }

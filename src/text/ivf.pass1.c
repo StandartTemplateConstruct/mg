@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: ivf.pass1.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: ivf.pass1.c,v 1.6 1995/01/16 03:57:05 tes Exp $
  *
  **************************************************************************/
 
@@ -28,8 +28,6 @@
 #include "bitio_m.h"
 #include "bitio_m_stdio.h"
 #include "bitio_gen.h"
-#include "local_strings.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg_files.h"
 #include "invf.h"
@@ -39,42 +37,12 @@
 #include "words.h"
 #include "stemmer.h"
 #include "hash.h"
+#include "local_strings.h"
 
 #include "longlong.h"
 
 /*
-   $Log$
-   Revision 1.2  2004/06/10 03:02:05  kjdon
-   fixed the bug that was causing it not to be able to create a second index using jni - basically had to reset all the static variables at the start of each pass. the tricky thing to find was the static variables in occur_to_lexical in ivf.pass2
-
-   Revision 1.1  2003/02/20 21:18:23  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.2  2001/09/21 12:46:42  kjm18
-   updated mg to be in line with mg_1.3f. Now uses long long for some variables
-   to enable indexing of very large collections.
-
-   Revision 1.1  1999/08/10 21:17:54  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.3  1998/12/17 09:12:50  rjmcnab
-
-   Altered mg to process utf-8 encoded Unicode. The main changes
-   are in the parsing of the input, the casefolding, and the stemming.
-
-   Revision 1.2  1998/11/25 07:55:43  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:34:44  rjmcnab
-   *** empty log message ***
-
+   $Log: ivf.pass1.c,v $
    * Revision 1.6  1995/01/16  03:57:05  tes
    * Fixed bug for index_string_bytes which was calculated
    * by adding the suffix lengths except for every lookback (block)
@@ -100,7 +68,8 @@
  *   - long long bit counts for inverted file
  *     (1999-08-05 Tim Bell <bhat@cs.mu.oz.au>)
  */
-static char *RCSID = "$Id: ivf.pass1.c 16583 2008-07-29 10:20:36Z davidb $";
+
+static char *RCSID = "$Id: ivf.pass1.c,v 1.6 1995/01/16 03:57:05 tes Exp $";
 
 #define LOGLOOKBACK	2
 #define POOL_SIZE 1024*1024
@@ -125,6 +94,13 @@ typedef struct hash_rec
   }
 hash_rec;
 
+
+
+
+
+
+
+
 static unsigned long words_read = 0, words_diff = 0, bytes_diff = 0;
 static unsigned long outputbytes = 0;
 static unsigned long inputbytes = 0;
@@ -137,16 +113,16 @@ static FILE *ic;		/* The invf block file */
 static stdio_bitio_state sbs;
 
 static hash_rec **HashTable;
-static unsigned long HashSize=0;
-static unsigned long HashUsed=0;
+static unsigned long HashSize;
+static unsigned long HashUsed;
 static u_char *Pool;
-static int PoolLeft=0;
+static int PoolLeft;
 
 static hash_rec *hr_pool;
-static int hr_PoolLeft=0;
+static int hr_PoolLeft;
 
 static hash_rec **first_occr;
-static int max_first_occr=0;
+static int max_first_occr;
 
 static mg_ullong L1_bits = 0;
 static mg_ullong L2_bits = 0;
@@ -156,7 +132,7 @@ static unsigned long L2_ohead = 0;
 static unsigned long L3_ohead = 0;
 static unsigned long callnum = 0, lcallnum = 0, wordnum = 0, lwordnum = 0;
 static unsigned long ptrcnt = 0;
-static unsigned long checknum=0;
+static unsigned long checknum;
 static long max_mem = 0;
 
 
@@ -168,47 +144,13 @@ ChangeMem (int Change)
     MaxMemInUse = MemInUse;
 }
 
-void
-ResetStaticI1Vars () 
-{
-  words_read = 0;
-  words_diff = 0; 
-  bytes_diff = 0;
-  outputbytes = 0;
-  inputbytes = 0;
-  MaxMemInUse = 0;
-  MemInUse = 0;
-  ChunksWritten = 0;
-  
-  HashSize=0;
-  HashUsed=0;
-  PoolLeft=0;
-  
-  hr_PoolLeft=0;
-  
-  max_first_occr=0;
-  
-  L1_bits = 0;
-  L2_bits = 0;
-  L3_bits = 0;
-  L1_ohead = 0;
-  L2_ohead = 0;
-  L3_ohead = 0;
-  callnum = 0;
-  lcallnum = 0;
-  wordnum = 0;
-  lwordnum = 0;
-  ptrcnt = 0;
-  checknum=0;
-  max_mem = 0;
-  
-}
+
+
 int 
 init_ivf_1 (char *file_name)
 {
-  ResetStaticI1Vars();
-  if (!(ic = create_file (file_name, INVF_CHUNK_SUFFIX, "wb", MAGIC_CHUNK,
-			  MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(ic = create_file (file_name, INVF_CHUNK_SUFFIX, "w", MAGIC_CHUNK,
+			  MG_MESSAGE)))
     return (COMPERROR);
   fwrite ("    ", sizeof (u_long), 1, ic);	/* Space for the maxmem */
   ENCODE_START (ic)
@@ -338,7 +280,7 @@ process_doc (u_char * s_in, int l_in)
   lcallnum++;
   inputbytes += l_in;
 
-  if (!inaword (s_in, end))
+  if (!INAWORD (*s_in))
     if (SkipSGML)
       PARSE_NON_STEM_WORD_OR_SGML_TAG (s_in, end);
     else
@@ -354,8 +296,7 @@ process_doc (u_char * s_in, int l_in)
       u_char Word[MAXSTEMLEN + 1];
 
       PARSE_STEM_WORD (Word, s_in, end);
-      
-      stemmer (stem_method, stemmer_num, Word);
+      stemmer (stem_method, Word);
       if (SkipSGML)
 	PARSE_NON_STEM_WORD_OR_SGML_TAG (s_in, end);
       else
@@ -578,10 +519,11 @@ PackHashTable (void)
 static int 
 ent_comp (const void *A, const void *B)
 {
+  register int diff;
   u_char *s1 = (*((hash_rec **) A))->word;
   u_char *s2 = (*((hash_rec **) B))->word;
-
-  return (casecompare (s1, s2)); /* [RPAP - Jan 97: Stem Index Change] */
+  diff = ((u_char *) s1)[1] - ((u_char *) s2)[1];
+  return (diff ? diff : compare (s1, s2));
 }				/* stem_comp */
 
 
@@ -600,6 +542,7 @@ count_text ()
 {
   int i;
   mg_ullong oldL12_bits = 0;
+  
   for (i = 0; i < HashUsed; i++)
     {
       hash_rec *wrd = HashTable[i];
@@ -683,21 +626,19 @@ write_stem_file (char *file_name)
 
   lastword = NULL;
 
-  if (!(sp = create_file (file_name, INVF_DICT_SUFFIX, "wb", MAGIC_STEM_BUILD,
-			  MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(sp = create_file (file_name, INVF_DICT_SUFFIX, "w", MAGIC_STEM_BUILD,
+			  MG_MESSAGE)))
     return;
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL2(lookback, idh.lookback);
-  HTONUL2(HashSize, idh.dict_size);
-  HTONUL2(totalbytes, idh.total_bytes);
-  HTONUL2(indexstringbytes, idh.index_string_bytes);
-  HTOND2(inputbytes, idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  HTONUL2(callnum, idh.num_of_docs);
-  HTONUL2(callnum, idh.static_num_of_docs);
-  HTONUL2(words_read, idh.num_of_words);
-  HTONUL2(stemmer_num, idh.stemmer_num);
-  HTONUL2(stem_method, idh.stem_method);
+  idh.lookback = lookback;
+  idh.dict_size = HashSize;
+  idh.total_bytes = totalbytes;
+  idh.index_string_bytes = indexstringbytes;
+  idh.input_bytes = inputbytes;
+  idh.num_of_docs = callnum;
+  idh.static_num_of_docs = idh.num_of_docs;
+  idh.num_of_words = words_read;
+  idh.stem_method = stem_method;
 
   fwrite ((char *) &idh, sizeof (idh), 1, sp);
   outputbytes += sizeof (idh);
@@ -705,7 +646,6 @@ write_stem_file (char *file_name)
   for (j = 0; j < HashSize; j++)
     {
       int i;
-      unsigned long wcnt, fcnt;  /* [RPAP - Jan 97: Endian Ordering] */
       hash_rec *ent = HashTable[j];
       if (lastword != NULL)
 	/* look for prefix match with prev string */
@@ -716,17 +656,9 @@ write_stem_file (char *file_name)
       fputc (ent->word[0] - i, sp);
       fwrite ((char *) ent->word + i + 1, sizeof (u_char), ent->word[0] - i, sp);
       outputbytes += ent->word[0] - i + 1;
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      HTONUL2(ent->fcnt, fcnt);
-      fwrite ((char *) &(fcnt), sizeof (fcnt), 1, sp);
-
+      fwrite ((char *) &(ent->fcnt), sizeof (ent->fcnt), 1, sp);
       outputbytes += sizeof (ent->fcnt);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      HTONUL2(ent->wcnt, wcnt);
-      fwrite ((char *) &(wcnt), sizeof (wcnt), 1, sp);
-
+      fwrite ((char *) &(ent->wcnt), sizeof (ent->wcnt), 1, sp);
       outputbytes += sizeof (ent->wcnt);
       lastword = ent->word;
     }
@@ -789,8 +721,8 @@ write_num_file (char *file_name)
   for (i = 0; i < HashSize; i++)
     HashTable[i]->fnum = i;
 
-  if (!(f = create_file (file_name, INVF_CHUNK_TRANS_SUFFIX, "wb",
-			 MAGIC_CHUNK_TRANS, MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(f = create_file (file_name, INVF_CHUNK_TRANS_SUFFIX, "w",
+			 MAGIC_CHUNK_TRANS, MG_MESSAGE)))
     return;
 
 #if 1
@@ -802,16 +734,14 @@ write_num_file (char *file_name)
   ENCODE_DONE;
 #else
   for (i = 0; i < HashSize; i++)
-    {
-      /* [RPAP - Jan 97: Endian Ordering] */
-      unsigned long fnum;
-      HTONUL2(first_occur[i]->fnum, fnum);
-      fwrite ((char *) &fnum, sizeof (unsigned long), 1, f);
-    }
+    fwrite ((char *) &first_occr[i]->fnum, sizeof (unsigned long), 1, f);
 #endif
 
   fclose (f);
 }
+
+
+
 
 int 
 done_ivf_1 (char *FileName)
@@ -837,30 +767,12 @@ done_ivf_1 (char *FileName)
     GAMMA_ENCODE (1);
   ENCODE_DONE
     fseek (ic, sizeof (long), 0);
-  
-  HTONSL(max_mem);  /* [RPAP - Jan 97: Endian Ordering] */
   fwrite (&max_mem, sizeof (max_mem), 1, ic);
-  NTOHSL(max_mem);  /* [RPAP - Jan 97: Endian Ordering] */
-
   fclose (ic);
 
   write_num_file (FileName);
 
   msg_prefix = temp_str;
-
-  /* free the memory */
-  Xfree(HashTable);
-  if (Pool) {
-    Pool -= (POOL_SIZE-PoolLeft);
-    Xfree(Pool);
-  }
-  if (hr_pool) {
-    hr_pool -= (HASH_POOL_SIZE-hr_PoolLeft);
-    Xfree(hr_pool);
-  }
-  if (first_occr) {
-    Xfree(first_occr);
-  }
 
   return (COMPALLOK);
 }				/* done_encode */

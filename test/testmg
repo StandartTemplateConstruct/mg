@@ -1,0 +1,176 @@
+#!/bin/csh -f 
+###########################################################################
+#
+# mg_get.sh -- script to do rudimentary tests on mg
+# Copyright (C) 1995  Tim Shimmin (August)
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#
+###########################################################################
+
+#---------------------------------------------------------
+# Tests out the MG full-text retrieval system
+# ie. the files in src/text
+#
+# Builds up the alice database and compares its using
+# the output of "simple_sum" on a prebuilt alice database.
+# Since some file formats will vary on machines, these files
+# will only have their lengths compared.
+#
+# Does some queries on the database and compares the
+# results with precomputed ones.
+#
+# This is a very rudimentary test.
+# Not much functionality is exercised
+#---------------------------------------------------------
+
+# Modified 1999-08-05 Tim A. H. Bell <bhat@cs.mu.oz.au>
+# Cope with either using "long long" or not, which causes differences in
+# the lengths of various files.
+# Restore old ~/.mg_getrc file
+
+ 
+# setup directories
+set top_srcdir = $1
+set testdir = $top_srcdir/test
+set bindir = $top_srcdir/src/text # uses this dir as we haven't probably installed yet
+
+# do everything in the testdir directory
+cd $testdir
+
+# *** Test out build ***
+
+set collection = alice
+
+# set env variables
+setenv MGDATA "$testdir/mgdata"
+setenv MGSAMPLE "$top_srcdir/SampleData"
+
+# create dirs
+mkdir $MGDATA 
+
+# backup any past .mg_getrc file
+if (-e ~/.mg_getrc) then
+  mv ~/.mg_getrc ~/.mg_getrc.bak
+  set mggetrcbackedup = 1
+else
+  set mggetrcbackedup = 0
+endif
+
+# copy mgbuild into bindir directory so it uses the other binaries
+# need all binaries in same directory for mgbuild
+cp $top_srcdir/src/scripts/mgbuild $bindir
+cp $top_srcdir/src/scripts/mg_get $bindir
+
+# do the build
+echo "Building test database..."
+$bindir/mgbuild $collection >&! $testdir/build.log
+
+if ($status != 0) then
+  echo "FAIL: mgbuild $collection did not successfully complete"
+  set buildfailed = 1
+else
+  set buildfailed = 0
+endif
+
+# remove them now
+rm $bindir/mgbuild
+rm $bindir/mg_get
+
+# restore any past .mg_getrc file
+if ($mggetrcbackedup == 1) then
+  mv ~/.mg_getrc.bak ~/.mg_getrc
+endif
+
+if ($buildfailed == 1) then
+  exit 1
+endif
+
+@ num_pass = 0
+@ num_fail = 0
+
+# See whether "long long" is being used
+./usinglonglong
+if ($status == 0) then
+    set llsuffix = ll
+else
+    set llsuffix = l
+endif
+
+# *** Test out the build ***
+set sum_suffixes = \
+  (invf invf.chunk invf.chunk.trans invf.dict invf.dict.blocked \
+   invf.idx text text.idx text.stats)
+
+set length_suffixes = \
+  (invf.dict.hash text.dict)
+
+# create the data sum file
+cat < /dev/null >! ./$collection.sum.cmp # create empty file
+foreach suffix ($sum_suffixes)
+  set file = "./mgdata/$collection/$collection.$suffix"
+  ./simple_sum $file >> ./$collection.sum.cmp
+end
+
+# create the data length file
+cat < /dev/null >! ./$collection.len.cmp # create empty file
+foreach suffix ($length_suffixes)
+  set file = "./mgdata/$collection/$collection.$suffix"
+  ./simple_sum -l $file >> ./$collection.len.cmp
+end
+
+diff ./$collection.sum.$llsuffix ./$collection.sum.cmp > sum.diff
+if ($status == 0) then
+  echo "PASS: Build Sum comparison matched ok"
+  @ num_pass++
+else
+  echo "FAIL: Build Sum comparison did not match"
+  echo "Please inspect sum.diff to see which files are different" 
+  @ num_fail++
+endif
+
+diff ./$collection.len.$llsuffix ./$collection.len.cmp > len.diff
+if ($status == 0) then
+  echo "PASS: Build Length comparison matched ok"
+  @ num_pass++
+else
+  echo "FAIL: Build Length comparison did not match"
+  echo "Please inspect len.diff to see which files are different" 
+  @ num_fail++
+endif
+
+
+# *** Test out querying ***
+echo "Running queries..."
+@ num_queries = 3
+@ query_count = 1
+
+while ($query_count <= $num_queries)
+  cp ./mgrc$query_count ./.mgrc
+  $bindir/mgquery $collection < ./q$query_count >&! \
+    ./r${query_count}.cmp
+  diff ./r${query_count}.cmp ./r$query_count >&! ./diff.log
+  if ($status == 0) then
+    echo "PASS: query $query_count matched ok"
+    @ num_pass++
+  else
+    echo "FAIL: query $query_count did not match"
+    @ num_fail++
+  endif
+  @ query_count++
+end
+
+echo "Number of failures = $num_fail"

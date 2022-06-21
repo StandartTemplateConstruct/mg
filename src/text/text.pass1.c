@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: text.pass1.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: text.pass1.c,v 1.4 1994/11/25 03:47:47 tes Exp $
  *
  **************************************************************************/
 
@@ -26,7 +26,6 @@
 #include "memlib.h"
 #include "messages.h"
 #include "huffman.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 
 #include "mg_files.h"
@@ -37,14 +36,32 @@
 #include "text.h"
 #include "hash.h"
 #include "local_strings.h"
-/* for more meaningful messages - jrm21 (gsdl) */
-#ifdef HAVE_STRERROR
-#include <string.h>
-#include <errno.h>
-#endif
+
+
+/*
+   $Log: text.pass1.c,v $
+   * Revision 1.4  1994/11/25  03:47:47  tes
+   * Committing files before adding the merge stuff.
+   *
+   * Revision 1.3  1994/10/20  03:57:09  tes
+   * I have rewritten the boolean query optimiser and abstracted out the
+   * components of the boolean query.
+   *
+   * Revision 1.2  1994/09/20  04:42:13  tes
+   * For version 1.1
+   *
+ */
+
+static char *RCSID = "$Id: text.pass1.c,v 1.4 1994/11/25 03:47:47 tes Exp $";
+
 
 #define POOL_SIZE 1024*1024
 #define INITIAL_HASH_SIZE 7927
+
+
+
+
+
 
 
 typedef struct hash_rec
@@ -75,11 +92,11 @@ static dict_data DictData[2];
 
 static u_char *Pool;
 static int PoolLeft;
-static double inputbytes = 0; /* [RJM 07/97: 4G limit] */
+static unsigned long inputbytes = 0;
 static unsigned long MaxMemInUse = 0;
 static unsigned long MemInUse = 0;
 static compression_stats_header csh =
-{0, 0.0}; /* [RJM 07/97: 4G limit] */
+{0, 0};
 
 
 static void 
@@ -97,6 +114,7 @@ int
 init_text_1 (char *FileName)
 {
   int which;
+
   if (!(Pool = Xmalloc (POOL_SIZE)))
     {
       Message ("Unable to allocate memory for pool");
@@ -116,6 +134,7 @@ init_text_1 (char *FileName)
       dd->bytes_diff = 0;
       dd->HashSize = INITIAL_HASH_SIZE;
       dd->HashUsed = 0;
+
       if (!(dd->HashTable = Xmalloc (sizeof (hash_rec) * dd->HashSize)))
 	{
 	  Message ("Unable to allocate memory for table");
@@ -158,13 +177,14 @@ process_text_1 (u_char * s_in, int l_in)
 {
   int which;
   u_char *end = s_in + l_in - 1;
+
   if (l_in > LongestDoc)
     LongestDoc = l_in;
 
   csh.num_docs++;
   csh.num_bytes += l_in;
 
-  which = inaword (s_in, end);
+  which = INAWORD (*s_in);
   /*
    ** Alternately parse off words and non-words from the input
    ** stream beginning with a non-word. Each token is then
@@ -221,6 +241,7 @@ process_text_1 (u_char * s_in, int l_in)
 		dd->bytes_diff += Word[0];
 		break;
 	      }
+
 	    /* Compare the words */
 	    s1 = Word;
 	    s2 = ent->word;
@@ -243,7 +264,7 @@ process_text_1 (u_char * s_in, int l_in)
 	  }
       }
 
-  
+
       if (dd->HashUsed >= dd->HashSize >> 1)
 	{
 	  hash_rec *ht;
@@ -315,7 +336,7 @@ PackHashTable (dict_data * dd)
 static int 
 ent_comp (const void *s1, const void *s2)
 {
-  return casecompare (((hash_rec *) s1)->word, ((hash_rec *) s2)->word);
+  return compare (((hash_rec *) s1)->word, ((hash_rec *) s2)->word);
 }
 
 
@@ -337,28 +358,14 @@ WriteHashTable (FILE * fp, dict_data * dd)
   for (j = 0; j < dd->HashSize; j++)
     fsh.mem_for_frags += dd->HashTable[j].word[0];
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(fsh.num_frags);
-  HTONUL(fsh.mem_for_frags);
-
   fwrite (&fsh, sizeof (fsh), 1, fp);
 
   for (j = 0; j < dd->HashSize; j++)
     {
       curr = dd->HashTable[j].word;
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      HTONUL(dd->HashTable[j].wcnt);
-      HTONUL(dd->HashTable[j].occurance_num);
-
       fwrite (&dd->HashTable[j].wcnt, sizeof (dd->HashTable[j].wcnt), 1, fp);
       fwrite (&dd->HashTable[j].occurance_num,
 	      sizeof (dd->HashTable[j].occurance_num), 1, fp);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(dd->HashTable[j].wcnt);
-      NTOHUL(dd->HashTable[j].occurance_num);
-
       fwrite (curr, sizeof (u_char), curr[0] + 1, fp);
     }
 }
@@ -370,36 +377,16 @@ done_text_1 (char *file_name)
   char *temp_str;
   FILE *fp;
 
-  if (!(fp = create_file (file_name, TEXT_STATS_DICT_SUFFIX, "wb",
-			  MAGIC_STATS_DICT, MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
-    {
-      fprintf(stderr,"Couldn't create file %s%s:%s\n",
-	      file_name, TEXT_STATS_DICT_SUFFIX,
-#if defined(HAVE_STRERROR) || defined(__WIN32__)
-	      strerror(errno)
-#else
-	      " "
-#endif
-	      );
-      return COMPERROR;
-    }
+  if (!(fp = create_file (file_name, TEXT_STATS_DICT_SUFFIX, "w",
+			  MAGIC_STATS_DICT, MG_MESSAGE)))
+    return COMPERROR;
 
   temp_str = msg_prefix;
   msg_prefix = "text.pass1";
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(csh.num_docs);
-  HTOND(csh.num_bytes); /* [RJM 07/97: 4G limit] */
-
   fwrite (&csh, sizeof (csh), 1, fp);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(csh.num_docs);
-  NTOHD(csh.num_bytes); /* [RJM 07/97: 4G limit] */
-
   WriteHashTable (fp, &DictData[0]);
   WriteHashTable (fp, &DictData[1]);
   msg_prefix = temp_str;
-  fclose(fp);
   return COMPALLOK;
 }				/* done_encode */

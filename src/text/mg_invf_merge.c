@@ -18,7 +18,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * Last edited:  31 March, 1995 
- * $Id: mg_invf_merge.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id$
  *
  **************************************************************************/
 
@@ -29,7 +29,6 @@
 #include "local_strings.h"
 #include "messages.h"
 #include "timing.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "bitio_m.h"
 #include "bitio_gen.h"
@@ -54,7 +53,6 @@ typedef struct merge_info_type
     FILE *invf;
     FILE *dict;
     FILE *idx;
-    FILE *para;  /* [RPAP - Feb 97: Level 3 Merge] */
     struct invf_dict_header idh;
     struct invf_file_header ifh;
     u_long nDocs;
@@ -117,41 +115,16 @@ init_merge_invf ()
     /***
      *  open .dict files
      ***/
-  m[OLD].dict = open_file (m[OLD].fname, INVF_DICT_SUFFIX, "rb",
-			   MAGIC_STEM_BUILD, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  m[OLD].dict = open_file (m[OLD].fname, INVF_DICT_SUFFIX, "r",
+			   MAGIC_STEM_BUILD, MG_ABORT);
   magicsize = ftell (m[OLD].dict);
   fread (&(m[OLD].idh), sizeof (m[OLD].idh), 1, m[OLD].dict);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(m[OLD].idh.lookback);
-  NTOHUL(m[OLD].idh.dict_size);
-  NTOHUL(m[OLD].idh.total_bytes);
-  NTOHUL(m[OLD].idh.index_string_bytes);
-  NTOHD(m[OLD].idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(m[OLD].idh.num_of_docs);
-  NTOHUL(m[OLD].idh.static_num_of_docs);
-  NTOHUL(m[OLD].idh.num_of_words);
-  NTOHUL(m[OLD].idh.stemmer_num);
-  NTOHUL(m[OLD].idh.stem_method);
-
-  m[NEW].dict = open_file (m[NEW].fname, INVF_DICT_SUFFIX, "rb",
-			   MAGIC_STEM_BUILD, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  m[NEW].dict = open_file (m[NEW].fname, INVF_DICT_SUFFIX, "r",
+			   MAGIC_STEM_BUILD, MG_ABORT);
   fread (&(m[NEW].idh), sizeof (m[NEW].idh), 1, m[NEW].dict);
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(m[NEW].idh.lookback);
-  NTOHUL(m[NEW].idh.dict_size);
-  NTOHUL(m[NEW].idh.total_bytes);
-  NTOHUL(m[NEW].idh.index_string_bytes);
-  NTOHD(m[NEW].idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(m[NEW].idh.num_of_docs);
-  NTOHUL(m[NEW].idh.static_num_of_docs);
-  NTOHUL(m[NEW].idh.num_of_words);
-  NTOHUL(m[NEW].idh.stemmer_num);
-  NTOHUL(m[NEW].idh.stem_method);
-
-  m[MERGE].dict = create_file (m[MERGE].fname, INVF_DICT_SUFFIX, "wb",
-			       MAGIC_STEM_BUILD, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  m[MERGE].dict = create_file (m[MERGE].fname, INVF_DICT_SUFFIX, "w",
+			       MAGIC_STEM_BUILD, MG_ABORT);
 
   /* write space for header */
   fwrite ((char *) &(m[OLD].idh), sizeof (m[OLD].idh), 1, m[MERGE].dict);
@@ -177,37 +150,15 @@ init_merge_invf ()
      *  Try ".ORG" extension first for m[OLD].invf since an inverted file
      *  with skips may have been created.
      ****/
-  if (!(m[OLD].invf = open_file (m[OLD].fname, INVF_SUFFIX ".ORG", "rb",
-				 MAGIC_INVF, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
-    m[OLD].invf = open_file (m[OLD].fname, INVF_SUFFIX, "rb",
-			     MAGIC_INVF, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(m[OLD].invf = open_file (m[OLD].fname, INVF_SUFFIX ".ORG", "r",
+				 MAGIC_INVF, MG_CONTINUE)))
+    m[OLD].invf = open_file (m[OLD].fname, INVF_SUFFIX, "r",
+			     MAGIC_INVF, MG_ABORT);
   fread (&(m[OLD].ifh), sizeof (m[OLD].ifh), 1, m[OLD].invf);
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(m[OLD].ifh.no_of_words);
-  NTOHUL(m[OLD].ifh.no_of_ptrs);
-  NTOHUL(m[OLD].ifh.skip_mode);
-  {
-    int i;
-    for (i = 0; i < 16; i++)
-      NTOHUL(m[OLD].ifh.params[i]);
-  }
-  NTOHUL(m[OLD].ifh.InvfLevel);
-
-  m[NEW].invf = open_file (m[NEW].fname, INVF_SUFFIX, "rb",
+  m[NEW].invf = open_file (m[NEW].fname, INVF_SUFFIX, "r",
 			   MAGIC_INVF, MG_ABORT);
   fread (&(m[NEW].ifh), sizeof (m[NEW].ifh), 1, m[NEW].invf);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(m[NEW].ifh.no_of_words);
-  NTOHUL(m[NEW].ifh.no_of_ptrs);
-  NTOHUL(m[NEW].ifh.skip_mode);
-  {
-    int i;
-    for (i = 0; i < 16; i++)
-      NTOHUL(m[NEW].ifh.params[i]);
-  }
-  NTOHUL(m[NEW].ifh.InvfLevel);
 
   if (m[OLD].ifh.skip_mode != 0)
     FatalError (1, "The old invf file contains skips. Unable to merge.");
@@ -215,15 +166,11 @@ init_merge_invf ()
   if (m[OLD].ifh.InvfLevel != m[NEW].ifh.InvfLevel)
     FatalError (1, "The two invf files have different inversion levels!");
 
-  /********** [RPAP - Feb 97: Level 3 Merge]
-
   if ((m[OLD].ifh.InvfLevel > 2) || (m[NEW].ifh.InvfLevel > 2))
     FatalError (1, "mgmerge cannot handle level 3 inverted files!");
 
-    *************/
-
-  m[MERGE].invf = create_file (m[MERGE].fname, INVF_SUFFIX, "wb",
-			       MAGIC_INVF, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  m[MERGE].invf = create_file (m[MERGE].fname, INVF_SUFFIX, "w",
+			       MAGIC_INVF, MG_ABORT);
 
   /* write space for header in inverted file */
   m[MERGE].ifh.no_of_words = m[MERGE].ifh.no_of_ptrs = 0;
@@ -242,34 +189,12 @@ init_merge_invf ()
   m[OLD].idx = open_file (m[OLD].fname, INVF_IDX_SUFFIX, "rb",
 			  MAGIC_INVI, MG_ABORT);
   fread (&oldIdxValue, sizeof (u_long), 1, m[OLD].idx);
-  NTOHUL(oldIdxValue);  /* [RPAP - Jan 97: Endian Ordering] */
 
   m[NEW].idx = open_file (m[NEW].fname, INVF_IDX_SUFFIX, "rb",
 			  MAGIC_INVI, MG_ABORT);
 
   m[MERGE].idx = create_file (m[MERGE].fname, INVF_IDX_SUFFIX, "wb",
 			      MAGIC_INVI, MG_ABORT);
-
-
-  /* [RPAP - Feb 97: Level 3 Merge] */
-
-    /***
-     *  open .invf.parargraph files
-     ***/
-  if (m[OLD].ifh.InvfLevel == 3)
-    {
-      m[OLD].para = NULL;
-      m[NEW].para = open_file (m[NEW].fname, INVF_PARAGRAPH_SUFFIX, "rb",
-			       MAGIC_PARAGRAPH, MG_ABORT);
-      m[MERGE].para = open_file (m[MERGE].fname, INVF_PARAGRAPH_SUFFIX, "rb+",
-				 MAGIC_PARAGRAPH, MG_ABORT);
-    }
-  else
-    {
-      m[OLD].para = NULL;
-      m[NEW].para = NULL;
-      m[MERGE].para = NULL;
-    }
 
   return OK;
 }
@@ -297,9 +222,7 @@ procEntry_slow (int tnum, int type, u_long oldN, u_long newN, u_long mergeN)
   u_long inbits = 0, outbits = 0;
 
   /* write .invf.idx pointer */
-  HTONUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
   fwrite (&bytes_output, sizeof (u_long), 1, m[MERGE].idx);
-  NTOHUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
 
   outblk = BIO_Bblock_Init (mergeN, (fcntOLD + fcntNEW));
 
@@ -388,7 +311,6 @@ procEntry_fast (int tnum, int type)
   if (type != NEW)		/* read in an index number from m[OLD].idx */
     {
       fread (&newIdxValue, sizeof (u_long), 1, m[OLD].idx);
-      NTOHUL(newIdxValue);  /* [RPAP - Jan 97: Endian Ordering] */
       len = newIdxValue - oldIdxValue;
       oldIdxValue = newIdxValue;
     }
@@ -398,9 +320,7 @@ procEntry_fast (int tnum, int type)
   else
     {
       /* write .invf.idx pointer */
-      HTONUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
       fwrite (&bytes_output, sizeof (u_long), 1, m[MERGE].idx);
-      NTOHUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
 
       /* copy entry */
       {
@@ -470,10 +390,6 @@ readTerm (int x)
   fread ((char *) &(m[x].fcnt), sizeof (u_long), 1, m[x].dict);
   fread ((char *) &(m[x].wcnt), sizeof (u_long), 1, m[x].dict);
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(m[x].fcnt);
-  NTOHUL(m[x].wcnt);
-
   return;
 }
 
@@ -513,18 +429,8 @@ writeTerm (int x)
   fputc (suffix, m[MERGE].dict);	/* suffix length */
   for (i = 0; i < suffix; i++)
     fputc (m[x].term[prefix + i + 1], m[MERGE].dict);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(m[MERGE].fcnt);
-  HTONUL(m[MERGE].wcnt);
-
   fwrite ((char *) &(m[MERGE].fcnt), sizeof (m[MERGE].fcnt), 1, m[MERGE].dict);
   fwrite ((char *) &(m[MERGE].wcnt), sizeof (m[MERGE].wcnt), 1, m[MERGE].dict);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(m[MERGE].fcnt);
-  NTOHUL(m[MERGE].wcnt);
-
   memcpy (prevTerm, m[x].term, prefix + suffix + 1);
   m[MERGE].idh.total_bytes += m[x].term[0] + 1;
   m[MERGE].idh.index_string_bytes += m[x].term[0] + 2 - prefix;
@@ -585,7 +491,7 @@ process_merge_invf (void)
       else if (m[NEW].done)
 	i = -1; /* OLD will always be greater */
       else
-	i = casecompare (m[OLD].term, m[NEW].term);
+	i = compare (m[OLD].term, m[NEW].term);
 
       if (i < 0)
 	{			/* term in OLD only */
@@ -643,9 +549,7 @@ process_merge_invf (void)
 	processEntry (i, mergedata[i]);
       }
     /* write final .invf.idx pointer */
-    HTONUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
     fwrite (&bytes_output, sizeof (u_long), 1, m[MERGE].idx);
-    NTOHUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
 
     fprintf (stderr, "Old invf: old only bits: %ld, merged bits: %ld\n",
 	     oldOnlyBits, oldMergeBits);
@@ -669,7 +573,6 @@ done_merge_invf (void)
   m[MERGE].idh.total_bytes = m[OLD].idh.total_bytes + m[NEW].idh.total_bytes;
   m[MERGE].idh.num_of_docs = m[MERGE].nDocs;
   m[MERGE].idh.num_of_words = m[OLD].idh.num_of_words + m[NEW].idh.num_of_words;
-  m[MERGE].idh.stemmer_num = m[OLD].idh.stemmer_num;
   m[MERGE].idh.stem_method = m[OLD].idh.stem_method;
 
   /* if fastMerge, static num of docs stays the same! */
@@ -677,18 +580,6 @@ done_merge_invf (void)
     m[MERGE].idh.static_num_of_docs = m[OLD].idh.static_num_of_docs;
   else
     m[MERGE].idh.static_num_of_docs = m[MERGE].nDocs;
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(m[MERGE].idh.lookback);
-  HTONUL(m[MERGE].idh.dict_size);
-  HTONUL(m[MERGE].idh.total_bytes);
-  HTONUL(m[MERGE].idh.index_string_bytes);
-  HTOND(m[MERGE].idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  HTONUL(m[MERGE].idh.num_of_docs);
-  HTONUL(m[MERGE].idh.static_num_of_docs);
-  HTONUL(m[MERGE].idh.num_of_words);
-  HTONUL(m[MERGE].idh.stemmer_num);
-  HTONUL(m[MERGE].idh.stem_method);
 
   fseek (m[MERGE].dict, magicsize, 0);
   fwrite (&(m[MERGE].idh), sizeof (struct invf_dict_header), 1, m[MERGE].dict);
@@ -707,59 +598,22 @@ done_merge_invf (void)
       m[MERGE].ifh.params[i] = m[OLD].ifh.params[i];
   }
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(m[MERGE].ifh.no_of_words);
-  HTONUL(m[MERGE].ifh.no_of_ptrs);
-  HTONUL(m[MERGE].ifh.skip_mode);
-  {
-    int i;
-    for (i = 0; i < 16; i++)
-      HTONUL(m[MERGE].ifh.params[i]);
-  }
-  HTONUL(m[MERGE].ifh.InvfLevel);
-
   fseek (m[MERGE].invf, magicsize, 0);	/* go to start of header */
   fwrite (&(m[MERGE].ifh), sizeof (struct invf_file_header), 1, m[MERGE].invf);
 
 /*** Write new document weights --- leave old weights alone ***/
   if ((weightOption) && (m[OLD].ifh.InvfLevel >= 2))
     {
-      FILE *weightfile = open_file (m[MERGE].fname, WEIGHTS_SUFFIX, "r+b",
-				    MAGIC_WGHT, MG_CONTINUE);  /* [RPAP - Feb 97: WIN32 Port] */
+      FILE *weightfile = open_file (m[MERGE].fname, WEIGHTS_SUFFIX, "r+",
+				    MAGIC_WGHT, MG_CONTINUE);
       if (weightfile)
 	{
-	  u_long i;  /* [RPAP - Jan 97: Endian Ordering] */
-
 	  fprintf (stderr, "writing new weights: Nnew = %ld\n", m[NEW].nDocs);
 	  fseek (weightfile, 0, 2);	/* end of file */
-
-	  /* [RPAP - Jan 97: Endian Ordering] */
-	  for (i = 0; i < m[NEW].nDocs; i++)
-	    HTONF(DocWeightBuffer[i]);
-
 	  fwrite ((char *) DocWeightBuffer, sizeof (float), m[NEW].nDocs,
 		  weightfile);
 	}
       fclose (weightfile);
-    }
-
-
-  /* [RPAP - Feb 97: Level 3 Merge] */
-  if (m[OLD].ifh.InvfLevel == 3)
-    {
-      /* Update paragraph file */
-      int buffer_size = 1000;
-      u_char *buffer;
-      int num;
-
-      if (!(buffer = (u_char *) Xmalloc (buffer_size)))
-	FatalError (1, "Could not allocate memory for paragraph buffer");
-
-      fseek (m[MERGE].para, 0, SEEK_END);
-      while ((num = fread ((char *) buffer, sizeof (*buffer), buffer_size, m[NEW].para)) != 0)
-	fwrite ((char *) buffer, sizeof (*buffer), num, m[MERGE].para);
-
-      Xfree (buffer);
     }
 
 /*** close files ***/
@@ -772,13 +626,6 @@ done_merge_invf (void)
   fclose (m[MERGE].idx);
   fclose (m[OLD].idx);
   fclose (m[NEW].idx);
-
-  /* [RPAP - Feb 97: Level 3 Merge] */
-  if (m[OLD].ifh.InvfLevel == 3)
-    {
-      fclose (m[NEW].para);
-      fclose (m[MERGE].para);
-    }
 
   return OK;
 }

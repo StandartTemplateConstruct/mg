@@ -1,0 +1,62 @@
+#
+# Makefile.in
+#
+# $Log: Makefile.in,v $
+# Revision 1.2  1997/08/01  04:12:19  wew
+# added Makefile.in to DISTFILES
+#
+# Revision 1.1  1997/07/16  04:55:00  wew
+# Initial revision
+#
+# 
+
+top_srcdir = @top_srcdir@
+prefix = @prefix@
+
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
+
+mandir = $(prefix)/man/man1
+
+MAN = mg.1 mgintro.1 mgintro++.1
+
+DISTFILES = Makefile.in mgmerge.README mg_invf_dump.changes \
+  README.man mg.1 mgintro.1 mgintro++.1
+
+dist:
+	ln $(DISTFILES) $(distdir)
+
+# add targets to install man directories  [wew 16/7/97]
+
+all: 
+
+install: maninstall
+
+uninstall: manuninstall
+
+maninstall: $(MAN)
+	$(top_srcdir)/mkinstalldirs $(mandir); \
+	for f in $(MAN); do \
+	  $(INSTALL_DATA) $$f $(mandir)/$$f ;\
+	done
+
+manuninstall: $(MAN)
+	for f in $(MAN); do \
+	  rm -f $(mandir)/$$f ;\
+	done
+
+execinstall:
+
+execuninstall:
+
+mostlyclean:
+
+clean: mostlyclean
+
+distclean: clean
+
+maintainer-clean: distclean
+
+Makefile: Makefile.in ../config.status
+	cd .. && CONFIG_FILES=$(subdir)/$@ \
+	  CONFIG_HEADERS= ./config.status

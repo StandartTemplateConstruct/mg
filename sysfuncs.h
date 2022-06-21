@@ -25,21 +25,14 @@
 #ifndef SYSFUNCS_H
 #define SYSFUNCS_H
 
-/* [RPAP - Feb 97: WIN32 Port] */
 #ifdef HAVE_CONFIG_H
-# ifdef __WIN32__
-#  include <win32cfg.h>
-# else
-#  include <config.h>
-# endif
+#include <config.h>
 #endif
 
 /* Declare alloca.  AIX requires this to be the first thing in the file.  */
 
 #ifdef __GNUC__
-#ifndef alloca
 #define alloca __builtin_alloca
-#endif
 #else
 #if HAVE_ALLOCA_H
 #include <alloca.h>
@@ -75,8 +68,7 @@ char *alloca ();
 # define setbuffer(f, b, s)  setvbuf(f, b, _IOFBF, s)
 #endif
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#if defined(__MSDOS__)  && !defined(__WIN32__)
+#ifdef __MSDOS__
 # define SHORT_SUFFIX 1
 #endif
 
@@ -125,9 +117,7 @@ char *alloca ();
 #include <memory.h>
 #endif /* not STDC_HEADERS and HAVE_MEMORY_H */
 #ifndef index
-/*#define index strchr 
- *
- * this is stuffing up our code so its commented out */
+#define index strchr
 #endif
 #ifndef rindex
 #define rindex strrchr
@@ -197,14 +187,10 @@ extern int errno;
 #endif
 
 /* On MSDOS, there are missing things from <sys/stat.h>.  */
-#if defined(__MSDOS__)
+#ifdef __MSDOS__
 #define S_ISUID 0
 #define S_ISGID 0
 #define S_ISVTX 0
-#endif
-
-#if defined(__GNUC__) && defined(__WIN32__)
-#include <limits.h>
 #endif
 
 #ifndef S_ISREG			/* POSIX.1 stat stuff missing */
@@ -246,8 +232,7 @@ extern int errno;
 #define S_ISVTX 0001000
 #endif
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#if !defined(_POSIX_SOURCE) && !defined(__WIN32__)
+#ifndef _POSIX_SOURCE
 #include <sys/param.h>
 #endif
 
@@ -270,10 +255,7 @@ char *getenv ();
 #include <stdio.h>
 
 #ifndef _POSIX_VERSION
-#if defined(__WIN32__)
-#include <io.h>
-#define lseek _lseek
-#elif defined(__MSDOS__)
+#ifdef __MSDOS__
 #include <io.h>
 #else
 off_t lseek ();
@@ -282,10 +264,9 @@ off_t lseek ();
 
 #include <pathmax.h>
 
-/* jrm21 2003 - this is in unistd.h now */
-#ifndef HAVE_UNISTD_H
+/* Until getoptold function is declared in getopt.h, we need this here for
+   struct option.  */
 #include <getopt.h>
-#endif
 
 #ifdef WITH_DMALLOC
 #undef HAVE_VALLOC
@@ -306,6 +287,9 @@ off_t lseek ();
 #if HAVE_LOCALE_H
 #include <locale.h>
 #endif
+#if !HAVE_SETLOCALE
+#define setlocale(Category, Locale)
+#endif
 
 #if ENABLE_NLS
 #include <libintl.h>
@@ -317,11 +301,10 @@ off_t lseek ();
 
 /* Library modules.  */
 
-#if (HAVE_VPRINTF || HAVE_DOPRNT) && __STDC__
-/*void error __P ((int, int, const char *,...));*/
-void error (int, int, const char *,...);
+#ifdef HAVE_VPRINTF
+void error __P ((int, int, const char *,...));
 #else
-void error (int, int, char *, char *, char *, char *, char *, char *, char *, char *, char *);
+void error ();
 #endif
 
 #ifndef HAVE_STRSTR
@@ -348,14 +331,6 @@ extern size_t   fread __P ((void *, size_t, size_t, FILE *));
 #endif
 #ifndef HAVE_FGETC_DECL
 extern int      fgetc __P ((FILE *));
-#endif
-
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifndef u_long
-# define u_long unsigned long
-#endif
-#ifndef u_char
-# define u_char unsigned char
 #endif
 
 

@@ -17,13 +17,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: filestats.c,v 1.1 1994/08/22 00:24:42 tes Exp $
+ *
  **************************************************************************/
+
+
+/*
+   $Log: filestats.c,v $
+   * Revision 1.1  1994/08/22  00:24:42  tes
+   * Initial placement under CVS.
+   *
+ */
+
+static char *RCSID = "$Id: filestats.c,v 1.1 1994/08/22 00:24:42 tes Exp $";
 
 #include "sysfuncs.h"
 
 #include "memlib.h"
 #include "filestats.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 
 File *
@@ -39,7 +50,6 @@ Fopen (char *name, char *mode, unsigned long magic)
       {
       case 'r':
 	fread ((char *) &m, sizeof (m), 1, f);
-	NTOHUL(m);  /* [RPAP - Jan 97: Endian Ordering] */
 	if (m != magic)
 	  {
 	    fclose (f);
@@ -47,7 +57,6 @@ Fopen (char *name, char *mode, unsigned long magic)
 	  }
 	break;
       case 'w':
-	HTONUL(magic);  /* [RPAP - Jan 97: Endian Ordering] */
 	fwrite ((char *) &magic, sizeof (magic), 1, f);
       }
   if (!(F = Xmalloc (sizeof (File))))

@@ -57,7 +57,7 @@ if !(-e $mg_getrc) then
   endif
 
   cat > $mg_getrc << END
-alice	PARA	$SampleData/alice13a.txt.Z
+alice	PARA	$SampleData/alice13a.txt.gz
 davinci	TXTIMG	$SampleData/davinci
 mailfiles	MAIL	~/mbox ~/.sentmail
 allfiles	DIR	~/Mail

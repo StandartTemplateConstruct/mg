@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mg_compression_dict.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mg_compression_dict.c,v 1.3 1994/10/20 03:56:54 tes Exp $
  *
  **************************************************************************/
 
@@ -30,8 +30,7 @@
 #include "bitio_m.h"
 #include "bitio_m_stdio.h"
 #include "timing.h"
-#include "mgheap.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
+#include "heap.h"
 
 #include "mg_files.h"
 #include "locallib.h"
@@ -43,39 +42,7 @@
 #define MAXBITS (sizeof(unsigned long) * 8)
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.2  1999/12/10 15:04:25  cs025
-   Incorrect use of NTOHUL on a double value (num_bytes).
-
-   Revision 1.1  1999/08/10 21:18:04  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.4  1999/01/15 03:05:51  rjmcnab
-
-   Renamed lib/heap to be lib/mgheap (it was causing some problems with
-   some versions of the STL libraries which contained a heap.h)
-
-   Revision 1.3  1998/12/17 09:12:52  rjmcnab
-
-   Altered mg to process utf-8 encoded Unicode. The main changes
-   are in the parsing of the input, the casefolding, and the stemming.
-
-   Revision 1.2  1998/11/25 07:55:44  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:34:52  rjmcnab
-   *** empty log message ***
-
+   $Log: mg_compression_dict.c,v $
    * Revision 1.3  1994/10/20  03:56:54  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -85,7 +52,7 @@
    *
  */
 
-static char *RCSID = "$Id: mg_compression_dict.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: mg_compression_dict.c,v 1.3 1994/10/20 03:56:54 tes Exp $";
 
 /* #define DEBUG1 */
 
@@ -141,7 +108,8 @@ static int OccuranceOrder (void *a, void *b);
 
 
 
-int main (int argc, char **argv)
+int 
+main (int argc, char **argv)
 {
   ProgTime StartTime;
   int ch;
@@ -253,7 +221,7 @@ int main (int argc, char **argv)
   Message ("Actual mem required : %8u\n", mem_reqd);
 
   Message ("%s", ElapsedTime (&StartTime, NULL));
-  return 0;
+  exit (0);
 }
 
 
@@ -264,14 +232,10 @@ ReadInWords (char *filename)
 {
   FILE *f;
   unsigned long i;
-  f = open_file (filename, TEXT_STATS_DICT_SUFFIX, "rb",
-		 MAGIC_STATS_DICT, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  f = open_file (filename, TEXT_STATS_DICT_SUFFIX, "r",
+		 MAGIC_STATS_DICT, MG_ABORT);
 
   fread (&csh, sizeof (csh), 1, f);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(csh.num_docs);
-  NTOHD(csh.num_bytes);
 
   for (i = 0; i < 2; i++)
     {
@@ -282,10 +246,6 @@ ReadInWords (char *filename)
       chars[i] = 0;
 
       fread (&fsh, sizeof (fsh), 1, f);
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fsh.num_frags);
-      NTOHUL(fsh.mem_for_frags);
-
       Num[i] = all[i].num_wds = fsh.num_frags;
 
       /* The +1 on the following line is to leave room for the esc code. */
@@ -297,9 +257,7 @@ ReadInWords (char *filename)
 	{
 	  int len;
 	  fread (&wd->freq, sizeof (wd->freq), 1, f);
-	  NTOHUL(wd->freq);  /* [RPAP - Jan 97: Endian Ordering] */
 	  fread (&wd->occur_num, sizeof (wd->occur_num), 1, f);
-	  NTOHUL(wd->occur_num);  /* [RPAP - Jan 97: Endian Ordering] */
 	  len = fgetc (f);
 	  wd->word = (u_char *) buf;
 	  *buf++ = len;
@@ -332,7 +290,7 @@ sort_comp (const void *a, const void *b)
 {
   WordData *aa = *(WordData **) a;
   WordData *bb = *(WordData **) b;
-  return casecompare (aa->word, bb->word);  /* [RPAP - Jan 97: Stem Index Change] */
+  return compare (aa->word, bb->word);
 }
 
 
@@ -781,20 +739,7 @@ Method3 (int k)
 static void 
 Write_cdh (FILE * f, compression_dict_header * cdh)
 {
-  /* [RPAP - Jan 97: Endian Ordering] */
-  int i;
-  compression_dict_header tmp = *cdh;
-  HTONUL(tmp.dict_type);
-  HTONUL(tmp.novel_method);
-  for (i = 0; i < TEXT_PARAMS; i++)
-    HTONUL(tmp.params[i]);
-  HTONUL(tmp.num_words[0]);
-  HTONUL(tmp.num_words[1]);
-  HTONUL(tmp.num_word_chars[0]);
-  HTONUL(tmp.num_word_chars[1]);
-  HTONUL(tmp.lookback);
-
-  fwrite (&tmp, sizeof (tmp), 1, f);
+  fwrite (cdh, sizeof (*cdh), 1, f);
 }
 
 
@@ -859,9 +804,9 @@ Write_data (FILE * f, DictData * dd, int lookback)
   if (Write_Huffman_Data (f, hd) == -1)
     FatalError (1, "Unable to write huffman data");
 
-  HTONUL(us);  /* [RPAP - Jan 97: Endian Ordering] */
+
   fwrite (&us, sizeof (us), 1, f);
-  NTOHUL(us);  /* [RPAP - Jan 97: Endian Ordering] */
+
 
 
 /* Calculate the amount of memory that will be required to store the text for
@@ -905,17 +850,8 @@ Write_data (FILE * f, DictData * dd, int lookback)
       lencounts[codelen]++;
     }
 
-  /* [RPAP - Jan 97: Endian Ordering] */
-  for (i = hd->mincodelen; i < hd->maxcodelen + 1; i++)
-    HTONUL(huff_words_size[i]);
-
   fwrite (huff_words_size + hd->mincodelen, sizeof (*huff_words_size),
 	  hd->maxcodelen - hd->mincodelen + 1, f);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  for (i = hd->mincodelen; i < hd->maxcodelen + 1; i++)
-    NTOHUL(huff_words_size[i]);
-
   Write_words (f, dd);
 
   Xfree (hd->clens);
@@ -947,7 +883,7 @@ Write_charfreqs (FILE * f, DictData * dd, int words,
 
   if (!zero_freq_permitted)
     for (j = 0; j < 256; j++)
-      if (!freqs[j] && PESINAWORD (j) == words)
+      if (!freqs[j] && INAWORD (j) == words)
 	freqs[j] = 1;
 
   if (!(hd = Generate_Huffman_Data (256, freqs, NULL, NULL)))
@@ -1000,10 +936,9 @@ WriteOutWords (char *file_name, u_long type, int lookback)
   FILE *f;
   int i;
   u_long mem_reqd = 0;
-
   compression_dict_header cdh;
-  f = create_file (file_name, TEXT_DICT_SUFFIX, "w+b",
-		   MAGIC_DICT, MG_ABORT);  /* [RPAP - Feb 97: WIN32 Port] */
+  f = create_file (file_name, TEXT_DICT_SUFFIX, "w+",
+		   MAGIC_DICT, MG_ABORT);
 
   bzero((char *) &cdh, sizeof(cdh));
 
@@ -1016,7 +951,6 @@ WriteOutWords (char *file_name, u_long type, int lookback)
   cdh.num_word_chars[1] = Uncompressed_size (&keep[1]);
   cdh.num_word_chars[0] = Uncompressed_size (&keep[0]);
   cdh.lookback = lookback;
-
   Write_cdh (f, &cdh);
 
   for (i = 0; i < 2; i++)

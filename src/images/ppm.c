@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: ppm.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: ppm.c,v 1.2 1994/09/20 04:42:02 tes Exp $
  *
  **************************************************************************/
 
@@ -29,22 +29,13 @@
 
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:16:56  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:17:33  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.1  1998/11/17 09:33:55  rjmcnab
-   *** empty log message ***
-
+   $Log: ppm.c,v $
    * Revision 1.2  1994/09/20  04:42:02  tes
    * For version 1.1
    *
  */
 
-static char *RCSID = "$Id: ppm.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: ppm.c,v 1.2 1994/09/20 04:42:02 tes Exp $";
 
 /* FIXEDORDER sets the maximum context length that will be used.
    Making FIXEDORDER large increases the compression if there is enough

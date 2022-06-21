@@ -17,16 +17,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: huffman.h,v 1.2 1994/09/20 04:20:03 tes Exp $
+ *
  **************************************************************************/
 
 #ifndef H_HUFFMAN
 #define H_HUFFMAN
-#include <sys/types.h>
+
+#include "sysfuncs.h"
+
 #include "filestats.h"
 
-#ifdef __WIN32__
-#include "sysfuncs.h"
-#endif
 
 #define MAX_HUFFCODE_LEN 31
 
@@ -67,7 +68,7 @@ double Calculate_Huffman_Size (int num, long *freqs, long *counts);
     register int __i;							\
     register int __clen = (lens)[x];					\
     register unsigned long __code = (codes)[x];				\
-    for (__i=__clen-1; __i>=0; --__i)					\
+    for (__i=__clen-1; __i>=0; __i--)					\
       ENCODE_BIT((__code >> __i) & 1);					\
   } while(0)
 

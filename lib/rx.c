@@ -1,4 +1,3 @@
-
 /*	Copyright (C) 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 This file is part of the librx library.
@@ -32,12 +31,7 @@ write to the Free Software Foundation, 675 Mass Ave, Cambridge, MA
 #endif
 
 #if HAVE_CONFIG_H
-# ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-#  include <win32cfg.h>
-#  include <malloc.h>
-# else
-#  include <sysfuncs.h>
-# endif
+#include <config.h>
 #endif
 
 
@@ -106,11 +100,7 @@ char *alloca ();
 #ifdef REGEX_MALLOC
 #define REGEX_ALLOCATE malloc
 #else /* not REGEX_MALLOC  */
-#ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-#define REGEX_ALLOCATE _alloca
-#else
 #define REGEX_ALLOCATE alloca
-#endif /* __WIN32__ */
 #endif /* not REGEX_MALLOC */
 
 
@@ -6016,11 +6006,7 @@ rx_compile (pattern, size, syntax, rxb)
   {
     rx_Bitset cs = rx_cset(&rxb->rx);
     rx_Bitset cs2 = rx_cset(&rxb->rx);
-#ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-    char * se_map = (char *) _alloca (paramc);
-#else
     char * se_map = (char *) alloca (paramc);
-#endif
     struct rexp_node * new_rexp = 0;
 
 
@@ -6525,11 +6511,7 @@ re_search_2 (rxb, string1, size1, string2, size2, startpos, range, regs, stop)
   int ret;
   ret = inner_re_search_2 (rxb, string1, size1, string2, size2, startpos,
 			   range, regs, stop);
-#ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-  _alloca (0);
-#else
   alloca (0);
-#endif
   return ret;
 }
 #endif
@@ -6751,17 +6733,10 @@ posix_se_list_order (rx, a, b)
 
   else
     {
-#ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-      rx_side_effect * av = ((rx_side_effect *)
-			     _alloca (sizeof (rx_side_effect) * (al + 1)));
-      rx_side_effect * bv = ((rx_side_effect *)
-			     _alloca (sizeof (rx_side_effect) * (bl + 1)));
-#else
       rx_side_effect * av = ((rx_side_effect *)
 			     alloca (sizeof (rx_side_effect) * (al + 1)));
       rx_side_effect * bv = ((rx_side_effect *)
 			     alloca (sizeof (rx_side_effect) * (bl + 1)));
-#endif
       struct rx_se_list * ap = a;
       struct rx_se_list * bp = b;
       int ai, bi;
@@ -6846,11 +6821,7 @@ re_compile_pattern (pattern, length, rxb)
   rxb->rx.start_set = 0;
 
   ret = rx_compile (pattern, length, re_syntax_options, rxb);
-#ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-  _alloca (0);
-#else
   alloca (0);
-#endif
   return rx_error_msg[(int) ret];
 }
 
@@ -6923,11 +6894,7 @@ re_comp (s)
   rx_comp_buf.rx.local_cset_size = 256;
 
   ret = rx_compile (s, strlen (s), re_syntax_options, &rx_comp_buf);
-#ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-  _alloca (0);
-#else
   alloca (0);
-#endif
 
   /* Yes, we're discarding `__const__' here.  */
   return (char *) rx_error_msg[(int) ret];
@@ -7056,12 +7023,7 @@ regcomp (preg, pattern, cflags)
   preg->rx.se_list_cmp = posix_se_list_order;
   preg->rx.start_set = 0;
   ret = rx_compile (pattern, strlen (pattern), syntax, preg);
-
-#ifdef __WIN32__  /* [RPAP - Feb 97: WIN32 Port] */
-  _alloca (0);
-#else
   alloca (0);
-#endif
 
   /* POSIX doesn't distinguish between an unmatched open-group and an
      unmatched close-group: both are REG_EPAREN.  */
@@ -7162,19 +7124,19 @@ regexec (preg, string, nmatch, pmatch, eflags)
 
 #ifdef __STDC__
 size_t
-regerror (int rx_errcode, __const__ regex_t *preg,
+regerror (int errcode, __const__ regex_t *preg,
 	  char *errbuf, size_t errbuf_size)
 #else
 size_t
-regerror (rx_errcode, preg, errbuf, errbuf_size)
-    int rx_errcode;
+regerror (errcode, preg, errbuf, errbuf_size)
+    int errcode;
     __const__ regex_t *preg;
     char *errbuf;
     size_t errbuf_size;
 #endif
 {
   __const__ char *msg
-    = rx_error_msg[rx_errcode] == 0 ? "Success" : rx_error_msg[rx_errcode];
+    = rx_error_msg[errcode] == 0 ? "Success" : rx_error_msg[errcode];
   size_t msg_size = strlen (msg) + 1; /* Includes the 0.  */
 
   if (errbuf_size != 0)

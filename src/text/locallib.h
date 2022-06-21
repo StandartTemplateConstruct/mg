@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: locallib.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: locallib.h,v 1.3 1994/10/20 03:56:51 tes Exp $
  *
  **************************************************************************/
 

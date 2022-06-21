@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: invf.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: invf.h,v 1.3 1994/11/29 00:31:56 tes Exp $
  *
  **************************************************************************/
 
@@ -33,11 +33,10 @@ struct invf_dict_header
     unsigned long dict_size;
     unsigned long total_bytes;
     unsigned long index_string_bytes;
-    double input_bytes; /* [RJM 07/97: 4G limit] */
+    unsigned long input_bytes;
     unsigned long num_of_docs;
     unsigned long static_num_of_docs;
     unsigned long num_of_words;
-    unsigned long stemmer_num;
     unsigned long stem_method;
   };
 
@@ -51,9 +50,7 @@ struct stem_dict_header
     unsigned long num_of_docs;
     unsigned long static_num_of_docs;
     unsigned long num_of_words;
-    unsigned long stemmer_num;
     unsigned long stem_method;
-    unsigned long indexed;       /* [RPAP - Jan 97: Stem Index Change] */
   };
 
 struct invf_file_header
@@ -63,17 +60,6 @@ struct invf_file_header
     unsigned long skip_mode;
     unsigned long params[16];
     unsigned long InvfLevel;
-  };
-
-/* [RPAP - Jan 97: Stem Index Change] */
-struct stem_idx_header
-  {
-    unsigned long lookback;
-    unsigned long block_size;
-    unsigned long num_blocks;
-    unsigned long blocks_start;
-    unsigned long index_chars;
-    unsigned long num_of_words;
   };
 
 #endif

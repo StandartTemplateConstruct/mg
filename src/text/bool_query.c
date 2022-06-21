@@ -46,21 +46,13 @@
 #include "bool_optimiser.h"
 #include "environment.h"
 
-
-/**********************
-  [RPAP - Feb 97: Term Frequency]
-
-  Shifted to bool_parser.y
-
-  *********************/
-
 /* =========================================================================
  * Function: ReadInTermInfo
  * Description: 
  * Input: 
  * Output: 
  * ========================================================================= */
-/**************************
+
 static void 
 ReadInTermInfo (query_data * qd)
 {
@@ -72,17 +64,13 @@ ReadInTermInfo (query_data * qd)
       TermEntry *te = &(tl->TE[i]);
       WordEntry *we = &(te->WE);
 
-       we->word_num = FindWord (qd->sd, te->Word,
+      we->word_num = FindWord (qd->sd, te->Word,
 			       &we->count, &we->doc_count,
 			       &we->invf_ptr, &we->invf_len);
       if (we->word_num == -1)
 	we->count = we->doc_count = 0;
     }
 }
-
-***********************/
-
-
 
 /* =========================================================================
  * Function: FindNoneTerms 
@@ -305,17 +293,14 @@ AdjustParaDocs (query_data * qd, DocList * Docs)
  * ========================================================================= */
 
 void 
-BooleanQuery (query_data * qd, char *Query, BooleanQueryInfo * bqi,
-	      int stem_method)
+BooleanQuery (query_data * qd, char *Query, BooleanQueryInfo * bqi)
 {
   bool_tree_node *tree;
   DocList *Docs;
   int res = 0;
 
-  tree = ParseBool (Query, MAXLINEBUFFERLEN, &(qd->TL), 
-		    qd->sd->sdh.stemmer_num, stem_method, &res,
-		    qd->sd, qd->sd->sdh.indexed,         /* [RPAP - Jan 97: Stem Index Change] */
-		    &(qd->QTL));                         /* [RPAP - Feb 97: Term Frequency] */
+  tree = ParseBool (Query, MAXLINEBUFFERLEN,
+		    &(qd->TL), qd->sd->sdh.stem_method, &res);
 
   /* [TS:Aug/94] no longer tries to continue after parse failure */
   if (res != 0)			/* failed the parse */
@@ -324,9 +309,7 @@ BooleanQuery (query_data * qd, char *Query, BooleanQueryInfo * bqi,
       return;
     }
 
-  /* [RPAP - Feb 97: Term Frequency] */
-  /*  ReadInTermInfo (qd); */
-
+  ReadInTermInfo (qd);
   FindNoneTerms (qd, tree);
 
   OptimiseBoolTree (tree, qd->TL, atoi (GetEnv ("optimise_type")));
@@ -336,13 +319,10 @@ BooleanQuery (query_data * qd, char *Query, BooleanQueryInfo * bqi,
 
   Docs = BooleanGet (qd, tree, bqi);
 
-/* [RPAP - Feb 97: NZDL Specifics] */
-#if !defined(PARABOOLEANMATCHES) && !defined(NZDL)
   if (qd->id->ifh.InvfLevel == 3)
     {
       AdjustParaDocs (qd, Docs);
     }
-#endif
 
   if (bqi->MaxDocsToRetrieve != -1 && Docs->num > bqi->MaxDocsToRetrieve)
     Docs->num = bqi->MaxDocsToRetrieve;

@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: build.h 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: build.h,v 1.3 1994/10/20 03:56:40 tes Exp $
  *
  **************************************************************************/
 
@@ -154,13 +154,6 @@ extern mg_ullong bytes_processed;
 extern mg_ullong bytes_received;
 /*
  * The number of bytes processed. NOTE: This includes document separators.
- */
-
-
-extern int stemmer_num;
-/*
- * The stemmer to use for stemming words for the inverted file.
- * see stemmer.h
  */
 
 extern int stem_method;

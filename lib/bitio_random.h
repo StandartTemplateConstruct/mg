@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_random.h,v 1.2 1994/09/20 04:19:58 tes Exp $
+ *
  **************************************************************************
  *
  *  This file contains function definitions for doing bitwise input and output
@@ -36,7 +38,6 @@
 #define H_BITIO_RANDOM
 
 #include "longlong.h"
-
 
 typedef struct random_bitio_state
   {

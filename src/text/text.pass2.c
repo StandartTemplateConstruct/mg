@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: text.pass2.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: text.pass2.c,v 1.3 1994/10/20 03:57:10 tes Exp $
  *
  **************************************************************************/
 
@@ -32,7 +32,6 @@
 #include "huffman.h"
 #include "bitio_stdio.h"
 #include "huffman_stdio.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg.h"
 #include "mg_files.h"
@@ -46,25 +45,9 @@
 
 
 
+
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.2  2002/01/22 02:41:14  jrm21
-   Try to print out an error if the aux file couldn't be written to.
-
-   Revision 1.1  1999/08/10 21:18:25  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/12/17 09:12:54  rjmcnab
-
-   Altered mg to process utf-8 encoded Unicode. The main changes
-   are in the parsing of the input, the casefolding, and the stemming.
-
-   Revision 1.1  1998/11/17 09:35:47  rjmcnab
-   *** empty log message ***
-
+   $Log: text.pass2.c,v $
    * Revision 1.3  1994/10/20  03:57:10  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -74,7 +57,7 @@
    *
  */
 
-static char *RCSID = "$Id: text.pass2.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: text.pass2.c,v 1.3 1994/10/20 03:57:10 tes Exp $";
 
 #define POOL_SIZE 1024*256
 
@@ -116,10 +99,9 @@ static u_char *comp_buffer;
 
 static u_long text_length;
 
-/* [RJM 07/97: 4G limit] */
-static double stats_in_tot_bytes = 0.0;
-static double stats_in_bytes = 0.0;
-static double stats_out_bytes = 0.0;
+static u_long stats_in_tot_bytes = 0;
+static u_long stats_in_bytes = 0;
+static u_long stats_out_bytes = 0;
 
 
 static novel_hash_table nht[2];
@@ -155,8 +137,8 @@ init_text_2 (char *file_name)
 					    path)) == COMPERROR)
     return COMPERROR;
 
-  if (!(text = create_file (file_name, TEXT_SUFFIX, "w+b",
-			    MAGIC_TEXT, MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(text = create_file (file_name, TEXT_SUFFIX, "w+",
+			    MAGIC_TEXT, MG_MESSAGE)))
     return COMPERROR;
 
   bzero ((char *) &cth, sizeof (cth));
@@ -166,8 +148,8 @@ init_text_2 (char *file_name)
 
   text_length = sizeof (u_long) + sizeof (cth);
 
-  if (!(text_idx = create_file (file_name, TEXT_IDX_SUFFIX, "w+b",
-				MAGIC_TEXI, MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(text_idx = create_file (file_name, TEXT_IDX_SUFFIX, "w+",
+				MAGIC_TEXI, MG_MESSAGE)))
     return COMPERROR;
 
   if (fwrite (&cth, sizeof (cth), 1, text_idx) != 1)
@@ -240,7 +222,7 @@ process_text_2 (u_char * s_in, int l_in)
   int novels_used[2];
   int swaps[2][MAX_SWAPS];
 
-  which = inaword (s_in, end);
+  which = INAWORD (*s_in);
 
   ENCODE_START (comp_buffer, buf_size)
 
@@ -563,9 +545,7 @@ process_text_2 (u_char * s_in, int l_in)
     }
 #endif
 
-  HTONUL(text_length);  /* [RPAP - Jan 97: Endian Ordering] */
   fwrite (&text_length, sizeof (text_length), 1, text_idx);
-  NTOHUL(text_length);  /* [RPAP - Jan 97: Endian Ordering] */
   text_length += byte_length;
 
 #ifdef DOCDUMP
@@ -611,11 +591,11 @@ process_text_2 (u_char * s_in, int l_in)
       stats_out_bytes += byte_length;
       if (stats_in_bytes >= comp_stat_point)
 	{
-	  fprintf (Comp_Stats, "%10.0f %10.0f %10.0f %f\n", stats_in_tot_bytes,
+	  fprintf (Comp_Stats, "%ld %ld %ld %f\n", stats_in_tot_bytes,
 		   stats_in_bytes, stats_out_bytes,
 		   (double) stats_out_bytes / (double) stats_in_bytes);
-	  stats_in_bytes = 0.0;
-	  stats_out_bytes = 0.0;
+	  stats_in_bytes = 0;
+	  stats_out_bytes = 0;
 	}
     }
 
@@ -632,19 +612,10 @@ write_aux_dict (char *FileName)
 {
   int i;
   FILE *aux;
-  if (!(aux = create_file (FileName, TEXT_DICT_AUX_SUFFIX, "wb",
-			   MAGIC_AUX_DICT, MG_MESSAGE)))  /* [RPAP - Feb 97: WIN32 Port] */
-    {
-      fprintf(stderr,"Couldn't create file %s%s:%s\n",
-              FileName, TEXT_DICT_AUX_SUFFIX,
-#if defined(HAVE_STRERROR) || defined(__WIN32__)
-              strerror(errno)
-#else
-              " "
-#endif
-              );
-      return COMPERROR;
-    }
+  if (!(aux = create_file (FileName, TEXT_DICT_AUX_SUFFIX, "w",
+			   MAGIC_AUX_DICT, MG_MESSAGE)))
+    return COMPERROR;
+
   for (i = 0; i <= 1; i++)
     {
       aux_frags_header afh;
@@ -654,10 +625,6 @@ write_aux_dict (char *FileName)
       afh.mem_for_frags = 0;
       for (cp = nht[i].first_pool; cp; cp = cp->next)
 	afh.mem_for_frags += POOL_SIZE - cp->left;
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      HTONUL(afh.num_frags);
-      HTONUL(afh.mem_for_frags);
 
       fwrite (&afh, sizeof (afh), 1, aux);
 
@@ -695,7 +662,7 @@ estimate_compressed_aux_dict (void)
 	    }
 	}
       for (j = 0; j < 256; j++)
-	if (!chars[j] && PESINAWORD (j) == i)
+	if (!chars[j] && INAWORD (j) == i)
 	  fchars[j] = 1;
 	else
 	  fchars[j] = chars[j];
@@ -727,21 +694,11 @@ int
 done_text_2 (char *FileName)
 {
   if (Comp_Stats)
-    fprintf (Comp_Stats, "%10.0f %10.0f %10.0f %f\n", stats_in_tot_bytes,
+    fprintf (Comp_Stats, "%ld %ld %ld %f\n", stats_in_tot_bytes,
 	     stats_in_bytes, stats_out_bytes,
 	     (double) stats_out_bytes / (double) stats_in_bytes);
 
-  HTONUL(text_length);  /* [RPAP - Jan 97: Endian Ordering] */
   fwrite (&text_length, sizeof (text_length), 1, text_idx);
-  NTOHUL(text_length);  /* [RPAP - Jan 97: Endian Ordering] */
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL(cth.num_of_docs);
-  HTOND(cth.num_of_bytes); /* [RJM 07/97: 4G limit] */
-  HTONUL(cth.num_of_words);
-  HTONUL(cth.length_of_longest_doc);
-  HTOND(cth.ratio);
-
   if (fseek (text_idx, sizeof (u_long), SEEK_SET) == -1 ||
       fwrite (&cth, sizeof (cth), 1, text_idx) != 1)
     return COMPERROR;
@@ -751,14 +708,6 @@ done_text_2 (char *FileName)
       fwrite (&cth, sizeof (cth), 1, text) != 1)
     return COMPERROR;
   fclose (text);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(cth.num_of_docs);
-  NTOHD(cth.num_of_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(cth.num_of_words);
-  NTOHUL(cth.length_of_longest_doc);
-  NTOHD(cth.ratio);
-  
 
   Message ("Compressed Text %.2f Mb ( %u bytes   %0.3f %%)",
 	   text_length / 1024.0 / 1024.0, text_length,

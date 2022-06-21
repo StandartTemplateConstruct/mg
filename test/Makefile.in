@@ -1,0 +1,21 @@
+CC = @CC@
+
+DISTFILES = Makefile.in q1 q2 q3 r1 r2 r3 mgrc1 mgrc2 mgrc3 testmg \
+            alice.sum.l alice.len.l \
+            alice.sum.ll alice.len.ll \
+	    simple_sum.c usinglonglong.c \
+
+all: simple_sum usinglonglong
+
+dist:
+	ln $(DISTFILES) $(distdir)
+
+clean:
+	rm -f simple_sum usinglonglong *.cmp *.diff
+	rm -rf mgdata
+
+simple_sum: simple_sum.c
+	$(CC) -o $@ $?
+
+usinglonglong: usinglonglong.c
+	$(CC) -I../lib -I.. -o $@ $?

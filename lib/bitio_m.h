@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_m.h,v 1.2 1994/09/20 04:19:52 tes Exp $
+ *
  **************************************************************************/
 
 
@@ -56,7 +58,7 @@
 do {									\
   register int _B_x  = (x) - 1;						\
   (v) = 0;								\
-  for (; _B_x ; _B_x>>=1, ++(v));					\
+  for (; _B_x ; _B_x>>=1, (v)++);					\
 } while(0)
 
 
@@ -64,7 +66,7 @@ do {									\
 do {									\
   register int _B_x  = (x);						\
   (v) = -1;								\
-  for (; _B_x ; _B_x>>=1, ++(v));					\
+  for (; _B_x ; _B_x>>=1, (v)++);					\
 } while(0)
 
 
@@ -97,7 +99,7 @@ do {									\
 do {									\
   BIO_DECODE_PROLOGUE;							\
   (x) = 1;								\
-  while (!DECODE_BIT) ++(x);						\
+  while (!DECODE_BIT) (x)++;						\
   BIO_DECODE_EPILOGUE;							\
 } while(0)
 
@@ -105,7 +107,7 @@ do {									\
 do {									\
   BIO_DECODE_PROLOGUE;							\
   (x) = 1;								\
-  while (!DECODE_BIT) ++(x);						\
+  while (!DECODE_BIT) (x)++;						\
   (count) += (x);							\
   BIO_DECODE_EPILOGUE;							\
 } while(0)
@@ -175,8 +177,8 @@ do {									\
     {									\
       CEILLOG_2(_B_b, _B_logofb);					\
       _B_thresh = (1<<_B_logofb) - _B_b;				\
-      --_B_logofb;							\
-      for (_B_i=0; _B_i < _B_logofb; ++_B_i)			 	\
+      _B_logofb--;							\
+      for (_B_i=0; _B_i < _B_logofb; _B_i++)			 	\
         DECODE_ADD(_B_x);						\
       if (_B_x >= _B_thresh)						\
         {								\
@@ -200,15 +202,15 @@ do {									\
     {									\
       CEILLOG_2(_B_b, _B_logofb);					\
       _B_thresh = (1<<_B_logofb) - _B_b;				\
-      --_B_logofb;							\
+      _B_logofb--;							\
       (count) += _B_logofb;					       	\
-      for (_B_i=0; _B_i < _B_logofb; ++_B_i)			 	\
+      for (_B_i=0; _B_i < _B_logofb; _B_i++)			 	\
         DECODE_ADD(_B_x);						\
       if (_B_x >= _B_thresh)						\
         {								\
           DECODE_ADD(_B_x);						\
           _B_x -= _B_thresh;						\
-          ++(count);							\
+          (count)++;							\
 	}								\
       (x) = _B_x+1;							\
     }									\
@@ -273,7 +275,7 @@ do {									\
   register unsigned long _B_xx = 1;					\
   register int _B_nbits = 0;						\
   BIO_DECODE_PROLOGUE;							\
-  while(!DECODE_BIT) ++_B_nbits;					\
+  while(!DECODE_BIT) _B_nbits++;					\
   while (_B_nbits-- > 0)						\
     DECODE_ADD(_B_xx);							\
   (x) = _B_xx;								\
@@ -285,7 +287,7 @@ do {									\
   register unsigned long _B_xx = 1;					\
   register int _B_nbits = 0;						\
   BIO_DECODE_PROLOGUE;							\
-  while(!DECODE_BIT) ++_B_nbits;					\
+  while(!DECODE_BIT) _B_nbits++;					\
   (count) += _B_nbits*2+1;						\
   while (_B_nbits-- > 0)						\
     DECODE_ADD(_B_xx);							\
@@ -330,8 +332,8 @@ do {									\
 do {									\
   register unsigned long _B_xxx;					\
   register int _B_logx;							\
-  GAMMA_DECODE(_B_logx); --_B_logx;					\
-  BINARY_DECODE(_B_xxx, 1<<_B_logx); --_B_xxx;				\
+  GAMMA_DECODE(_B_logx); _B_logx--;					\
+  BINARY_DECODE(_B_xxx, 1<<_B_logx); _B_xxx--;				\
   (x) = _B_xxx + (1<<_B_logx);						\
 } while (0)
 
@@ -339,8 +341,8 @@ do {									\
 do {									\
   register unsigned long _B_xxx;					\
   register int _B_logx;							\
-  GAMMA_DECODE_L(_B_logx, count); --_B_logx;				\
-  BINARY_DECODE_L(_B_xxx, 1<<_B_logx, count); --_B_xxx;			\
+  GAMMA_DECODE_L(_B_logx, count); _B_logx--;				\
+  BINARY_DECODE_L(_B_xxx, 1<<_B_logx, count); _B_xxx--;			\
   (x) = _B_xxx + (1<<_B_logx);						\
 } while (0)
 
@@ -371,7 +373,7 @@ do {									\
   POSITIVE(elias, _B_xx);						\
   while (_B_xx>_B_upper) 						\
     {									\
-      ++_B_k;								\
+      _B_k++;								\
       _B_lower = _B_upper+1;						\
       _B_pow *= _B_s;							\
       _B_upper += _B_b*_B_pow;						\
@@ -391,7 +393,7 @@ do {									\
   POSITIVE(elias, _B_xx);						\
   while (_B_xx>_B_upper) 						\
     {									\
-      ++_B_k;								\
+      _B_k++;								\
       _B_lower = _B_upper+1;						\
       _B_pow *= _B_s;							\
       _B_upper += _B_b*_B_pow;						\
@@ -408,14 +410,14 @@ do {									\
   register int _B_lower=1, _B_upper=1;					\
   register int _B_k;							\
   register double _B_pow=1.0;						\
-  UNARY_DECODE(_B_k); --_B_k;						\
+  UNARY_DECODE(_B_k); _B_k--;						\
   while (_B_k--)							\
     {									\
       _B_lower = _B_upper+1;						\
       _B_pow *= _B_s;							\
       _B_upper += _B_b*_B_pow;						\
     }									\
-  BINARY_DECODE(_B_xx, _B_upper-_B_lower+1); --_B_xx;			\
+  BINARY_DECODE(_B_xx, _B_upper-_B_lower+1); _B_xx--;			\
   POSITIVE(gamma, _B_xx+_B_lower);				  	\
   (x) = _B_xx+_B_lower;							\
 } while (0)
@@ -428,14 +430,14 @@ do {									\
   register int _B_lower=1, _B_upper=1;					\
   register int _B_k;							\
   register double _B_pow=1.0;						\
-  UNARY_DECODE_L(_B_k, count); --_B_k;					\
+  UNARY_DECODE_L(_B_k, count); _B_k--;					\
   while (_B_k--)							\
     {									\
       _B_lower = _B_upper+1;						\
       _B_pow *= _B_s;							\
       _B_upper += _B_b*_B_pow;						\
     }									\
-  BINARY_DECODE_L(_B_xx, _B_upper-_B_lower+1, count); --_B_xx;		\
+  BINARY_DECODE_L(_B_xx, _B_upper-_B_lower+1, count); _B_xx--;		\
   POSITIVE(gamma, _B_xx+_B_lower);				  	\
   (x) = _B_xx+_B_lower;							\
 } while (0)
@@ -451,7 +453,7 @@ do {									\
   POSITIVE(gamma, _B_xx);						\
   while (_B_xx>_B_upper) 						\
     {									\
-      ++_B_k;								\
+      _B_k++;								\
       _B_lower = _B_upper+1;						\
       _B_pow *= _B_s;							\
       _B_upper += _B_b*_B_pow;						\
@@ -471,10 +473,10 @@ do {									\
   register unsigned long _B_bb = (b);					\
   register int _B_xdivb = 0;						\
   POSITIVE(bblock, _B_xx);						\
-  --_B_xx;								\
+  _B_xx--;								\
   while (_B_xx >= _B_bb) 						\
     {									\
-      ++_B_xdivb;							\
+      _B_xdivb++;							\
       _B_xx -= _B_bb;							\
     }									\
   UNARY_ENCODE(_B_xdivb+1);						\
@@ -487,10 +489,10 @@ do {									\
   register unsigned long _B_bb = (b);					\
   register int _B_xdivb = 0;						\
   POSITIVE(bblock, _B_xx);						\
-  --_B_xx;								\
+  _B_xx--;								\
   while (_B_xx >= _B_bb) 						\
     {									\
-      ++_B_xdivb;							\
+      _B_xdivb++;							\
       _B_xx -= _B_bb;							\
     }									\
   UNARY_ENCODE_L(_B_xdivb+1, count);					\
@@ -502,7 +504,7 @@ do {									\
   register unsigned long _B_x1, _B_xx = 0;				\
   register unsigned long _B_bb = (b);					\
   register int _B_xdivb;						\
-  UNARY_DECODE(_B_xdivb); --_B_xdivb;					\
+  UNARY_DECODE(_B_xdivb); _B_xdivb--;					\
   while (_B_xdivb--)							\
     _B_xx += _B_bb;							\
   BINARY_DECODE(_B_x1, _B_bb);						\
@@ -514,7 +516,7 @@ do {									\
   register unsigned long _B_x1, _B_xx = 0;				\
   register unsigned long _B_bb = (b);					\
   register int _B_xdivb;						\
-  UNARY_DECODE_L(_B_xdivb, count); --_B_xdivb;				\
+  UNARY_DECODE_L(_B_xdivb, count); _B_xdivb--;				\
   while (_B_xdivb--)							\
     _B_xx += _B_bb;							\
   BINARY_DECODE_L(_B_x1, _B_bb, count);					\
@@ -527,10 +529,10 @@ do {									\
   register unsigned long _B_bb = (b);					\
   register int _B_xdivb = 0;						\
   POSITIVE(bblock, _B_xx);						\
-  --_B_xx;								\
+  _B_xx--;								\
   while (_B_xx >= _B_bb) 						\
     {									\
-      ++_B_xdivb;							\
+      _B_xdivb++;							\
       _B_xx -= _B_bb;							\
     }									\
   UNARY_LENGTH(_B_xdivb+1, count);					\

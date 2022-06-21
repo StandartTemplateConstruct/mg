@@ -17,46 +17,27 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: term_lists.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: term_lists.c,v 1.1 1994/10/20 03:57:07 tes Exp $
  *
  **************************************************************************/
 
 /*
-   $Log$
-   Revision 1.1  2003/02/20 21:18:24  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.1  1999/08/10 21:18:24  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.2  1998/11/25 07:55:52  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:35:43  rjmcnab
-   *** empty log message ***
-
+   $Log: term_lists.c,v $
    * Revision 1.1  1994/10/20  03:57:07  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
    *
  */
 
-static char *RCSID = "$Id: term_lists.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: term_lists.c,v 1.1 1994/10/20 03:57:07 tes Exp $";
 
+#include "config.h"
 #include "sysfuncs.h"
 
 #include "memlib.h"
 #include "local_strings.h"
 #include "term_lists.h"
 #include "messages.h"
-#include "stemmer.h"
 
 TermList *query_term_list = NULL;
 
@@ -192,14 +173,13 @@ AddTermEntry (TermList ** query_term_list, TermEntry * te)
 
 /* =========================================================================
  * Function: AddTerm
- * Description: Used in boolean parser - see bool_tree   [RPAP - Feb 97: Term Frequency] 
+ * Description: 
  * Input: 
  * Output: 
  * ========================================================================= */
 
 int
-AddTerm (TermList ** query_term_list, u_char * Word, int Count, int word_num,
-	 u_long count, u_long doc_count, u_long invf_ptr, u_long invf_len, int stemmer_num)  /* [RPAP - Feb 97: Term Frequency] */
+AddTerm (TermList ** query_term_list, u_char * Word)
 {
   int j;
   TermList *tl = *query_term_list;
@@ -220,25 +200,15 @@ AddTerm (TermList ** query_term_list, u_char * Word, int Count, int word_num,
     /* Create a new entry in the list for the new word */
     TermEntry te;
 
-    /* [RPAP - Feb 97: Term Frequency] */
-    te.WE.word_num = word_num;
-    te.WE.count = count;
-    te.WE.doc_count = doc_count;
-    te.WE.max_doc_count = doc_count;   /* [RPAP - Jan 97: Stem Index Change] */
-    te.WE.invf_ptr = invf_ptr;
-    te.WE.invf_len = invf_len;
-    te.Count = Count;
+    te.WE.word_num = 0;
+    te.WE.count = 0;
+    te.WE.doc_count = 0;
+    te.WE.invf_ptr = 0;
+    te.WE.invf_len = 0;
+    te.Count = 1;
     te.Word = copy_string (Word);
     if (!te.Word)
       FatalError (1, "Could NOT create memory to add term");
-
-    /* [RPAP - Jan 97: Stem Index Change] */
-    te.Stem = copy_string (Word);
-    if (!te.Stem)
-      FatalError (1, "Could NOT create memory to add term");
-    stemmer (2, stemmer_num, te.Stem);
-
-    te.require_match = 0;  /* [RJM - 07/97: Ranked Required Terms] */
 
     return AddTermEntry (query_term_list, &te);
   }
@@ -259,13 +229,8 @@ FreeTermList (TermList ** the_tl)
   TermList *tl = *the_tl;
 
   for (j = 0; j < tl->num; j++)
-    {
-      if (tl->TE[j].Word)
-	Xfree (tl->TE[j].Word);
-      /* [RPAP - Jan 97: Stem Index Change] */
-      if (tl->TE[j].Stem)
-	Xfree (tl->TE[j].Stem);
-    }
+    if (tl->TE[j].Word)
+      Xfree (tl->TE[j].Word);
   Xfree (tl);
 
   *the_tl = NULL;
@@ -284,7 +249,6 @@ PrintWordEntry (WordEntry * we, FILE * file)
   fprintf (file, "we->word_num = %d\n", we->word_num);
   fprintf (file, "we->count = %ld\n", we->count);
   fprintf (file, "we->doc_count = %ld\n", we->doc_count);
-  fprintf (file, "we->max_doc_count = %ld\n", we->max_doc_count);
   fprintf (file, "we->invf_ptr = %ld\n", we->invf_ptr);
   fprintf (file, "we->invf_len = %ld\n", we->invf_len);
 }
@@ -303,9 +267,6 @@ PrintTermEntry (TermEntry * te, FILE * file)
   fprintf (file, "Term Entry\n");
   fprintf (file, "te->Count = %d\n", te->Count);
   fprintf (file, "te->Word = %s\n", str255_to_string (te->Word, NULL));
-  if (te->Stem != NULL)
-    fprintf (file, "te->Stem = %s\n", str255_to_string (te->Stem, NULL));  /* [RPAP - Jan 97: Stem Index Change] */
-  fprintf (file, "te->require_match = %i\n", te->require_match);  /* [RJM 07/97: Ranked Required Terms] */
   PrintWordEntry (&(te->WE), file);
 
 }

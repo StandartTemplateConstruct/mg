@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: marklist.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: marklist.c,v 1.1.1.1 1994/08/11 03:26:11 tes Exp $
  *
  **************************************************************************/
 

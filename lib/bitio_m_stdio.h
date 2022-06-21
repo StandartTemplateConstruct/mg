@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ * $Id: bitio_m_stdio.h,v 1.2 1994/09/20 04:19:55 tes Exp $
+ *
  **************************************************************************
  *
  *  This file contains macros for doing bitwise input and output on a FILE*.
@@ -62,7 +64,7 @@ stdio_bitio_state;
 
 #define ENCODE_BIT(b)							\
   do {									\
-    --__btg;								\
+    __btg--;								\
     if (b) __buff |= (1 << __btg);					\
     if (!__btg)								\
       {									\

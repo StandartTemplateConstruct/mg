@@ -18,7 +18,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  *
- * $Id: arithcode.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: arithcode.c,v 1.1.1.1 1994/08/11 03:26:09 tes Exp $
  *
  **************************************************************************
  *
@@ -38,7 +38,7 @@ FILE *arith_in, *arith_out;
    $log$
  */
 
-static char *RCSID = "$Id: arithcode.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: arithcode.c,v 1.1.1.1 1994/08/11 03:26:09 tes Exp $";
 
 #undef BECAREFUL
 #define INTEGRATED
@@ -421,6 +421,9 @@ InitArithEncoding (void)
   S_buffer = 0, S_bitstogo = 0;
   cmpbytes = 0, rawbytes = 0;
 
+  arith_in = stdin;
+  arith_out = stdout;
+  
   startoutputingbits ();
   startencoding ();
 }
@@ -433,6 +436,9 @@ InitArithDecoding (void)
   S_buffer = 0, S_bitstogo = 0;
   cmpbytes = 0, rawbytes = 0;
 
+  arith_in = stdin;
+  arith_out = stdout;
+  
   startinputingbits ();
   startdecoding ();
 }

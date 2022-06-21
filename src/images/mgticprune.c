@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: mgticprune.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: mgticprune.c,v 1.1.1.1 1994/08/11 03:26:12 tes Exp $
  *
  **************************************************************************/
 
@@ -245,7 +245,7 @@ averagedout_addagain (marklistptr origlist, marklistptr * librarylist)
 
 
 
-void 
+int 
 main (int argc, char *args[])
 {
   int i;
@@ -390,4 +390,5 @@ main (int argc, char *args[])
       marklist_free (&avglib[i]);
       free (avglib[i]);
     }
+  exit(0);
 }

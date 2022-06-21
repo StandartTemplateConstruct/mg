@@ -2164,7 +2164,7 @@ fastmap_search (rxb, stop, get_burst, app_closure, search_state)
 /* The `emacs' switch turns on certain matching commands
  * that make sense only in Emacs. 
  */
-#include "sysfuncs.h"
+#include "config.h"
 #include "lisp.h"
 #include "buffer.h"
 #include "syntax.h"

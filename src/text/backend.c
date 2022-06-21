@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: backend.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: backend.c,v 1.2 1994/10/20 03:56:30 tes Exp $
  *
  **************************************************************************/
 
@@ -28,7 +28,6 @@
 #include "timing.h"
 #include "filestats.h"
 #include "sptree.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 
 #include "mg_files.h"
@@ -44,14 +43,13 @@
 #include "locallib.h"
 #include "mg_errors.h"
 
-
 static File *
 OpenFile (char *base, char *suffix, unsigned long magic, int *ok)
 {
   char FileName[512];
   File *F;
   sprintf (FileName, "%s%s", base, suffix);
-  if (!(F = Fopen (FileName, "rb", 0)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(F = Fopen (FileName, "r", 0)))
     {
       mg_errno = MG_NOFILE;
       MgErrorData (FileName);
@@ -71,7 +69,6 @@ OpenFile (char *base, char *suffix, unsigned long magic, int *ok)
 	  Fclose (F);
 	  return (NULL);
 	}
-      NTOHUL(m);  /* [RPAP - Jan 97: Endian Ordering] */
       if (m != magic)
 	{
 	  mg_errno = MG_BADMAGIC;
@@ -91,32 +88,21 @@ open_all_files (query_data * qd)
 {
   int ok = 1;
 
-  qd->File_text = OpenFile (qd->textpathname, TEXT_SUFFIX, /* [RJM 06/97: text filename] */
+  qd->File_text = OpenFile (qd->pathname, TEXT_SUFFIX,
 			    MAGIC_TEXT, &ok);
-  qd->File_fast_comp_dict = OpenFile (qd->textpathname, /* [RJM 06/97: text filename] */
-				      TEXT_DICT_FAST_SUFFIX, MAGIC_FAST_DICT, NULL);
+  qd->File_fast_comp_dict = OpenFile (qd->pathname, TEXT_DICT_FAST_SUFFIX,
+				      MAGIC_FAST_DICT, NULL);
   if (!qd->File_fast_comp_dict)
     {
-      qd->File_comp_dict = OpenFile (qd->textpathname, /* [RJM 06/97: text filename] */
-				     TEXT_DICT_SUFFIX, MAGIC_DICT, &ok);
-      qd->File_aux_dict = OpenFile (qd->textpathname, /* [RJM 06/97: text filename] */
-				    TEXT_DICT_AUX_SUFFIX, MAGIC_AUX_DICT, NULL);
+      qd->File_comp_dict = OpenFile (qd->pathname, TEXT_DICT_SUFFIX,
+				     MAGIC_DICT, &ok);
+      qd->File_aux_dict = OpenFile (qd->pathname, TEXT_DICT_AUX_SUFFIX,
+				    MAGIC_AUX_DICT, NULL);
     }
   else
     qd->File_comp_dict = qd->File_aux_dict = NULL;
-
   qd->File_stem = OpenFile (qd->pathname, INVF_DICT_BLOCKED_SUFFIX,
 			    MAGIC_STEM, &ok);
-
-  /* [RPAP - Jan 97: Stem Index Change]
-     These will fail if collection not built with stem indexes */
-  qd->File_stem1 = OpenFile (qd->pathname, INVF_DICT_BLOCKED_1_SUFFIX,
-			     MAGIC_STEM_1, NULL);
-  qd->File_stem2 = OpenFile (qd->pathname, INVF_DICT_BLOCKED_2_SUFFIX,
-			     MAGIC_STEM_2, NULL);
-  qd->File_stem3 = OpenFile (qd->pathname, INVF_DICT_BLOCKED_3_SUFFIX,
-			     MAGIC_STEM_3, NULL);
-
   qd->File_invf = OpenFile (qd->pathname, INVF_SUFFIX,
 			    MAGIC_INVF, &ok);
 
@@ -127,8 +113,8 @@ open_all_files (query_data * qd)
   qd->File_weight_approx = OpenFile (qd->pathname, APPROX_WEIGHTS_SUFFIX,
 				     MAGIC_WGHT_APPROX, NULL);
   if (qd->File_text_idx_wgt == NULL && qd->File_weight_approx == NULL)
-    qd->File_text_idx = OpenFile (qd->textpathname, /* [RJM 06/97: text filename] */
-				  TEXT_IDX_SUFFIX, MAGIC_TEXI, NULL);
+    qd->File_text_idx = OpenFile (qd->pathname, TEXT_IDX_SUFFIX,
+				  MAGIC_TEXI, NULL);
   else
     qd->File_text_idx = NULL;
 
@@ -141,15 +127,6 @@ open_all_files (query_data * qd)
       if (qd->File_comp_dict)
 	Fclose (qd->File_comp_dict);
       Fclose (qd->File_stem);
-
-      /* [RPAP - Jan 97: Stem Index Change] */
-      if (qd->File_stem1)
-	Fclose (qd->File_stem1);
-      if (qd->File_stem2)
-	Fclose (qd->File_stem2);
-      if (qd->File_stem3)
-	Fclose (qd->File_stem3);
-
       Fclose (qd->File_invf);
       if (qd->File_text_idx_wgt)
 	Fclose (qd->File_text_idx_wgt);
@@ -174,15 +151,6 @@ close_all_files (query_data * qd)
   if (qd->File_comp_dict)
     Fclose (qd->File_comp_dict);
   Fclose (qd->File_stem);
-
-  /* [RPAP - Jan 97: Stem Index Change] */
-  if (qd->File_stem1)
-    Fclose (qd->File_stem1);
-  if (qd->File_stem2)
-    Fclose (qd->File_stem2);
-  if (qd->File_stem3)
-    Fclose (qd->File_stem3);
-
   Fclose (qd->File_invf);
   if (qd->File_text_idx_wgt)
     Fclose (qd->File_text_idx_wgt);
@@ -192,15 +160,12 @@ close_all_files (query_data * qd)
     Fclose (qd->File_text_idx);
 }
 
-/* If textname is equal to null then name will be used instead */
-/* [RJM 06/97: text filename] */
+
 query_data *
-InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt)
+InitQuerySystem (char *dir, char *name, InitQueryTimes * iqt)
 {
   query_data *qd;
   char *s;
-
-  if (textname == NULL) textname = name; /* [RJM 06/97: text filename] */
 
   if (!(qd = Xmalloc (sizeof (query_data))))
     {
@@ -215,11 +180,6 @@ InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt)
   qd->doc_pos = qd->buf_in_use = 0;
   qd->TextBufferLen = 0;
   qd->DL = NULL;
-
-  /* [RPAP - Feb 97: Term Frequency] */
-  qd->TL = NULL;
-  qd->QTL = NULL;
-
   qd->TextBuffer = NULL;
 
   qd->tot_hops_taken = 0;
@@ -236,55 +196,32 @@ InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt)
   qd->num_of_ans = 0;
   qd->text_idx_lookups = 0;
 
-  qd->pathname = NULL; /* RJM 06/97: text filename] */
-  qd->textpathname = NULL; /* RJM 06/97: text filename] */
 
   s = strrchr (dir, '/');
   if (s && *(s + 1) == '\0')
     {
-      /* [RJM 06/97: text filename] */
-      if (!(qd->pathname = Xmalloc (strlen (dir) + strlen (name) + 1)) ||
-	  !(qd->textpathname = Xmalloc (strlen (dir) + strlen (textname) + 1)))
+      if (!(qd->pathname = Xmalloc (strlen (dir) + strlen (name) + 1)))
 	{
 	  mg_errno = MG_NOMEM;
-	  if (qd->pathname) Xfree (qd->pathname); /* [RJM 06/97: text filename] */
 	  Xfree (qd);
 	  return (NULL);
 	}
       sprintf (qd->pathname, "%s%s", dir, name);
-      sprintf (qd->textpathname, "%s%s", dir, textname); /* [RJM 06/97: text filename] */
     }
-
   else
     {
-      /* [RJM 06/97: text filename] */
-      if (!(qd->pathname = Xmalloc (strlen (dir) + strlen (name) + 2)) ||
-	  !(qd->textpathname = Xmalloc (strlen (dir) + strlen (textname) + 2)))
+      if (!(qd->pathname = Xmalloc (strlen (dir) + strlen (name) + 2)))
 	{
 	  mg_errno = MG_NOMEM;
-	  if (qd->pathname) Xfree (qd->pathname); /* [RJM 06/97: text filename] */
 	  Xfree (qd);
 	  return (NULL);
 	}
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-      if (dir == NULL || dir[0] == '\0') {
-	sprintf (qd->pathname, "%s", name);
-	sprintf (qd->textpathname, "%s", textname); /* [RJM 06/97: text filename] */
-      } else {
-	sprintf (qd->pathname, "%s%s", dir, name);
-	sprintf (qd->textpathname, "%s%s", dir, textname); /* [RJM 06/97: text filename] */
-      }
-#else
       sprintf (qd->pathname, "%s/%s", dir, name);
-      sprintf (qd->textpathname, "%s/%s", dir, textname); /* [RJM 06/97: text filename] */
-#endif
     }
 
   if (open_all_files (qd) == -1)
     {
       Xfree (qd->pathname);
-      Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
       Xfree (qd);
       return (NULL);
     }
@@ -297,65 +234,8 @@ InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt)
     {
       close_all_files (qd);
       Xfree (qd->pathname);
-      Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
       Xfree (qd);
       return (NULL);
-    }
-
-  /* [RPAP - Jan 97: Stem Index Change] */
-  if ((qd->sd->sdh.indexed & 7) && qd->File_stem1 && qd->File_stem2 && qd->File_stem3)
-    {
-      if (!(qd->sd->stem1 = ReadStemIdxBlk (qd->File_stem1)))
-	{
-	  FreeStemDict (qd->sd);
-	  close_all_files (qd);
-	  Xfree (qd->pathname);
-	  Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
-	  Xfree (qd);
-	  return (NULL);
-	}
-      if (!(qd->sd->stem2 = ReadStemIdxBlk (qd->File_stem2)))
-	{
-	  FreeStemDict (qd->sd);
-	  close_all_files (qd);
-	  Xfree (qd->pathname);
-	  Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
-	  Xfree (qd);
-	  return (NULL);
-	}
-      if (!(qd->sd->stem3 = ReadStemIdxBlk (qd->File_stem3)))
-	{
-	  FreeStemDict (qd->sd);
-	  close_all_files (qd);
-	  Xfree (qd->pathname);
-	  Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
-	  Xfree (qd);
-	  return (NULL);
-	}
-      }
-  else if (qd->sd->sdh.indexed != 0)
-    {
-      FreeStemDict (qd->sd);
-      close_all_files (qd);
-      Xfree (qd->pathname);
-      Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
-      Xfree (qd);
-      return (NULL);
-    }
-  else
-    {
-      if (qd->File_stem1)
-	Fclose (qd->File_stem1);
-      if (qd->File_stem2)
-	Fclose (qd->File_stem2);
-      if (qd->File_stem3)
-	Fclose (qd->File_stem3);
-      qd->File_stem1 = NULL;
-      qd->File_stem2 = NULL;
-      qd->File_stem3 = NULL;
-      qd->sd->stem1 = NULL;
-      qd->sd->stem2 = NULL;
-      qd->sd->stem3 = NULL;
     }
 
   if (iqt)
@@ -368,7 +248,6 @@ InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt)
 	  FreeStemDict (qd->sd);
 	  close_all_files (qd);
 	  Xfree (qd->pathname);
-	  Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
 	  Xfree (qd);
 	  return (NULL);
 	}
@@ -388,7 +267,6 @@ InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt)
       FreeStemDict (qd->sd);
       close_all_files (qd);
       Xfree (qd->pathname);
-      Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
       Xfree (qd);
       return (NULL);
     }
@@ -404,7 +282,6 @@ InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt)
       FreeStemDict (qd->sd);
       close_all_files (qd);
       Xfree (qd->pathname);
-      Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
       Xfree (qd);
       return (NULL);
     }
@@ -418,7 +295,6 @@ InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt)
       FreeStemDict (qd->sd);
       close_all_files (qd);
       Xfree (qd->pathname);
-      Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
       Xfree (qd);
       mg_errno = MG_INVERSION;
       return (NULL);
@@ -436,72 +312,9 @@ InitQuerySystem (char *dir, char *name, char *textname, InitQueryTimes * iqt)
       FreeStemDict (qd->sd);
       close_all_files (qd);
       Xfree (qd->pathname);
-      Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
       Xfree (qd);
       return (NULL);
     }
-
-/* [RPAP - Feb 97: NZDL Additions] */
-#if defined(PARADOCNUM) || defined(NZDL)
-
-/*
-
-This code is based on the TREC_MODE code below to read the .paragraph
-file to determine what document numbers correspond to what paragraphs.
-This code is more space efficient, reading in the .paragraph file
-into memory as an accumulate docnum array.  Eg.  the .paragraph may contain
-
-	[5 3 6 4 7 9 4]
-
-indicating the first document has 5 paragraphs, the next 3, etc.
-This will be stored in memory as
-
-	[0 5 8 14 18 25 34 38]
-
-so a binary search can be performed.  The first 0 is for convenience;
-it prevents testing boundary conditions.
-
-
-The TREC_MODE code does this differently; it stores the array
-
-	[1 1 1 1 1 2 2 2 3 3 3 3 3 3 ....]
-
-allowing directy paragraph to docnum conversion, at the expense
-of memory.
-
-*/ 
-  qd->paragraph = NULL;
-
-  if (qd->id->ifh.InvfLevel == 3)
-    {
-      unsigned long magic;
-      FILE *paragraph;
-      int i;
-      char paraFile[512];
-
-      sprintf(paraFile, "%s%s", qd->pathname, INVF_PARAGRAPH_SUFFIX);
-      paragraph = fopen(paraFile, "rb");
-      if (!paragraph)
-	FatalError(1, "Unable to open 'paraFile'.", paraFile);
-
-      fread((void *)&magic, sizeof(magic), 1, paragraph);
-      qd->paragraph = Xmalloc((qd->td->cth.num_of_docs+1)*sizeof(int));
-      qd->paragraph[0] = 0;
-      for (i = 1; i <= qd->td->cth.num_of_docs; i++)
-	{
-	  int count;
-
-	  if (fread((void *)&count, sizeof(count), 1, paragraph) != 1)
-	    FatalError(1, "Unexpected EOF while reading '%s'.", paraFile);
-	  NTOHSI(count);  /* [RPAP - Jan 97: Endian Ordering] */
-	  qd->paragraph[i] = qd->paragraph[i-1]+count;
-	}
-
-      fclose (paragraph); /* [RJM 07/98: Memory Leak] */
-    }
-  
-  
-#endif
 
 #ifdef TREC_MODE
   {
@@ -513,7 +326,7 @@ of memory.
     if (!strstr (qd->pathname, "trec"))
       goto error;
     sprintf (FileName, "%s%s", qd->pathname, ".DOCIDS");
-    if (!(f = fopen (FileName, "rb")))  /* [RPAP - Feb 97: WIN32 Port] */
+    if (!(f = fopen (FileName, "r")))
       {
 	Message ("Unable to open \"%s\"", FileName);
 	goto error;
@@ -541,13 +354,13 @@ of memory.
 	    goto error;
 	  }
 	sprintf (FileName, "%s%s", qd->pathname, INVF_PARAGRAPH_SUFFIX);
-	if (!(f = fopen (FileName, "rb")))  /* [RPAP - Feb 97: WIN32 Port] */
+	if (!(f = fopen (FileName, "r")))
 	  {
 	    Message ("Unable to open \"%s\"", FileName);
 	    goto error;
 	  }
 	if (fread ((char *) &magic, sizeof (magic), 1, f) != 1 ||
-	    NTOHUL(magic) != MAGIC_PARAGRAPH)  /* [RPAP - Jan 97: Endian Ordering] */
+	    magic != MAGIC_PARAGRAPH)
 	  {
 	    fclose (f);
 	    Message ("Bad magic number in \"%s\"", FileName);
@@ -562,7 +375,6 @@ of memory.
 		fclose (f);
 		goto error;
 	      }
-	    NTOHSI(count);  /* [RPAP - Jan 97: Endian Ordering] */
 	    while (count--)
 	      trec_paras[d++] = i;
 	  }
@@ -608,14 +420,6 @@ ChangeMemInUse (query_data * qd, long delta)
 void 
 FinishQuerySystem (query_data * qd)
 {
-/* [RJM 07/98: Memory Leak] */
-#if defined(PARADOCNUM) || defined(NZDL)
-  if (qd->paragraph != NULL) {
-    Xfree (qd->paragraph);
-    qd->paragraph = NULL;
-  }
-#endif
-
   FreeTextData (qd->td);
   FreeInvfData (qd->id);
   FreeCompDict (qd->cd);
@@ -623,15 +427,9 @@ FinishQuerySystem (query_data * qd)
     FreeWeights (qd->awd);
   FreeStemDict (qd->sd);
   close_all_files (qd);
-  Xfree (qd->textpathname); /* [RJM 06/97: text filename] */
   Xfree (qd->pathname);
   FreeQueryDocs (qd);
-  if (qd->TL != NULL) FreeTermList(&qd->TL);         /* [RJM 07/98: Memory Leak] */
-  if (qd->QTL != NULL) FreeQueryTermList(&qd->QTL);  /* [RJM 07/98: Memory Leak] */
   Xfree (qd);
-
-  /* other global stuff hanging around */
-  MgErrorDeinit ();
 }
 
 
@@ -644,15 +442,6 @@ ResetFileStats (query_data * qd)
   if (qd->File_fast_comp_dict)
     ZeroFileStats (qd->File_fast_comp_dict);
   ZeroFileStats (qd->File_stem);
-
-  /* [RPAP - Jan 97: Stem Index Change] */
-  if (qd->File_stem1)
-    ZeroFileStats (qd->File_stem1);
-  if (qd->File_stem2)
-    ZeroFileStats (qd->File_stem2);
-  if (qd->File_stem3)
-    ZeroFileStats (qd->File_stem3);
-
   ZeroFileStats (qd->File_invf);
   if (qd->File_text_idx_wgt)
     ZeroFileStats (qd->File_text_idx_wgt);
@@ -672,15 +461,6 @@ TransFileStats (query_data * qd)
   if (qd->File_fast_comp_dict)
     qd->File_fast_comp_dict->Current = qd->File_fast_comp_dict->Cumulative;
   qd->File_stem->Current = qd->File_stem->Cumulative;
-
-  /* [RPAP - Jan 97: Stem Index Change] */
-  if (qd->File_stem1)
-    qd->File_stem1->Current = qd->File_stem1->Cumulative;
-  if (qd->File_stem2)
-    qd->File_stem2->Current = qd->File_stem2->Cumulative;
-  if (qd->File_stem3)
-    qd->File_stem3->Current = qd->File_stem3->Cumulative;
-
   qd->File_invf->Current = qd->File_invf->Cumulative;
   if (qd->File_text_idx_wgt)
     qd->File_text_idx_wgt->Current = qd->File_text_idx_wgt->Cumulative;

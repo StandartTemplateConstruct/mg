@@ -17,51 +17,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: ivf.pass2.c 16583 2008-07-29 10:20:36Z davidb $
+ * $Id: ivf.pass2.c,v 1.2 1997/08/02 05:01:57 wew Exp wew $
  *
  **************************************************************************/
 
 /*
-   $Log$
-   Revision 1.3  2004/06/10 05:07:43  kjdon
-   have to declare vars before calling functions!!
-
-   Revision 1.2  2004/06/10 03:02:05  kjdon
-   fixed the bug that was causing it not to be able to create a second index using jni - basically had to reset all the static variables at the start of each pass. the tricky thing to find was the static variables in occur_to_lexical in ivf.pass2
-
-   Revision 1.1  2003/02/20 21:18:23  mdewsnip
-   Addition of MG package for search and retrieval
-
-   Revision 1.2  2001/09/21 12:46:42  kjm18
-   updated mg to be in line with mg_1.3f. Now uses long long for some variables
-   to enable indexing of very large collections.
-
+   $Log: ivf.pass2.c,v $
  * Revision 1.2  1997/08/02  05:01:57  wew
  * changed literal values of 32 for the bit size of magic numbers of
  * files to sizeof (unsigned long) * 8, increased the gap at the start
  * of the invf during processing to 200 bytes
-
-   Revision 1.1  1999/08/10 21:17:54  sjboddie
-   renamed mg-1.3d directory mg
-
-   Revision 1.3  1998/12/17 09:12:51  rjmcnab
-
-   Altered mg to process utf-8 encoded Unicode. The main changes
-   are in the parsing of the input, the casefolding, and the stemming.
-
-   Revision 1.2  1998/11/25 07:55:43  rjmcnab
-
-   Modified mg to that you can specify the stemmer you want
-   to use via a command line option. You specify it to
-   mg_passes during the build process. The number of the
-   stemmer that you used is stored within the inverted
-   dictionary header and the stemmed dictionary header so
-   the correct stemmer is used in later stages of building
-   and querying.
-
-   Revision 1.1  1998/11/17 09:34:45  rjmcnab
-   *** empty log message ***
-
+ *
+ * Revision 1.1  1997/08/02  04:58:11  wew
+ * Initial revision
+ *
    * Revision 1.3  1994/10/20  03:56:49  tes
    * I have rewritten the boolean query optimiser and abstracted out the
    * components of the boolean query.
@@ -78,7 +47,7 @@
  *     Code provided by Owen de Kretser <oldk@cs.mu.oz.au>
  */
 
-static char *RCSID = "$Id: ivf.pass2.c 16583 2008-07-29 10:20:36Z davidb $";
+static char *RCSID = "$Id: ivf.pass2.c,v 1.2 1997/08/02 05:01:57 wew Exp wew $";
 
 #include "local_strings.h"
 #include "sysfuncs.h"
@@ -91,7 +60,6 @@ static char *RCSID = "$Id: ivf.pass2.c 16583 2008-07-29 10:20:36Z davidb $";
 #include "bitio_gen.h"
 #include "bitio_random.h"
 #include "bitio_stdio.h"
-#include "netorder.h"  /* [RPAP - Jan 97: Endian Ordering] */
 
 #include "mg_files.h"
 #include "invf.h"
@@ -100,6 +68,7 @@ static char *RCSID = "$Id: ivf.pass2.c 16583 2008-07-29 10:20:36Z davidb $";
 #include "build.h"
 #include "words.h"
 #include "hash.h"
+#include "stemmer.h"
 
 #include "longlong.h"
 
@@ -111,10 +80,7 @@ static char *RCSID = "$Id: ivf.pass2.c 16583 2008-07-29 10:20:36Z davidb $";
 #define BIO_Random_Tell_X BIO_Random_Tell
 #endif
 
-/* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-#include <io.h>
-#endif
+
 
 #ifndef RND_BUF_SIZE
 #define RND_BUF_SIZE 8*1024
@@ -165,8 +131,8 @@ static FILE *count_trans;	/* Count translation file */
 static FILE *invf_state;	/* Inverted file State */
 static FILE *chunk_state;	/* Chunk state */
 static FILE *chunks;		/* Chunk state */
-static FILE *invf_para = NULL;	/* Paragraph counts file */
-static FILE *weights = NULL;	/* Weights file */
+static FILE *invf_para;		/* Paragraph counts file */
+static FILE *weights;		/* Weights file */
 
 static stdio_bitio_state sbs;
 static random_bitio_state crbs;
@@ -213,33 +179,7 @@ ChangeMemInUse (int mem)
     MaxMemInUse = MemInUse;
 }
 
-void 
-ResetStaticI2Vars() 
-{
-  docs_left = 0;
-  next_docs_left = 0;
-  N = 0;
-  MemBufSize=0;
-  BufToUse=0;
-  memset(&idh, 0, sizeof(idh));
-  wl_size = 0;
-  
-  dict_size = 0;
-  no_of_ptrs = 0;
-  chunks_read = 0;
-  Disk_pos = 0;
-  callnum = 0;
-  wordnum = 0;
-  
-  totalIbytes = 0;
-  totalDbytes = 0;
-  totalHbytes = 0;
-  
-  MemInUse = 0;
-  MaxMemInUse = 0;
-  max_buffer_len = 0;
 
-}
 
 
 static int 
@@ -247,62 +187,58 @@ open_files (char *file_name)
 {
   char FName[200];
 
-  if (!(dict = open_file (file_name, INVF_DICT_SUFFIX, "rb",
-			  MAGIC_STEM_BUILD, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(dict = open_file (file_name, INVF_DICT_SUFFIX, "r",
+			  MAGIC_STEM_BUILD, MG_CONTINUE)))
     return (COMPERROR);
 
-  if (!(hash = open_file (file_name, INVF_DICT_HASH_SUFFIX, "rb",
-			  MAGIC_HASH, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(hash = open_file (file_name, INVF_DICT_HASH_SUFFIX, "r",
+			  MAGIC_HASH, MG_CONTINUE)))
     return (COMPERROR);
 
-  if (!(count = open_file (file_name, INVF_CHUNK_SUFFIX, "rb",
-			   MAGIC_CHUNK, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(count = open_file (file_name, INVF_CHUNK_SUFFIX, "r",
+			   MAGIC_CHUNK, MG_CONTINUE)))
     return (COMPERROR);
   fread (&max_buffer_len, sizeof (max_buffer_len), 1, count);
-  NTOHUL(max_buffer_len);  /* [RPAP - Jan 97: Endian Ordering] */
-
   BIO_Stdio_Decode_Start (count, &sbs);
   next_docs_left = BIO_Stdio_Gamma_Decode (&sbs, NULL) - 1;
 
-  if (!(count_trans = open_file (file_name, INVF_CHUNK_TRANS_SUFFIX, "rb",
-				 MAGIC_CHUNK_TRANS, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(count_trans = open_file (file_name, INVF_CHUNK_TRANS_SUFFIX, "r",
+				 MAGIC_CHUNK_TRANS, MG_CONTINUE)))
     return (COMPERROR);
 
-  if (!(invf = create_file (file_name, INVF_SUFFIX, "w+b",
-			    MAGIC_INVF, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(invf = create_file (file_name, INVF_SUFFIX, "w+",
+			    MAGIC_INVF, MG_CONTINUE)))
     return (COMPERROR);
   fflush (invf);
-  if (!(invf_in = open_file (file_name, INVF_SUFFIX, "rb",
-			     MAGIC_INVF, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(invf_in = open_file (file_name, INVF_SUFFIX, "r",
+			     MAGIC_INVF, MG_CONTINUE)))
     return (COMPERROR);
-  if (!(invf_out = create_file (file_name, INVF_SUFFIX, "wb",
-				MAGIC_INVF, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(invf_out = create_file (file_name, INVF_SUFFIX, "w",
+				MAGIC_INVF, MG_CONTINUE)))
     return (COMPERROR);
   BIO_Random_Start (invf, RND_BUF_SIZE, &rbs);
   BIO_Random_Start (invf, RND_BUF_SIZE, &rbsp);
   ChangeMemInUse (RND_BUF_SIZE * 2);
 
-  if (!(invf_idx = create_file (file_name, INVF_IDX_SUFFIX, "wb",
-				MAGIC_INVI, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
+  if (!(invf_idx = create_file (file_name, INVF_IDX_SUFFIX, "w",
+				MAGIC_INVI, MG_CONTINUE)))
     return (COMPERROR);
 
   if (InvfLevel == 3)
-    if (!(invf_para = create_file (file_name, INVF_PARAGRAPH_SUFFIX, "wb",
-				   MAGIC_PARAGRAPH, MG_CONTINUE)))  /* [RPAP - Feb 97: WIN32 Port] */
+    if (!(invf_para = create_file (file_name, INVF_PARAGRAPH_SUFFIX, "w",
+				   MAGIC_PARAGRAPH, MG_CONTINUE)))
       return (COMPERROR);
 
-  sprintf (FName, FILE_NAME_FORMAT ".%ld", get_basepath (), file_name,
-	   ".invf.state", (long) getpid ());  /* [RPAP - Feb 97: WIN32 Port] */
-  if (!(invf_state = fopen (FName, "w+b")))  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (FName, "%s/%s.invf.state.%ld", get_basepath (), file_name, (long) getpid ());
+  if (!(invf_state = fopen (FName, "w+")))
     {
       Message ("Unable to create \"%s\"", FName);
       return (COMPERROR);
     }
   unlink (FName);
 
-  sprintf (FName, FILE_NAME_FORMAT ".%ld", get_basepath (), file_name,
-	   ".chunk.state", (long) getpid ());  /* [RPAP - Feb 97: WIN32 Port] */
-  if (!(chunk_state = fopen (FName, "w+b")))  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (FName, "%s/%s.chunk.state.%ld", get_basepath (), file_name, (long) getpid ());
+  if (!(chunk_state = fopen (FName, "w+")))
     {
       Message ("Unable to create \"%s\"", FName);
       return (COMPERROR);
@@ -311,9 +247,8 @@ open_files (char *file_name)
   BIO_Random_Start (chunk_state, RND_BUF_SIZE, &crbs);
   ChangeMemInUse (RND_BUF_SIZE);
 
-  sprintf (FName, FILE_NAME_FORMAT ".%ld", get_basepath (), file_name,
-	   ".chunks", (long) getpid ());  /* [RPAP - Feb 97: WIN32 Port] */
-  if (!(chunks = fopen (FName, "w+b")))  /* [RPAP - Feb 97: WIN32 Port] */
+  sprintf (FName, "%s/%s.chunks.%ld", get_basepath (), file_name, (long) getpid ());
+  if (!(chunks = fopen (FName, "w+")))
     {
       Message ("Unable to create \"%s\"", FName);
       return (COMPERROR);
@@ -360,16 +295,11 @@ in_cache (int pos)
 
 
 unsigned long 
-occur_to_lexical (long occ, int clear_state)
+occur_to_lexical (long occ)
 {
   static long pos = -1;
   static random_bitio_state rbs;
   static int val = 0;
-  if (clear_state) {
-    pos = -1;
-    val = 0;
-    return 0;
-  }
   if (pos == -1)
     {
       BIO_Random_Start (count_trans, RND_BUF_SIZE, &rbs);
@@ -414,28 +344,12 @@ init_ivf_2 (char *file_name)
   mg_ullong lasttotalIbits;
   double logN = 0.0;
 
-  ResetStaticI2Vars(); /* clear the global statics */
-  occur_to_lexical(0, 1); /* clear the statics in here*/
-
   if (open_files (file_name) == COMPERROR)
     return COMPERROR;
 
 
   /* Read in the stemmed dictionary file header */
   fread ((char *) &idh, sizeof (idh), 1, dict);
-
-  /* [RPAP - Jan 97: Endian Ordering] */
-  NTOHUL(idh.lookback);
-  NTOHUL(idh.dict_size);
-  NTOHUL(idh.total_bytes);
-  NTOHUL(idh.index_string_bytes);
-  NTOHD(idh.input_bytes); /* [RJM 07/97: 4G limit] */
-  NTOHUL(idh.num_of_docs);
-  NTOHUL(idh.static_num_of_docs);
-  NTOHUL(idh.num_of_words);
-  NTOHUL(idh.stemmer_num);
-  NTOHUL(idh.stem_method);
-
   dict_size = idh.dict_size;
 
   N = idh.num_of_docs;
@@ -455,6 +369,7 @@ init_ivf_2 (char *file_name)
       return COMPERROR;
     }
   totalDbytes += sizeof (word_rec) * idh.dict_size;
+
   /* separate storage for the log(b) values, one byte each */
   if (!(lg_bs = Xmalloc (sizeof (u_char) * idh.dict_size)))
     {
@@ -473,11 +388,9 @@ init_ivf_2 (char *file_name)
 	}
       totalDbytes += sizeof (float) * idh.dict_size;
 
-      if (!(weights = create_file (file_name, WEIGHTS_SUFFIX, "wb",
-				 MAGIC_WGHT, MG_CONTINUE))) { /* [RPAP - Feb 97: WIN32 Port] */
-	Message ("Couldn't open weights file for writing");
+      if (!(weights = open_file (file_name, WEIGHTS_SUFFIX, "w",
+				 MAGIC_WGHT, MG_CONTINUE)))
 	return (COMPERROR);
-      }
     }
   else
     {
@@ -518,10 +431,6 @@ init_ivf_2 (char *file_name)
       fread ((char *) &fcnt, sizeof (fcnt), 1, dict);
       fread ((char *) &wcnt, sizeof (wcnt), 1, dict);
 
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fcnt);
-      NTOHUL(wcnt);
-
       WordRecs[i].last = 0;
       WordRecs[i].ptr = 0;
 
@@ -561,11 +470,9 @@ init_ivf_2 (char *file_name)
 
 
   /* now convert to bytes, and actually get the space */
-#ifdef USE_LONG_LONG
-  totalIbytes = (totalIbits + 7ull) >> 3ull;
-#else
   totalIbytes = (totalIbits + 7ul) >> 3ul;
-#endif
+
+
   return (COMPALLOK);
 
 }
@@ -586,16 +493,17 @@ LoadCounts (void)
   if (MemoryBuffer == NULL)
     {
       MemBufSize = sizeof (unsigned long) * dict_size;
-      if (max_buffer_len > MemBufSize) 
+      if (max_buffer_len > MemBufSize)
 	MemBufSize = max_buffer_len;
       if (!(MemoryBuffer = Xmalloc (MemBufSize)))
 	FatalError (1, "Unable to allocate memory for buffer");
       ChangeMemInUse (MemBufSize);
     }
+
   counts = (unsigned long *) MemoryBuffer;
-/*   bzero ((char *) counts, sizeof (unsigned long) * dict_size); */
-  bzero ((char *) counts, MemBufSize);
-  docs_left = next_docs_left; 
+  bzero ((char *) counts, sizeof (unsigned long) * dict_size);
+
+  docs_left = next_docs_left;
   if (!docs_left)
     FatalError (1, "The number of docs in the current chunk is 0");
 
@@ -605,26 +513,28 @@ LoadCounts (void)
 
   local_N = docs_left;
 
+
+
   for (wr = WordRecs, i = 0; i < dict_size; i++, wr++)
-    wr->ptr = 0; 
+    wr->ptr = 0;
 
   bzero ((char *) lg_bs, dict_size);
 
   for (i = 0; i < numwords; i++)
     {
       unsigned long word_num, wcnt, fcnt, p;
-      word_num = occur_to_lexical (i,0);
-      
+      word_num = occur_to_lexical (i);
+
       wr = &WordRecs[word_num];
-      
+
       wcnt = BIO_Stdio_Gamma_Decode (&sbs, NULL) - 1;
       if (wcnt >= 2)
 	fcnt = BIO_Stdio_Gamma_Decode (&sbs, NULL);
       else
 	fcnt = wcnt;
 
-
       p = fcnt;
+
       if (wcnt)
 	{
 	  register unsigned long length;
@@ -636,9 +546,10 @@ LoadCounts (void)
 	  lg_bs[word_num] = floorlog_2 (BIO_Bblock_Init_W (local_N, p));
 	}
 
+    }
 
-  }  
   crbs_pos = BIO_Random_Tell (&crbs);
+
   totalIbits = 0;
   last_total = 0;
   for (wr = WordRecs, i = 0; i < dict_size; i++, wr++)
@@ -813,10 +724,9 @@ DiskMerge (void)
     }
   Xfree (rbsi);
   ChangeMemInUse (-chunks_read * sizeof (random_bitio_state));
-/*   chunks_read = 0; */
+  chunks_read = 0;
   Xfree (chunk_ptrs);
   ChangeMemInUse (-chunks_read * sizeof (unsigned long));
-  chunks_read = 0;
   Disk_pos = 0;
   BIO_Random_Seek (0, &crbs);
 }
@@ -867,7 +777,7 @@ process_doc (u_char * s_in, int l_in)
 
   callnum++;
 
-  if (!inaword (s_in, end))
+  if (!INAWORD (*s_in))
     if (SkipSGML)
       PARSE_NON_STEM_WORD_OR_SGML_TAG (s_in, end);
     else
@@ -878,7 +788,7 @@ process_doc (u_char * s_in, int l_in)
       u_char Word[MAXSTEMLEN + 1];
 
       PARSE_STEM_WORD (Word, s_in, end);
-      stemmer (idh.stem_method, idh.stemmer_num, Word);
+      stemmer (idh.stem_method, Word);
       if (SkipSGML)
 	PARSE_NON_STEM_WORD_OR_SGML_TAG (s_in, end);
       else
@@ -949,7 +859,6 @@ process_doc (u_char * s_in, int l_in)
 	    else
 	      count++;
 	}
-      HTONF(doc_weight);  /* [RPAP - Jan 97: Endian Ordering] */
       fwrite ((char *) &doc_weight, sizeof (doc_weight), 1, weights);
     }
   docs_left--;
@@ -987,7 +896,6 @@ process_ivf_2 (u_char * s_in, int l_in)
 	    return (COMPERROR);
 	  count++;
 	}
-      HTONSI(count);  /* [RPAP - Jan 97: Endian Ordering] */
       fwrite ((char *) &count, sizeof (count), 1, invf_para);
     }
   return COMPALLOK;
@@ -1034,16 +942,13 @@ done_ivf_2 (char *FileName)
   unsigned long bytes_output;
   struct invf_file_header ifh;
 
-  if (weights)
+  if (MakeWeights)
     fclose (weights);
-  if (invf_para)
+  if (InvfLevel == 3)
     fclose (invf_para);
-
   free_perf_hash (phd);
-  phd = NULL;
 
-  Xfree (MemoryBuffer);
-  MemoryBuffer = NULL;
+  free (MemoryBuffer);
   ChangeMemInUse (-MemBufSize);
 
   BIO_Random_Done (&rbs);
@@ -1054,12 +959,11 @@ done_ivf_2 (char *FileName)
   invf_len = ftell (invf);
 
   fseek (invf_out, sizeof (long), 0);
-  /* [RPAP - Jan 97: Endian Ordering] */
-  HTONUL2(dict_size, ifh.no_of_words);
-  HTONUL2(no_of_ptrs, ifh.no_of_ptrs);
+  ifh.no_of_words = dict_size;
+  ifh.no_of_ptrs = no_of_ptrs;
   ifh.skip_mode = 0;
   bzero ((char *) ifh.params, sizeof (ifh.params));
-  HTONUL2(InvfLevel, ifh.InvfLevel);
+  ifh.InvfLevel = InvfLevel;
   fwrite ((char *) &ifh, sizeof (ifh), 1, invf_out);
 
   bytes_output = ftell (invf_out);
@@ -1076,10 +980,8 @@ done_ivf_2 (char *FileName)
       register unsigned long p;
       u_char dummy1, dummy2[MAXSTEMLEN + 1];
 
-      /* output location to the invf_idx  */
-      HTONUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
       fwrite ((char *) &bytes_output, sizeof (bytes_output), 1, invf_idx);
-      NTOHUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
+
 
       /* read an entry for a word, just to get p value */
       dummy1 = fgetc (dict);
@@ -1087,11 +989,6 @@ done_ivf_2 (char *FileName)
       fread (dummy2, sizeof (u_char), dummy1, dict);
       fread ((char *) &fcnt, sizeof (fcnt), 1, dict);
       fread ((char *) &wcnt, sizeof (wcnt), 1, dict);
-
-      /* [RPAP - Jan 97: Endian Ordering] */
-      NTOHUL(fcnt);
-      NTOHUL(wcnt);
-
       p = fcnt;
 
       isr = in_cache (i);
@@ -1122,25 +1019,16 @@ done_ivf_2 (char *FileName)
 #else
       totalIbits = (totalIbits + 7ul) & 0xfffffff8ul;
 #endif
-
+      
     }
 
   fclose (invf_in);
 
-  /* [RPAP - Feb 97: WIN32 Port] */
-#ifdef __WIN32__
-  if (!(_chsize (_fileno (invf_out), bytes_output)))
-    Message ("Could not truncate invf.");
-#else
   ftruncate (fileno (invf_out), bytes_output);
-#endif
 
   fclose (invf_out);
 
-  HTONUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
   fwrite ((char *) &bytes_output, sizeof (bytes_output), 1, invf_idx);
-  NTOHUL(bytes_output);  /* [RPAP - Jan 97: Endian Ordering] */
-
   fclose (invf_idx);
 
 #ifndef SILENT
@@ -1164,18 +1052,11 @@ done_ivf_2 (char *FileName)
   }
 #endif
 
-  Xfree(chunk_data);
-  chunk_data = NULL;
   Xfree (WordRecs);
-  WordRecs = NULL;
   Xfree (lg_bs);
-  lg_bs = NULL;
-  Xfree (idf);
-  idf = NULL;
-  Xfree (word_list);
-  word_list = NULL;
+
   /* Free the memory allocated for the BIO_Random */
-  occur_to_lexical (-1,1);
+  occur_to_lexical (-1);
 
   BIO_Random_Done (&crbs);
 
