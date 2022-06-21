@@ -1,5 +1,5 @@
-                 MG INFORMATION RETRIEVAL SYSTEM
-                 ===============================
+# Managing Gigabytes (MG) INFORMATION RETRIEVAL SYSTEM
+## Compressing and Indexing Documents and Images
 
 The MG system is a suite of programs for compressing and indexing text
 and images. Most of the functionality implemented in the suite is as
@@ -38,7 +38,7 @@ Instructions on how to build and install mg are in the files INSTALL.mg
 and INSTALL.
 
 
-** CHANGES FROM BOOK
+## CHANGES FROM BOOK
 
 For copyright reasons the stemmer used in this distribution of MG is not
 the same as the one illustrated in Figure 3.9 on page 146 of the MG
@@ -58,7 +58,7 @@ most cases, the increase is just 8 bytes.  This also means that databases
 built with older versions of mg are not compatible with this version.
 
 
-** MG VERSIONS
+## MG VERSIONS
 
 The current version is mg-1.2.1, August 1999. The changes from earlier 
 versions are listed in the file MODIFICATIONS. This can be accessed
@@ -105,11 +105,11 @@ The mg-1.1 extensions include:
 
 -- A real (rather than toy) stemmer.
 
-** PORTABILITY
+## PORTABILITY
 
 Please refer to "README.port".
 
-** CREDITS
+## CREDITS
  
 The MG development is largely the result of research collaboration
 between:
@@ -157,7 +157,7 @@ Council; the Universities of Melbourne, Waikato, Canterbury, and
 Calgary; RMIT; and the Collaborative Information Technology Research
 Institute (Melbourne).
 
-** BUG REPORTS
+## BUG REPORTS
 
 Send bug reports to <alistair@cs.mu.oz.au>.  But do please be aware
 that there is little likelihood of any immediate response apart from a
@@ -169,10 +169,26 @@ software development. And if you have $50,000, and thought MG was
 wonderful, well, think of us...
 
 
-** FURTHER READING
+##  FURTHER READING
 
 The bibliography of the MG book lists a wide range of relevant papers.
 Other recent work relevant to the project is listed at
 <http://www.cs.mu.oz.au/~alistair/abstracts/> and at
 <http://www.cs.rmit.edu.au/~jz/Papers.html>.  The NZDL project home
 page is at <http://www.nzdl.org>.
+
+
+
+## BOOK
+
+
+ - (Website of the book)[https://people.eng.unimelb.edu.au/ammoffat/mg/]
+
+
+As today’s information explosion generates greater and greater volumes of raw data, the challenge of storing and retrieving this information in the most efficient manner continues to grow, whether the data is stored on a local disk or distributed over the World-Wide Web.
+
+Managing Gigabytes helps you to meet this challenge by showing how to capitalize on new methods of compressing and accessing data, enabling you to store information more efficiently and locate specific items more quickly and cost-effectively than ever before. It uniquely covers fully-tested techniques for both text and image compression and shows how to construct a tailor-made electronic index for accessing text, scanned documents, and images.
+
+This book largely avoids extensive theoretical and mathematical discussions, making it accessible to curious laypersons who seek a clear, uncomplicated understanding of this new technology. Real, large-scale problems are illustrated, and the technical material is sprinkled with anecdotes and background information. The new edition is updated with information about recent standards and discoveries. An instructor's supplement will be available.
+
+Managing Gigabytes provides current and comprehensive tools and techniques that will help professionals and academics to work more confidently and effectively in today's increasingly paperless society.
