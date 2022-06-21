@@ -1,0 +1,219 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mg_compression_dict.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mg_compression_dict 1 \*(Dt CITRI
+.SH NAME
+mg_compression_dict \- build a compression dictionary.
+.SH SYNOPSIS
+.B mg_compression_dict
+[
+.B \-h
+]
+[
+.BR \-C " |"
+.BR \-P " |"
+.B  \-S
+]
+.if n .ti +9n
+[
+.BR \-0 " |"
+.BR \-1 " |"
+.BR \-2 " |"
+.B  \-3
+]
+[
+.BR \-H " |"
+.BR \-B " |"
+.BR \-D " |"
+.BR \-Y " |"
+.B  \-M
+]
+.if n .ti +9n
+.if t .ti +.5i
+[
+.BI \-l " lookback"
+]
+[
+.BI \-k " mem"
+]
+[
+.BI \-d " directory"
+]
+.BI \-f " name"
+.SH DESCRIPTION
+.B mg_compression_dict
+builds a compression dictionary based on the statistics gathered
+during the first pass over the text.  The options to the program are
+mainly concerned with limiting the amount of memory the dictionary
+will use and with how the text compressor will cope with any novel
+words found during the compression phase.
+.SH OPTIONS
+Options may appear in any order.
+.TP "\w'\fB\-d\fP \fIdirectory\fP'u+2n"
+.B \-h
+This displays a usage line on
+.IR stderr .
+.TP
+.B \-C
+Build a complete dictionary from the statistics file.  If during the
+text compression phase a novel word is found, then the compressor will
+produce an error message and stop.
+.TP
+.B \-P
+Build a partial dictionary from the statistics file.  This dictionary
+assumes that the statistics file are based on the entire text.  The
+statistics of words not includes in the dictionary are used to
+calculate the escape probability.  If novel words are being coded
+character by character, then there may not be a Huffman code for every
+possible character.  This means that the compressor may fail if a novel
+word contains a novel character.
+.TP
+.B \-S
+Build a seed dictionary from the statistics file.  This dictionary
+assumes that the statistics file is based on only a portion of the
+text to be compressed.  The probability of a novel word is based on the
+number of words that have only occurred once.  If novel words are being
+coded character by character, then the Huffman codes for characters are
+based on the frequency of characters in the dictionary.
+.TP
+.B \-0
+All words from the statistics file are included in the built
+dictionary.
+.TP
+.B \-1
+Words are included in the dictionary until the dictionary reaches the
+desired size.  Words are selected for the dictionary based on the order
+they occurred in the source text.
+.TP
+.B \-2
+Words are included in the dictionary until the dictionary reaches the
+desired size.  The most frequent words are included in the dictionary
+first; where there is a tie for frequency, the shortest word is
+included first.
+.TP
+.B \-3
+Words are included in the dictionary until the dictionary reaches the
+desired size.  The most frequent words are included in the dictionary
+first; where there is a tie for frequency, the shortest word is
+included first.  Words are the shuffled back and forth between the
+`keep' and `discard' lists to find the `optimal' set of words that
+should be in the dictionary.
+.TP
+.B \-H
+This specifies that novel words will be coded character by character
+using Huffman codes.
+.TP
+.B \-B
+This specifies that an auxiliary dictionary will be built by the
+compressor.  Each novel word found will be placed at the end of the
+auxiliary dictionary.  Novel words will be coded in the compressed text
+using binary codes.  The binary code represents their occurrence
+position in the auxiliary dictionary.
+.TP
+.B \-D
+This specifies that an auxiliary dictionary will be built by the
+compressor.  Each novel word found will be placed at the end of the
+auxiliary dictionary.  Novel words will be coded in the compressed text
+using delta codes.  The delta code represents their occurrence position
+in the auxiliary dictionary.
+.TP
+.B \-Y
+This specifies that an auxiliary dictionary will be built by the
+compressor.  Each novel word found will be placed at the end of the
+auxiliary dictionary.  Novel words will be coded in the compressed text
+using a combination of gamma and binary codes.  The code represents
+their occurrence position in the auxiliary dictionary.  This generally
+produces better compression than
+.B \-B
+or
+.BR \-D .
+.TP
+.B \-M
+This specifies that an auxiliary dictionary will be built by the
+compressor.  Each novel word found will be placed at the end of the
+auxiliary dictionary.  Novel words will be coded in the compressed text
+using a combination of gamma and binary codes.  The code represents
+their occurrence position in the auxiliary dictionary.  This method is
+adaptive within documents, and generally produces better compression
+than
+.BR \-B ,
+.B \-D
+or
+.BR \-Y .
+.TP
+.BI \-l " lookback"
+The generated dictionary is designed to be front coded when it is
+loaded into memory.  Under normal circumstances, a front-coded
+dictionary would require scanning from the beginning in order to find
+any particular word.  However, every
+.I lookback
+words in the dictionary, the whole word is stored and a pointer to that
+word maintained.  E.g., if
+.I lookback
+is 4, then every fourth word is stored in its entirety.
+.TP
+.BI \-k " mem"
+This limits the amount of memory to use for the generated
+dictionary.  Words are selected for the dictionary based of the text
+statistics, and whether
+.BR \-0 , " \-1" , " \-2"
+or
+.B \-3
+is specified.  The memory is calculated assuming a lookback of 0,
+irrespective of what actual lookback is specified.  This means that if
+a non-zero lookback is given, the dictionary will actually occupy
+less space than specified by
+.BR \-k .
+.TP
+.BI \-d " directory"
+This specifies the directory where the document collection can be found.
+.TP
+.BI \-f " name"
+This specifies the base name of the document collection.
+.SH ENVIRONMENT
+.TP "\w'\fBMGDATA\fP'u+2n"
+.SB MGDATA
+If this environment variable exists, then its value is used as the
+default directory where the
+.BR mg (1)
+collection files are.  If this variable does not exist, then the
+directory \*(lq\fB.\fP\*(rq is used by default.  The command line
+option
+.BI \-d " directory"
+overrides the directory in
+.BR MGDATA .
+.SH FILES
+.TP 20
+.B *.text.stats
+Statistics about the source text.
+.TP
+.B *.text.dict
+Compression dictionary for the source text.
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_dump (1),
+.BR mg_invf_rebuild (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_text_estimate (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgfelics (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgtic (1),
+.BR mgticbuild (1),
+.BR mgticdump (1),
+.BR mgticprune (1),
+.BR mgticstat (1).

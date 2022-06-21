@@ -1,0 +1,664 @@
+TITLE
+  Parsing of Long Words
+APPLICATION
+ mg-1, mg-2
+TYPE
+  bug
+REPORT
+  tim@cosc.canterbury.ac.nz - May 11th 1994
+FIX
+  tes@kbs.citri.edu.au - August 9th 1994
+CLAIM
+  Mg didn't handle long words properly; it crashed.
+PROBLEM
+  Invf passes calls PARSE_LONG_WORD [words.h] which uses a limit of
+  MAXLONGWORD on iterating thru the string and storing into 
+  a word. MAXLONGWORD = 8192.
+  However, mg strings generally store the length in the first
+  byte limiting them to 255 characters. The word which was passed
+  to PARSE_LONG_WORD was an allocated string of MAXSTEMLEN = 255,
+  which is as large as we should get anyway. Thus when accessing
+  a larger word than 255 chars, PARSE_LONG_WORD would allow it
+  (less than 8192) and would try storing beyond the array limit.
+SOLUTION
+  The author can't remember why PARSE_LONG_WORD was used and what
+  the significance of MAXLONGWORD = 8192 is.
+  So PARSE_LONG_WORD has been changed to PARSE_STEM_WORD which
+  uses MAXSTEMLEN as its limit.
+FILES
+ *   words.h
+ *   invf.pass1.c
+ *   invf.pass2.c
+ *   ivf.pass1.c
+ *   ivf.pass2.c
+ *   query.ranked.c
+*************************************************************
+TITLE
+  Use of Lovins stemmer
+APPLICATION
+  mg-1
+TYPE
+  improve
+REPORT
+  local - 1994
+FIX
+  linh@kbs.citri.edu.au - 1994
+CLAIM
+  Stemming was done naively.
+PROBLEM
+  Only a few types of words and their endings
+  were considered.
+SOLUTION
+  Replacement with a more elaborate "known" stemmer by Lovins.
+  The algorithm is described in:
+    J.B. Lovins, "Development of a Stemming Algorithm",
+    Mechanical Translation and Computational Linguistics, Vol 11,1968.
+FILES
+ *   stem.c
+ *   stem.h
+*************************************************************
+TITLE
+  Different term parsing
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  tes@kbs.citri.edu.au - 23 Aug 1994
+FIX
+  tes@kbs.citri.edu.au - 23 Aug 1994
+CLAIM
+  Boolean queries did not extract words/terms using the
+  same method as is done at inverted-file creation and
+  as is used for rank query parsing.
+PROBLEM
+  The hand-written lex. analyser, query_lex, which is called by
+  the boolean query parser was not calling a common
+  word-extraction routine as used by the rest of mg. 
+  This would be ok if the code did the same things - but they didn't.
+  Query_lex, for instance, did NOT place any limit on the
+  number of digits in a term.
+  Of even more concern, it would allow arbitrary sized words
+  although it used Pascal style strings which store the length
+  in the first byte and can therefore only be 255 characters in length.
+SOLUTION
+  Query_lex in "query.bool.y", was modified to call the routine
+  PARSE_STEM_WORD which is also used by text-inversion routines and
+  ranking query routines.
+  Now all terms are extracted by the same routine.
+  To do this, the end of the line buffer had to be noted as
+  PARSE_STEM_WORD requires a pointer to the end - which is the
+  safe thing to do (don't want to run over the end).
+  This meant I had to find the length of the query line buffer.
+  This was allocated in the file "read_line.c" by the routine,
+  "readline". Its size was the literal number 1024. 
+  This was changed to a constant and placed in "read_line.h".
+  The definition for PARSE_STEM_WORD can be found in "words.h".
+FILES
+ *   query.bool.y
+ *   query.bool.c (by bison)
+ *   read_line.c
+ *   read_line.h
+*************************************************************
+TITLE
+  Highlighting of query terms
+APPLICATION
+  mg-1
+TYPE
+  extend
+REPORT
+  tes@kbs.citri.edu.au - Aug 94
+FIX
+  tes@kbs.citri.edu.au - Sep 94
+CLAIM
+  Difficult to feel happy that the query-result returned is
+  satisfying the query - need to look hard to find the queried words.
+  Need to show words in results using some highlighting method.
+PROBLEM
+  No highlighting of query terms in results.
+SOLUTION
+  Mgquery was previously outputting the decompressed text to a pager
+  such as "less(1)" or "more(1)".
+  (Except when redirected or piped elsewhere :)
+  So what was needed was some sort of highlight pager that instead of
+  displaying the text would also use some means for highlighting the
+  stemmed query words. 
+  Two common forms of highlighting were chosen: underline and bolding.
+  These are supported by "less(1)" and possibly by "more(1)" by
+  using the backspace character.
+  A highlight pager will also need to know which words need to be
+  highlighted. Therefore, the code was modified to build up a
+  string of the stemmed query words for passing to the highlight pager.
+  Design Options:
+  ---------------
+    * Could do text filtering in mgquery before passing out to pager.
+      Instead I pipe to a separate process, the "hilite_words" pager,
+      which filters and pipes into less/more.
+    * Could do different highlighting or a combination.
+    * Could use a different structure for storing the query words other
+      than the hash-table I used.
+FILES
+ *   Makefile - to include hilite_words target
+ *   mg_hilite_words.c
+ *   mgquery.c
+ *   mgquery.1
+ *   query.bool.y
+ *   query.ranked.c
+ *   environment.c
+ *   environment.h
+ *   backend.h
+*************************************************************
+TITLE
+  Mg_compression_dict did premature free
+APPLICATION
+  mg-1
+TYPE
+  bug 
+REPORT
+  R.Sosic@cit.gu.edu.au - 23 Sep 94
+FIX
+  R.Sosic@cit.gu.edu.au - 23 Sep 94
+CLAIM
+  mg_compression_dict dumped core in 
+	file: mg_compression_dict.c
+	function: Write_data
+	line: int codelen = hd->clens[i];
+PROBLEM
+  Huffman data, hd, was freed *before* it was accessed again. 
+SOLUTION
+  The freeing of hd has been moved to after all accesses
+  (just before returning).
+FILES
+ *   mg_compression_dict.c
+*************************************************************
+TITLE
+  Boolean tree optimising rewrite
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  sosic@kurango.cit.gu.edu.au - 23 Sep 94
+FIX
+  tes@kbs.citri.edu.au - Oct 94
+CLAIM
+  "I am still getting core dump in "and" queries in mgquery, 
+   where the first word does not exist, but the second one does."
+PROBLEM
+  Having freed a particular node, it tried to refree it and 
+  access one of its fields.
+
+  I.e. code-fragment...
+
+       FreeNode(curr); /* where curr = CHILD(base) for 1st term in list */
+       FreeNodes(next);
+       FreeNodes(CHILD(base)); 
+              /* but CHILD(base) has already been freed above */
+              /* if the node was the first one in the list */
+
+SOLUTION
+  A number of things in the code seemed a bit dubious to me.
+  So I have rewritten the boolean optimising stage and abstracted out
+  the various stages - each file starts with "bool".
+  Boolean query optimising seems to be a tricky problem. 
+  It is not clear that putting an expression into a certain form will
+  actually simplify it and whether simplification means faster querying.
+  I have converted a given boolean expression into DNF 
+  (Disjunctive Normal Form).  "And not" nodes, which are readily apparent 
+  in DNF, are converted to "diff" nodes.  I have only applied the idempotency 
+  laws involving TRUE and FALSE, and not the ones requiring matching of 
+  expressions - it is a potentially more complicated problem.
+  The optimiser has been tested by playing with "bool_tester", and if you are
+  having a crash or problem in a boolean query it would be worth testing the
+  query on the "bool_tester." The token "*" stands for TRUE (or all documents) 
+  and the token "_" stands for FALSE (or no documents). This should show the 
+  expression before and after optimisation in an ascii tree bracketting format.
+FILES
+ *   bool_tree.c
+ *   bool_parser.y
+ *   bool_optimiser.c
+ *   bool_query.c 
+ *   bool_tester.c
+ *   term_lists.c
+*************************************************************
+TITLE
+  Mgtic pixel placement
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  Bruce McKenzie - bruce@cosc.canterbury.ac.nz (21st Oct 1994)
+FIX
+  singlis@cs.waikato.ac.nz
+CLAIM
+  mgtic crashed on certain files.
+PROBLEM
+  Placing pixels outside of bitmap.
+SOLUTION
+  Changed the putpixel routine to truncate at borders of the image.
+FILES
+ *   mgtic.c
+*************************************************************
+TITLE
+  Improved boolean tree optimising
+APPLICATION
+  mg-1
+TYPE
+  improve
+REPORT
+  tes@kbs.citri.edu.au - 12/Dec/94
+FIX
+  tes@kbs.citri.edu.au - 21/Dec/94, 14/Mar/95
+CLAIM
+  Optimising by conversion to DNF is not necessarily such
+  a good idea - can actually slow things down.
+PROBLEM
+  The distributive law used in converting to DNF
+  duplicates expressions.
+SOLUTION
+  Introduce a query environment variable, optimise_type = 0 | 1 | 2.
+  Type 0 does nothing to the parse tree. 
+  Type 2 does the DNF conversion.
+  Type 1 is the new default and does the following...
+    Do simple tree rearrangement like flattening. 
+    Optimise for CNF queries.
+FILES
+ *   bool_query.c, .h
+ *   bool_optimiser.c
+ *   environment.c
+ *   invf_get.c
+ *   bool_tree.c, .h
+ *   bool_tester.c
+ *   lists.h
+*************************************************************
+TITLE
+  Mgstat with non-existent files
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  beebe@math.utah.edu - 16 May 1994
+FIX
+  tes@kbs.citri.edu.au - 10 Aug 1994
+CLAIM
+  NaNs and Infinites would be printed out by mgstat
+  if unable to open .text or .text.dict file.
+PROBLEM
+  The NaNs etc. were output in the column stating
+  the percentage size of the file compared with the
+  number of input bytes of the source text data.
+  If it couldn't read the .text file with its
+  header describing the number of source text bytes, then
+  in working out the percentage it would divide by zero.
+  Also due to some bad control flow, it wouldn't attempt to
+  open the .text file if it failed when opening 
+  the .text.dict file.
+SOLUTION
+  Only printout the percentage if we can read the header
+  from the .text file.
+  Read in text header irrespective of text dictionary file.
+FILES
+ *   mgstat.c
+*************************************************************
+TITLE
+  nonexistent HOME bug  
+APPLICATION
+  mg-1, mg-2
+TYPE
+  bug 
+REPORT
+  cgn@totara.cs.waikato.ac.nz - 2/May/95
+FIX
+  tes@kbs.citri.edu.au - 2/May/95
+CLAIM
+"The big problem was that mgquery crashes when the HOME environment
+ variable is not set, which is the case when it is run by the www server."
+ [...] "I expect it happens when looking for $HOME/.mgrc."
+PROBLEM
+  The result of getenv("HOME")" was used directly in
+  a sprintf call. If the environment variable HOME
+  was not in existence then null would be used.
+  In some C libraries sprintf will convert the 0
+  string into the string "(null)" on others it will core dump.
+  (For example, Solaris seems to core dump, sunos 4 seems ok).
+SOLUTION
+  The result from getenv("HOME")" is tested before
+  being used.
+FILES
+ *   commands.c
+*************************************************************
+TITLE
+  mgquery collection name preference  
+APPLICATION
+  mg-1, mg-2
+TYPE
+  improve
+REPORT
+  cgn@totara.cs.waikato.ac.nz - 2/May/95
+FIX
+  tes@kbs.citri.edu.au - 4/May/95
+CLAIM
+ Surely something must override mquery's preference for ./bib. 
+ If MGDATA is set correctly, I think it should prefer that collection, 
+ and -d should definitely override it. 
+ I could always say -d . if I really wanted ./bib.
+PROBLEM
+Currently the priority is:
+1.  Check if ./name is a directory,
+     If so then use it as the collection directory.
+2.  Check if ./name.text is a file,
+     If so then use ./ as the collection directory.
+3.  Check if mgdir/name is a directory,
+     If so then use mgdir/name as the collection directory.
+4.  Otherwise,
+     Use mgdir/name as the database file prefix.
+     This would be the case if one used "-f alice/alice".
+     However, one would then not specify a final name argument
+     and we'd never get here. Go figure ???
+SOLUTION
+Moved step 3 to the top instead.
+FILES
+ *   mgquery.c [search_for_collection()]
+*************************************************************
+TITLE
+  Printout of query terms
+APPLICATION
+  mg-1, mg-2
+TYPE
+  extend
+REPORT
+  tes@kbs.citri.edu.au - April 95
+FIX
+  tes@kbs.citri.edu.au - April 95
+CLAIM
+  No easy way to find out the parsed and stemmed words
+  used in the query. Would like to know these words
+  so I can call a separate highlighting program to 
+  highlight these words.
+PROBLEM
+  No facility available.
+SOLUTION
+  A ".queryterms" mgquery command was added which lists
+  out the parsed/stemmed queryterms of the last query.
+FILES
+ *    commands.c (added CmdQueryTerms)
+*************************************************************
+TITLE
+  mg_getrc  
+APPLICATION
+  mg-1, mg-2
+TYPE
+  extend
+REPORT
+  bruce@cosc.canterbury.ac.nz - 2/May/95
+FIX
+   - 
+CLAIM
+  Repeated code had to be written for different named
+  gets but really the same type of parsing required.
+  E.g. one might want to use a standard method for inserting
+  ^Bs between paragraphs for different books. One doesn't
+  want to write duplicate code for each different named book,
+  rather note that each book should be filtered "book" style.
+PROBLEM
+  There was no way of abstracting out types of filters from
+  the name of an instance of a collection.
+SOLUTION
+  Allow information to be given with <name, type, files>.
+  This extra info can be provided in a mg_getrc file.
+  See man page for mg_get for details.
+FILES
+ *    mg_get.sh
+*************************************************************
+TITLE
+  Boolean optimiser #1 with `!'  
+APPLICATION
+  mg-1, mg-2
+TYPE
+  bug 
+REPORT
+  triffid@iconz.co.nz - 20/7/95
+FIX
+  tes@kbs.citri.edu.au - 27/7/95
+CLAIM
+  Complained about not-nodes. 
+  e.g. complained about "croquet & !hedgehog"
+PROBLEM
+  Boolean optimiser type#1 didn't convert
+  "and not"s into diff nodes.
+SOLUTION
+  Added code to convert '&!' to '-'.
+FILES
+ *   mg/bool_optimiser.c [mg-1]
+ *   query/bool_optimiser.c [mg-2]
+*************************************************************
+TITLE
+  Consistent use of stderr
+APPLICATION
+  mg-1
+TYPE
+  improve
+REPORT
+  beebe@math.utah.edu - 16 May 1994
+FIX
+  tes@kbs.citri.edu.au - 11 August 1994
+CLAIM
+  Inconsistent use of stdout/stderr in usage messages.
+PROBLEM
+  Sometimes used "printf" and sometimes used "fprintf(stderr"
+  in usage messages.
+SOLUTION
+  All should now use "fprintf(stderr" in usage messages.
+FILES
+ *   mg_compression_dict.c
+ *   mg_compression_dict.1
+ *   mg_fast_comp_dict.c
+ *   mg_fast_comp_dict.1
+ *   mg_invf_dict.c
+ *   mg_invf_dict.1
+ *   mg_invf_dump.c
+ *   mg_invf_dump.1
+ *   mg_invf_rebuild.c
+ *   mg_invf_rebuild.1
+ *   mg_perf_hash_build.c
+ *   mg_perf_hash_build.1
+ *   mg_text_estimate.c
+ *   mg_text_estimate.1
+ *   mg_weights_build.c
+ *   mg_weights_build.1
+*************************************************************
+TITLE
+  xmg bug
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  cgn@cpsc.ucalgary.ca - 22 April 1994
+FIX
+  cgn@cpsc.ucalgary.ca - 22 April 1994
+CLAIM
+  "Serious problem in xmg, which I fear occurs whenever a query
+   doesn't return anything."
+PROBLEM
+  ??
+SOLUTION
+  [xmg.sh 201] set rank 0
+FILES
+ *   xmg.sh
+*************************************************************
+TITLE
+  Unnecessary loading of text
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  tes@kbs.citri.edu.au - ?? August 1994
+FIX
+  tes@kbs.citri.edu.au - 12 August 1994
+CLAIM
+  Mg was loading and uncompressing text when the
+  query did not require the text.
+PROBLEM
+  There was no test for the query mode
+  before loading and uncompressing the text.
+SOLUTION
+  Only load/uncompress text if query mode
+  is for text, headers or silent(for timing).
+FILES
+ *   mgquery.c
+*************************************************************
+TITLE
+  Man page errors
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  beebe@math.utah.edu - 16 May 1994
+FIX
+  beebe@math.utah.edu - 16 May 1994
+CLAIM
+  Man page errors.
+PROBLEM
+  See below.
+SOLUTION
+ "The mg_make_fast_dict.1 file has been renamed mg_fast_comp_dict.1,
+  and all mg_make_fast_dict strings changed to mg_fast_comp_dict in all
+  man pages.
+  A large number of errors of spelling, typography, spacing, fonts,
+  grammar, omitted words, slang, punctuation, missing man page
+  cross-references, and man-page style have been corrected."
+FILES
+ *    mg_compression_dict.1
+ *    mg_fast_comp_dict.1
+ *    mg_get.1
+ *    mg_invf_dict.1
+ *    mg_invf_dump.1
+ *    mg_invf_rebuild.1
+ *    mg_passes.1
+ *    mg_perf_hash_build.1
+ *    mg_text_estimate.1
+ *    mg_weights_build.1
+ *    mgbilevel.1
+ *    mgbuild.1
+ *    mgdictlist.1
+ *    mgfelics.1
+ *    mgquery.1
+ *    mgstat.1
+ *    mgtic.1
+ *    mgticbuild.1
+ *    mgticdump.1
+ *    mgticprune.1
+ *    mgticstat.1
+ *    xmg.1
+*************************************************************
+TITLE
+  Man page overview
+APPLICATION
+  mg-1
+TYPE
+  extend
+REPORT
+  beebe@math.utah.edu - 
+FIX
+  tes@kbs.citri.edu.au - 17 August 1994
+CLAIM
+  "Write new mg.1 file to give a brief overview of mg, with samples
+   of how to use it.  Otherwise, users are likely to be completely
+   overwhelmed by the number of programs (about 20) which might need to
+   be used, when in reality, only 2 or 3 are likely to be run by end
+   users."
+SOLUTION
+  It was thought that mg.1, written by Nelson Beebe, was very useful
+  but a bit too comprehensive for an introduction.
+  Therefore, two man files, mgintro.1 and mgintro++.1 were written
+  with the basic stuff in mgintro.1 and slightly more advanced stuff
+  in mgintro++.1 . 
+FILES
+ *   mg.1
+ *   mgintro.1
+ *   mgintro++.1 
+*************************************************************
+TITLE
+  Parse errors not bus errors
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  tim@cosc.canterbury.ac.nz - 2 Jun 94
+FIX
+  tes@kbs.citri.edu.au - 19 Aug 94
+CLAIM
+  "These two queries 
+   (which I typed in before I knew what I was doing!!)
+      > The Queen of Hearts, she made some tarts
+      > "The Queen of Hearts" and "she made some tarts"
+      produced the following result:
+      mgquery : parse error
+      Bus error
+  "
+PROBLEM
+  What is expected to happen under boolean querying:
+    Query1:
+    > The Queen of Hearts, she made some tarts
+    will produce a parse error due to the comma which
+    is not a valid TERM.
+    Query2:
+    > "The Queen of Hearts" and "she made some tarts"
+    will store a post-processing string
+    of ''The Queen of Hearts" and "she made some tarts'' and
+    will have a main boolean query of the empty string.
+    This is because the postprocessing string takes in
+    everything between the first quote and the last one.
+    An empty string is illegal for the boolean grammar and
+    hence a parse error.
+  The problem stems from the fact that the processing of
+  the parse tree is carried out, even though we have a 
+  parse error. In the case of using an empty string to build
+  a parse tree, it is likely to leave the parse tree undefined.
+SOLUTION
+  As soon as we find out that there is a parse-error,
+  we abandon any processing of the parse tree.
+FILES
+ *   query.bool.y
+ *   query.bool.c (generated from query.bool.y)
+*************************************************************
+TITLE
+  Perfect hashing on small vocab
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  tes@kbs.citri.edu.au - July 1994
+FIX
+  alistair@cs.mu.oz.au - July 1994
+CLAIM
+  Mg could not handle small collections in the case
+  where there was only a small number of unique words.
+  The perfect hash function would report an error.
+PROBLEM
+  Rounding of the arithmetic during the calculation of the
+  parameters of the perfect hash function was resulting in a
+  combination of values such that the probability of a hash
+  function being found was very small. This led to the limit
+  on the generation loop being exceeded, and eventual
+  failure.
+SOLUTION
+  By using ceiling rather than floor when converting from a
+  floating point value to an integer parameter, the arithmetic
+  is now correct for all lexicon sizes, and the probability of
+  each iteration successfully generating a hash function is
+  sufficiently great that with _very_ high probability the
+  execution loop counter will not be exceeded unless there
+  genuinely is no hash function (for example, if the lexicon
+  contains two words the same there cannot be  a hash
+  function).
+FILES
+ *   perf_hash.c
+*************************************************************

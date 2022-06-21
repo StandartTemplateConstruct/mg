@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+ <head>
+  <title>Index of /greenstone/common-src/indexers/mg/lib</title>
+ </head>
+ <body>
+<h1>Index of /greenstone/common-src/indexers/mg/lib</h1>
+  <table>
+   <tr><th valign="top"><img src="/icons/blank.gif" alt="[ICO]"></th><th><a href="?C=N;O=A">Name</a></th><th><a href="?C=M;O=D">Last modified</a></th><th><a href="?C=S;O=A">Size</a></th><th><a href="?C=D;O=A">Description</a></th></tr>
+   <tr><th colspan="5"><hr></th></tr>
+<tr><td valign="top"><img src="/icons/back.gif" alt="[PARENTDIR]"></td><td><a href="/greenstone/common-src/indexers/mg/">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="alloca.c">alloca.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right"> 14K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_gen.c">bitio_gen.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.9K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_gen.h">bitio_gen.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.1K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_m.h">bitio_m.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right"> 15K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_m_mem.h">bitio_m_mem.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">5.3K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_m_mems.h">bitio_m_mems.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.1K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_m_random.h">bitio_m_random.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.9K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_m_stdio.h">bitio_m_stdio.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_mem.c">bitio_mem.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.6K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_mem.h">bitio_mem.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.3K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_mems.c">bitio_mems.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.8K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_mems.h">bitio_mems.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_random.c">bitio_random.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">5.8K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_random.h">bitio_random.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_stdio.c">bitio_stdio.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.8K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="bitio_stdio.h">bitio_stdio.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.3K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="error.c">error.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="filestats.c">filestats.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.7K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="filestats.h">filestats.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.7K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="ftruncate.c">ftruncate.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.8K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="getopt.c">getopt.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right"> 21K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="getopt.h">getopt.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="getopt1.c">getopt1.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="getpagesize.h">getpagesize.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">685 </td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="gmalloc.c">gmalloc.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right"> 38K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="huffman.c">huffman.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">9.7K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="huffman.h">huffman.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.3K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="huffman_mem.c">huffman_mem.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.5K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="huffman_mem.h">huffman_mem.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="huffman_stdio.c">huffman_stdio.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.6K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="huffman_stdio.h">huffman_stdio.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="local_strings.c">local_strings.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right"> 11K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="local_strings.h">local_strings.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="longlong.h">longlong.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="lovinstem.c">lovinstem.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right"> 24K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="lovinstem.h">lovinstem.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.1K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="memlib.c">memlib.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.3K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="memlib.h">memlib.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="messages.c">messages.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="messages.h">messages.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="mgheap.c">mgheap.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.9K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="mgheap.h">mgheap.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.8K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="pathmax.h">pathmax.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.7K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="perf_hash.c">perf_hash.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right"> 23K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="perf_hash.h">perf_hash.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.5K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="random.c">random.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="random.h">random.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.6K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="regex.c">regex.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">172K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="regex.h">regex.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right"> 18K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="rx.c">rx.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">175K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="rx.h">rx.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">113K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="simplefrenchstem.c">simplefrenchstem.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="simplefrenchstem.h">simplefrenchstem.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="sptree.c">sptree.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">7.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="sptree.h">sptree.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="strcasecmp.c">strcasecmp.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="strstr.c">strstr.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="timing.c">timing.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">5.3K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="timing.h">timing.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.8K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="unitool.h">unitool.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="win32in.c">win32in.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.1K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="win32in.h">win32in.h</a></td><td align="right">2008-07-29 07:20  </td><td align="right">294 </td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="xmalloc.c">xmalloc.c</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.5K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="win32.mak">win32.mak</a></td><td align="right">2009-12-09 05:16  </td><td align="right">3.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="Makefile.in">Makefile.in</a></td><td align="right">2010-05-10 03:24  </td><td align="right">5.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="netorder.h">netorder.h</a></td><td align="right">2010-06-10 09:44  </td><td align="right">9.1K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[TXT]"></td><td><a href="unitool.c">unitool.c</a></td><td align="right">2010-12-09 00:14  </td><td align="right">110K</td><td>&nbsp;</td></tr>
+   <tr><th colspan="5"><hr></th></tr>
+</table>
+<address>Apache/2.4.6 (CentOS) Server at www.bibliotecacpa.org.ar Port 80</address>
+</body></html>

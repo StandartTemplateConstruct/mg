@@ -1,0 +1,155 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mgintro.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.ds r \&\s-1MG\s0
+.if n .ds - \%--
+.if t .ds - \(em
+.\"------------------------------------------------------------
+.am SS
+.LP
+..
+.\"------------------------------------------------------------
+.TH MGINTRO 1 \*(Dt CITRI
+.\"--------------------------------------------------------------
+.SH NAME
+mgintro \- introduction to the MG system
+.\"--------------------------------------------------------------
+.SH DESCRIPTION
+The MG (Managing Gigabytes) system is a collection of
+programs which comprise a full-text retrieval system.
+A full-text retrieval system allows one to create a
+database out of some given documents and then do queries
+upon it to retrieve any relevant documents.
+It is "full-text" in the sense that every word in the
+text is indexed and the query operates only on this index 
+to do the searching.
+.PP
+For example, one could have a database on the book,
+"Alice in Wonderland." A document could be represented by
+each paragraph in the book.
+Having built up the "Alice" database, one could do queries
+such as "cat alice grin" and retrieve any paragraphs which
+match the query. The matching could either be boolean, that
+is the retrieved paragraphs contain a boolean expression of
+the query terms e.g. "cat alice grin"; or the matching
+could be ranked i.e. the most relevant documents to the query
+in relevance order, using some standard heuristic measure.
+.\"--------------------------------------------------------------
+.SS Motivation
+If one wants to find some particular information which
+is stored in a computer text file then one has a few alternative
+courses of action. One can operate directly on the text files
+with utilities such as grep or can process the text files into
+some form of database. Grep is generally limited to identifying
+lines by matching on regular expressions. If the collection 
+of files which grep operates on becomes large, then continual
+passes over the entire text on each query becomes expensive.
+However, its usage is simple as no auxiliary files must be created.
+.PP
+A database consists of some data and indexes into that data. By having
+indexes one can query a large database quickly. Standard databases
+divide the data up into records of fields. This means that the granularity
+of search is a field. In a full-text system, such as \*r,
+there are no fields 
+(or there is an arbitrary sized list of word fields per document) 
+and instead every word is indexed. 
+Using this method, we can except free-form information and yet be fast on searches.
+The next question is what is the overhead of this database.
+In \*r most files which are produced are in a compressed form. The
+two notable compressed files being the given data and the index, called
+an "inverted file". By compressing the files it is possible to have the
+size of the database smaller than the size of the source data.
+.\"--------------------------------------------------------------
+.SS Typical Usage
+The most common use for \*r
+has been as a search database on unix mail files.
+However, any set of text data can be used, one just needs to determine
+what constitutes a document (see 
+.BR mgintro++ (1)
+).
+\*r has also been used on large collections such
+as Comact (Commonwealth Acts of Australia) which is around 132 megabytes 
+and also on sizes up to around 2 gigabytes for TREC 
+(a mixture of collections such as the Wall Street Journal 
+and Associated Press).
+.\"--------------------------------------------------------------
+.SS Getting Started with \*r
+The first thing to do is install the package; 
+please follow the INSTALL instructions.
+Having done this, it is necessary to set a couple of environment variables.
+MGDATA should be set to a directory which is to hold subdirectories for
+each database that you build. For example: 
+.IP
+.B mkdir ~/mgdata; setenv MGDATA ~/mgdata.
+.LP
+If you want to try out building some sample databases then there is
+some sample data such as the "Alice In Wonderland" book. To make sure
+this is accessible you should set the environment variable MGSAMPLE.
+For example: 
+.IP
+.B setenv MGSAMPLE ~/mg/SampleData
+.LP
+Here, "~/mg/SampleData" should contain alice.z .
+.PP
+To build the Alice database (to be contained in $MGDATA/alice subdirectory), 
+type the command 
+.IP
+.B mgbuild alice 
+.LP
+Assuming all went well and some status messages 
+were printed indicating the build was completed, then type 
+.IP
+.B mgquery alice 
+.LP
+to query the database. 
+You can type a few words at the prompt, hit return and
+some relevant documents, Alice paragraphs, should be retrieved.
+Type ".set query ranked" to do ranking queries. Please refer to the 
+.BR mgquery (1)
+man-page for more information on the commands and options of 
+.BR mgquery (1).
+.PP
+The next thing to do is to use \*r
+on a more personal database. If you have
+your mail stored in subdirectories of ~/Mail, such as is done if you use the
+typical set up of 
+.BR elm (1), 
+then type 
+.IP
+.B mgbuild allfiles 
+.LP
+If, however, you keep all your mail in ~/mbox or ~/sentmail, then type 
+.IP
+.B mgbuild mailfiles
+.LP
+.\"--------------------------------------------------------------
+.SH AVAILABILITY
+The \*r software for SunOS 4, Solaris, HPUX, and MIPS,
+can be ftped from: munnari.oz.au [128.250.1.21] in the directory
+/pub/mg. 
+.\"--------------------------------------------------------------
+.SH SEE ALSO
+.na
+.BR mgintro++ (1),
+.BR mgbuild (1),
+.BR mgquery (1)
+.br
+"Guide To The \*r System", in Appendix A of the book:
+.PP
+.RS
+.nf
+Ian H. Witten, Alistair Moffat, and Timothy C. Bell
+.I "Managing Gigabytes: Compressing and Indexing Documents and Images"
+Van Nostrand Reinhold
+1994
+xiv + 429 pages
+US$54.95
+ISBN 0-442-01863-0
+Library of Congress catalog number TA1637 .W58 1994.
+.fi
+.RE

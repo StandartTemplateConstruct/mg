@@ -1,0 +1,103 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mgfelics.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mgfelics 1 \*(Dt CITRI
+.SH NAME
+mgfelics \- fast and efficient lossless image (de)compression
+.SH SYNOPSIS
+.B mgfelics
+.B \-e
+[
+.BI \-k " n"
+]
+.I infile
+[
+.I \>compressed-outfile
+]
+.br
+or
+.br
+.B mgfelics
+.B \-d
+.I compressed-infile
+[
+.I \>outfile
+]
+.SH DESCRIPTION
+.B mgfelics
+is a lossless compression process which can (de)compress portable
+bitmap files in
+.I pgm
+format.
+.B mgfelics
+writes to
+.IR stdout .
+.SH OPTIONS
+.TP "\w'\fB\-k\fP \fIn\fP'u+2n"
+.BI \-k " n"
+An integer parameter (< 32) which controls the compression speed and
+ratio.  The value of
+.I n
+is included in the output stream, and therefore is not needed in the
+decompression stage.  The default value of
+.I n
+is equal to the number of bits required to represent each grey level.
+.TP
+.B \-e
+Encodes the file
+.IR infile ,
+sending the output to
+.IR stdout .
+.TP
+.B \-d
+Decodes the file from
+.IR compressed-infile ,
+sending the output to
+.IR stdout .
+.SH NOTE
+.B mgfelics
+uses a combination of adjusted binary and Rice codes, the choice of
+which for any given pixel depends on the environment as determined by
+the intensity values of neighbouring pixels.  The result is a very
+fast and lossless algorithm for compressing grayscale images.  The
+optional parameter
+.BI \-k " n"
+corresponds to the maximum exponent of the same name in Rice encoding.
+Smaller values of
+.BI \-k " n"
+can result in significant improvement in compression times with a
+corresponding loss in compression ratio.  However the reduction in
+compression ratio with a small
+.BI \-k " n"
+parameter may be insignificant for many images.
+.SH REFERENCES
+Algorithm by Paul G. Howard and Jeffrey Scott Vitter
+of Brown University, RI, and Duke University, NC, respectively.
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_compression_dict (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_dump (1),
+.BR mg_invf_rebuild (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_text_estimate (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgtic (1),
+.BR mgticbuild (1),
+.BR mgticdump (1),
+.BR mgticprune (1),
+.BR mgticstat (1).

@@ -1,0 +1,462 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mg.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mg 1 \*(Dt CITRI
+.\"=====================================================================
+.\" Author:
+.\"     Nelson H. F. Beebe
+.\"     Center for Scientific Computing
+.\"     Department of Mathematics
+.\"     University of Utah
+.\"     Salt Lake City, UT 84112
+.\"     USA
+.\"     Email: beebe@math.utah.edu (Internet)
+.\"=====================================================================
+.if t .ds Bi B\s-2IB\s+2T\\h'-0.1667m'\\v'0.20v'E\\v'-0.20v'\\h'-0.125m'X
+.if n .ds Bi BibTeX
+.if t .ds Te T\\h'-0.1667m'\\v'0.20v'E\\v'-0.20v'\\h'-0.125m'X
+.if n .ds Te TeX
+.\"=====================================================================
+.SH NAME
+mg \- full-text inverted index support
+.\"=====================================================================
+.SH DESCRIPTION
+.B mg
+is a suite of programs that can be used to create
+and query full-text inverted indexes for a
+collection of documents.
+.PP
+An inverted index is essentially a list of
+pointers to occurrences of every word in a
+collection of documents, so that, for example, in
+a collection of Shakespeare's works, one can pose
+questions like
+.I "How often is a fool mentioned in the plays?"
+and
+.I "Are Romeo and Juliet ever mentioned in the same sentence?"
+While search utilities like the UNIX
+.BR grep (1)
+family can be used for simple queries, they suffer
+from several limitations:
+.TP \w'\(bu'u+2n
+\(bu
+Each invocation requires a separate pass over the
+documents, which becomes impossibly slow if the
+document collection is very large.
+.TP
+\(bu
+It is difficult to compose Boolean queries like
+.IR "Caesar AND Brutus AND NOT Antony" .
+.TP
+\(bu
+They provide no mechanism for ranking matches
+according to importance, which is extremely
+important when queries are complex and numerous
+matches are found.
+.TP
+\(bu
+They provide no mechanism for displaying
+surrounding context (although the Free Software
+Foundation
+implementations for the GNU Project remedy this
+with their
+.BI \-A " num"
+(after)
+and
+.BI \-B " num"
+(before)
+switches).
+.TP
+\(bu
+They provide no mechanism for searching for
+occurrences in the same paragraph, unless
+preprocessing is done on the files to wrap
+paragraphs into long lines.  Even that will often
+fail, because input buffer sizes may be limited to
+a few hundred characters.
+.TP
+\(bu
+They provide no easy way to deal with grammatical
+word-ending variants, except by explicit
+enumeration, such as searching for
+.IR compress ,
+.IR compressed ,
+.IR compresses ,
+.IR compressing ,
+and
+.IR compression .
+.PP
+Most computer users have been faced with the
+problem of finding information from a large
+collection of files, such as electronic mail,
+on-line documentation, or source code.  Inverted
+indices provide a highly-effective solution to
+this problem.
+.PP
+The
+.B mg
+software is described in Appendix A of the book
+.RS
+.nf
+Ian H. Witten, Alistair Moffat, and Timothy C. Bell
+.I "Managing Gigabytes: Compressing and Indexing Documents and Images"
+Van Nostrand Reinhold
+1994
+xiv + 429 pages
+US$54.95
+ISBN 0-442-01863-0
+Library of Congress catalog number TA1637 .W58 1994
+.fi
+.RE
+.PP
+Many of the algorithms implemented in
+.B mg
+represent significant advances over previous work,
+both in speed, and in storage requirements.  On a
+fast workstation, in tens of minutes, or a few
+hours,
+.BR mgbuild (1)
+can create an index to
+.I all
+of the words in hundreds of thousands of documents
+occupying hundreds of megabytes, or even more than
+a gigabyte, of disk space.
+.BR mgquery (1)
+can then be used to answer complex queries, with
+responses often returned in a second or less.
+.B mg
+also contains algorithms to deal with images, so
+that with a small amount of descriptive text for
+each image, it is possible to do searches in
+collections of images, and to have retrievals
+display the images using a viewer like
+.BR xv (1).
+.PP
+.B mg
+can deal with compressed text and image files and
+surprisingly, it usually runs faster than it would
+if the files were not compressed!  Thus, the
+considerable disk space savings possible from
+file compression are not lost because of the need
+for fast document search and retrieval.
+.PP
+The Free Software Foundation GNU Project
+compression utilities
+.BR gzip (1)
+and
+.BR gunzip (1)
+are recommended for general use over older
+alternatives, like
+.BR compress (1),
+because of their speed and high compression
+ratios.
+.\"=====================================================================
+.SH AVAILABILITY
+The
+.B mg
+software can be obtained via anonymous ftp to the
+Australian archive host
+.I "munnari.oz.au [128.250.1.21]"
+from the directory
+.IR "/pub/mg" .
+.\"=====================================================================
+.SH "TYPICAL USE OF mg"
+Although
+.B mg
+consists of more than 20 separate programs, many
+of which have complicated command-line options,
+take heart: most users require only two or three
+of these programs, and nothing more than a
+document name on the command line.
+.PP
+A
+.I document
+for
+.B mg
+is a fragment of text suitable for retrieval as a
+unit when it is found to contain a requested word,
+or words.  In a collection of poetry, a document
+might be a stanza, while in a novel, it could be a
+paragraph.  In an index of first lines of poems, a
+document would likely be just a single line.
+.PP
+Just what constitutes a document is decided by a
+user-modifiable UNIX shell script,
+.BR mg_get (1).
+The default script provided with the
+.B mg
+source distribution knows about these named
+document collections:
+.TP \w'mailfiles'u+2n
+.I alice
+Lewis Carroll's
+.I "Alice in Wonderland"
+book.
+.TP
+.I allfiles
+all mail files in the directory tree
+.IR $HOME/Mail ,
+including all of its nested subdirectories.
+.TP
+.I mailfiles
+individual mail messages in
+.IR $HOME/mbox
+and
+.IR $HOME/.sentmail.
+.TP
+.I davinci
+A small collection of text and images from the
+work of Leonardo da Vinci.
+.PP
+A document collection name is used by
+.B mg
+as a
+.BR csh (1)
+.I case
+statement selector, and as a subdirectory name in the
+.B $MGDATA
+directory, or the current directory, if
+.B MGDATA
+is not defined.
+.\"=====================================================================
+.SH "EXTENDING mg_get"
+This section describes how to extend
+.BR mg_get (1)
+to handle a new document collection.
+.PP
+Let us take two examples: all \*(Bi
+.I .bib
+files, and all \*(Te files, contained in
+subdirectories under the login directory.
+.PP
+For \*(Bi, each bibliographic entry will be
+considered a separate document.  In order to
+facilitate easy identification of entries, we
+shall require them to begin at the start of a
+line; the
+.BR bibclean (1)
+utility can be used to standardize the format of
+.I .bib
+files, and to validate their string values, so
+that this requirement is met.
+.PP
+For \*(Te, each paragraph will be a separate
+document, and we assume that paragraphs are
+separated by blank lines.  We assume that files
+with extensions
+.IR .atx ,
+.IR .ltx ,
+.IR .stx ,
+and
+.I .tex
+contain input to common \*(Te macro package
+variants.
+.PP
+Make a personal copy of the
+.I mg_get
+script, using the one in the
+.B mg
+source distribution
+.RI ( mg-1.0/mg/mg_get.sh ),
+or the one in the local binary program directory,
+at many sites called
+.IR /usr/local/bin/mg_get .
+.PP
+Examination of the
+.I mg_get
+script shows that each document collection name is
+used in a
+.BR csh (1)
+.I case
+statement selector, and that most of work is done
+by very simple
+.BR awk (1)
+programs that extract documents from files.  In
+your private copy of the
+.I mg_get
+file, after the line
+.PP
+.nf
+  breaksw #davinci
+.fi
+.PP
+and before the line
+.PP
+.nf
+  default:
+.fi
+.PP
+insert this new code:
+.PP
+.nf
+  case bibfiles:
+# Takes a list of files that contain BibTeX entries, and splits them up
+#   by putting ^B after each entry. Assumes that each entry
+#   begins with a line '^@'.
+  switch ($flag)
+    case '-init':
+    breaksw
+
+    case '-text':
+      find $HOME -name '*.bib' -print | \e
+        sort | \e
+        xargs -l100 awk \e
+          '/^@/&&NR!=1{print "^B"} {print $0} END{print "^B"}'
+    breaksw #-text
+
+    case '-cleanup':
+    breaksw #-cleanup
+
+  endsw #flag
+  breaksw #bibfiles
+
+  case texfiles:
+# Takes a list of TeX files and split them up
+#   by putting ^B after each paragraph. Assumes that each entry
+#   begins with a line '^@'.
+  switch ($flag)
+    case '-init':
+    breaksw
+
+    case '-text':
+      find $HOME -name '*x' -print | \e
+        egrep '[.]tex$|[.]ltx$|[.]atx$|[.]stx$' | \e
+        sort | \e
+        xargs -l100 nawk '   /^ *$/ {if (b!=1) printf "^B";b=1} \e
+            \e!/^ *$/ {print;b=0} \e
+            END {printf "^B"}'
+    breaksw #-text
+
+    case '-cleanup':
+    breaksw #-cleanup
+
+  endsw #flag
+  breaksw #texfiles
+.fi
+.PP
+The ^B characters here are Control-B characters,
+.I not
+caret-B pairs.
+.PP
+If you have a large number of \*(Bi or \*(Te
+files, it is likely that a list of them would be
+too long for the UNIX shell to hold in a single
+variable, or on a single command line.  Thus,
+instead of storing the output of
+.BR find (1)
+in a variable, we proceed more cautiously, and
+employ it to produce a list of the required files,
+then pipe them to
+.BR xargs (1),
+which in turn passes up to 100 filenames at a time
+to
+.BR nawk (1)
+for document selection.
+.PP
+Install this modified
+.I mg_get
+script in your private directory for executable
+programs (e.g.
+.IR $HOME/bin ),
+create a directory
+.I $HOME/mgdata
+to hold the index, issue a
+.B rehash
+command if you are using
+.BR csh (1)
+or
+.BR tcsh (1),
+ensure that
+.I mg_get
+occurs in your search path
+.I before
+any system-wide one (the command
+.BI which " mg_get"
+will tell you which version will be selected),
+then create the inverted indexes by
+.BI mgbuild " bibfiles"
+and
+.B mgbuild
+.IR texfiles .
+These commands may take several minutes to run if
+you have a lot of \*(Bi or \*(Te files, or a large
+home directory tree.  Once they are complete, you
+can then query the index with the commands
+.BI mgquery " bibfiles"
+and
+.B mgquery
+.IR texfiles .
+These should respond very rapidly.
+.PP
+In order to keep your index up-to-date, you should
+arrange for it to be recreated automatically and
+regularly, probably every night.  You can do this
+with
+.BR cron (1).
+Use the command
+.B "crontab \-e"
+to edit your
+.I crontab
+file and add two lines like this:
+.PP
+.nf
+00 04 * * * mgbuild bibfiles >$HOME/mgdata/bibfiles.log 2>&1
+15 04 * * * mgbuild texfiles >$HOME/mgdata/texfiles.log 2>&1
+.fi
+.PP
+Save the file and exit the editor.  Now, every
+night at 4am and 4:15am,
+.BR mgbuild (1)
+will reconstruct your inverted indexes, and the
+results of the builds will be saved in log files
+in your
+.I $HOME/mgdata
+directory.
+.\"=====================================================================
+.SH "SEE ALSO"
+.na
+.BR awk (1),
+.BR bibclean (1),
+.BR bibtex (1),
+.BR compress (1),
+.BR csh (1),
+.BR grep (1),
+.BR gunzip (1),
+.BR gzip (1),
+.BR mg_compression_dict (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_dump (1),
+.BR mg_invf_rebuild (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_text_estimate (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgfelics (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgtic (1),
+.BR mgticbuild (1),
+.BR mgticdump (1),
+.BR mgticprune (1),
+.BR mgticstat (1),
+.BR nawk (1),
+.BR tcsh (1),
+.BR tex (1),
+.BR xargs (1),
+.BR xmg (1),
+.BR xv (1).
+.\"=====================================================================
+.\" This is for GNU Emacs file-specific customization:
+.\" Local Variables:
+.\" fill-column: 50
+.\" End:

@@ -1,0 +1,1023 @@
+TITLE
+  Parsing of Long Words
+APPLICATION
+ mg-1, mg-2
+TYPE
+  bug
+REPORT
+  tim@cosc.canterbury.ac.nz - May 11th 1994
+FIX
+  tes@kbs.citri.edu.au - August 9th 1994
+CLAIM
+  Mg didn't handle long words properly; it crashed.
+PROBLEM
+  Invf passes calls PARSE_LONG_WORD [words.h] which uses a limit of
+  MAXLONGWORD on iterating thru the string and storing into 
+  a word. MAXLONGWORD = 8192.
+  However, mg strings generally store the length in the first
+  byte limiting them to 255 characters. The word which was passed
+  to PARSE_LONG_WORD was an allocated string of MAXSTEMLEN = 255,
+  which is as large as we should get anyway. Thus when accessing
+  a larger word than 255 chars, PARSE_LONG_WORD would allow it
+  (less than 8192) and would try storing beyond the array limit.
+SOLUTION
+  The author can't remember why PARSE_LONG_WORD was used and what
+  the significance of MAXLONGWORD = 8192 is.
+  So PARSE_LONG_WORD has been changed to PARSE_STEM_WORD which
+  uses MAXSTEMLEN as its limit.
+FILES
+ *   words.h
+ *   invf.pass1.c
+ *   invf.pass2.c
+ *   ivf.pass1.c
+ *   ivf.pass2.c
+ *   query.ranked.c
+*************************************************************
+TITLE
+  Use of Lovins stemmer
+APPLICATION
+  mg-1
+TYPE
+  improve
+REPORT
+  local - 1994
+FIX
+  linh@kbs.citri.edu.au - 1994
+CLAIM
+  Stemming was done naively.
+PROBLEM
+  Only a few types of words and their endings
+  were considered.
+SOLUTION
+  Replacement with a more elaborate "known" stemmer by Lovins.
+  The algorithm is described in:
+    J.B. Lovins, "Development of a Stemming Algorithm",
+    Mechanical Translation and Computational Linguistics, Vol 11,1968.
+FILES
+ *   stem.c
+ *   stem.h
+*************************************************************
+TITLE
+  Different term parsing
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  tes@kbs.citri.edu.au - 23 Aug 1994
+FIX
+  tes@kbs.citri.edu.au - 23 Aug 1994
+CLAIM
+  Boolean queries did not extract words/terms using the
+  same method as is done at inverted-file creation and
+  as is used for rank query parsing.
+PROBLEM
+  The hand-written lex. analyser, query_lex, which is called by
+  the boolean query parser was not calling a common
+  word-extraction routine as used by the rest of mg. 
+  This would be ok if the code did the same things - but they didn't.
+  Query_lex, for instance, did NOT place any limit on the
+  number of digits in a term.
+  Of even more concern, it would allow arbitrary sized words
+  although it used Pascal style strings which store the length
+  in the first byte and can therefore only be 255 characters in length.
+SOLUTION
+  Query_lex in "query.bool.y", was modified to call the routine
+  PARSE_STEM_WORD which is also used by text-inversion routines and
+  ranking query routines.
+  Now all terms are extracted by the same routine.
+  To do this, the end of the line buffer had to be noted as
+  PARSE_STEM_WORD requires a pointer to the end - which is the
+  safe thing to do (don't want to run over the end).
+  This meant I had to find the length of the query line buffer.
+  This was allocated in the file "read_line.c" by the routine,
+  "readline". Its size was the literal number 1024. 
+  This was changed to a constant and placed in "read_line.h".
+  The definition for PARSE_STEM_WORD can be found in "words.h".
+FILES
+ *   query.bool.y
+ *   query.bool.c (by bison)
+ *   read_line.c
+ *   read_line.h
+*************************************************************
+TITLE
+  Highlighting of query terms
+APPLICATION
+  mg-1
+TYPE
+  extend
+REPORT
+  tes@kbs.citri.edu.au - Aug 94
+FIX
+  tes@kbs.citri.edu.au - Sep 94
+CLAIM
+  Difficult to feel happy that the query-result returned is
+  satisfying the query - need to look hard to find the queried words.
+  Need to show words in results using some highlighting method.
+PROBLEM
+  No highlighting of query terms in results.
+SOLUTION
+  Mgquery was previously outputting the decompressed text to a pager
+  such as "less(1)" or "more(1)".
+  (Except when redirected or piped elsewhere :)
+  So what was needed was some sort of highlight pager that instead of
+  displaying the text would also use some means for highlighting the
+  stemmed query words. 
+  Two common forms of highlighting were chosen: underline and bolding.
+  These are supported by "less(1)" and possibly by "more(1)" by
+  using the backspace character.
+  A highlight pager will also need to know which words need to be
+  highlighted. Therefore, the code was modified to build up a
+  string of the stemmed query words for passing to the highlight pager.
+  Design Options:
+  ---------------
+    * Could do text filtering in mgquery before passing out to pager.
+      Instead I pipe to a separate process, the "hilite_words" pager,
+      which filters and pipes into less/more.
+    * Could do different highlighting or a combination.
+    * Could use a different structure for storing the query words other
+      than the hash-table I used.
+FILES
+ *   Makefile - to include hilite_words target
+ *   mg_hilite_words.c
+ *   mgquery.c
+ *   mgquery.1
+ *   query.bool.y
+ *   query.ranked.c
+ *   environment.c
+ *   environment.h
+ *   backend.h
+*************************************************************
+TITLE
+  Mg_compression_dict did premature free
+APPLICATION
+  mg-1
+TYPE
+  bug 
+REPORT
+  R.Sosic@cit.gu.edu.au - 23 Sep 94
+FIX
+  R.Sosic@cit.gu.edu.au - 23 Sep 94
+CLAIM
+  mg_compression_dict dumped core in 
+	file: mg_compression_dict.c
+	function: Write_data
+	line: int codelen = hd->clens[i];
+PROBLEM
+  Huffman data, hd, was freed *before* it was accessed again. 
+SOLUTION
+  The freeing of hd has been moved to after all accesses
+  (just before returning).
+FILES
+ *   mg_compression_dict.c
+*************************************************************
+TITLE
+  Boolean tree optimising rewrite
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  sosic@kurango.cit.gu.edu.au - 23 Sep 94
+FIX
+  tes@kbs.citri.edu.au - Oct 94
+CLAIM
+  "I am still getting core dump in "and" queries in mgquery, 
+   where the first word does not exist, but the second one does."
+PROBLEM
+  Having freed a particular node, it tried to refree it and 
+  access one of its fields.
+
+  I.e. code-fragment...
+
+       FreeNode(curr); /* where curr = CHILD(base) for 1st term in list */
+       FreeNodes(next);
+       FreeNodes(CHILD(base)); 
+              /* but CHILD(base) has already been freed above */
+              /* if the node was the first one in the list */
+
+SOLUTION
+  A number of things in the code seemed a bit dubious to me.
+  So I have rewritten the boolean optimising stage and abstracted out
+  the various stages - each file starts with "bool".
+  Boolean query optimising seems to be a tricky problem. 
+  It is not clear that putting an expression into a certain form will
+  actually simplify it and whether simplification means faster querying.
+  I have converted a given boolean expression into DNF 
+  (Disjunctive Normal Form).  "And not" nodes, which are readily apparent 
+  in DNF, are converted to "diff" nodes.  I have only applied the idempotency 
+  laws involving TRUE and FALSE, and not the ones requiring matching of 
+  expressions - it is a potentially more complicated problem.
+  The optimiser has been tested by playing with "bool_tester", and if you are
+  having a crash or problem in a boolean query it would be worth testing the
+  query on the "bool_tester." The token "*" stands for TRUE (or all documents) 
+  and the token "_" stands for FALSE (or no documents). This should show the 
+  expression before and after optimisation in an ascii tree bracketting format.
+FILES
+ *   bool_tree.c
+ *   bool_parser.y
+ *   bool_optimiser.c
+ *   bool_query.c 
+ *   bool_tester.c
+ *   term_lists.c
+*************************************************************
+TITLE
+  Mgtic pixel placement
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  Bruce McKenzie - bruce@cosc.canterbury.ac.nz (21st Oct 1994)
+FIX
+  singlis@cs.waikato.ac.nz
+CLAIM
+  mgtic crashed on certain files.
+PROBLEM
+  Placing pixels outside of bitmap.
+SOLUTION
+  Changed the putpixel routine to truncate at borders of the image.
+FILES
+ *   mgtic.c
+*************************************************************
+TITLE
+  Improved boolean tree optimising
+APPLICATION
+  mg-1
+TYPE
+  improve
+REPORT
+  tes@kbs.citri.edu.au - 12/Dec/94
+FIX
+  tes@kbs.citri.edu.au - 21/Dec/94, 14/Mar/95
+CLAIM
+  Optimising by conversion to DNF is not necessarily such
+  a good idea - can actually slow things down.
+PROBLEM
+  The distributive law used in converting to DNF
+  duplicates expressions.
+SOLUTION
+  Introduce a query environment variable, optimise_type = 0 | 1 | 2.
+  Type 0 does nothing to the parse tree. 
+  Type 2 does the DNF conversion.
+  Type 1 is the new default and does the following...
+    Do simple tree rearrangement like flattening. 
+    Optimise for CNF queries.
+FILES
+ *   bool_query.c, .h
+ *   bool_optimiser.c
+ *   environment.c
+ *   invf_get.c
+ *   bool_tree.c, .h
+ *   bool_tester.c
+ *   lists.h
+*************************************************************
+TITLE
+  Similarity variants
+APPLICATION
+  mg-2
+TYPE
+  extend
+REPORT
+  jz@kbs.citri.edu.au/alistair - June 1994
+FIX
+  tes@kbs.citri.edu.au - July 1994 .. Feb 1995
+CLAIM
+  Can only use one type of similarity measure - the
+  standard cosine measure.
+PROBLEM
+  See CITRI/TR-95-3 for more details.
+  The standard measure can be broken up into 7 components.
+  The 7 components are  
+  Each one of these components has a number of alternatives.
+  The overall measure, S_qd, can also be altered.
+  Thus the particular similarity measure used can be specified
+  by an 8 dimensional vector.
+  What is desired is to be able to specify to mgquery an option
+  and a 8-digit string representing this vector (assuming that
+  any one alternative can have at most 9 (not using zero) variants).
+SOLUTION
+  The programs which had to be modified were:
+  (i) mgquery,
+  (ii) mg_weights_build.
+  The other mg programs in existence store the text, indexing info,
+  and the basic statistics such as N, n, ft, fdt.  
+  Other programs which had to be created were:
+  (i) mg_fmd_build,
+  (ii) mg_wt_build.
+  Mg_fmd_build will create the file to store the f_md statistic, 
+  where f_md is the largest (maximum) f_dt of any term in document, d.
+  Mg_wt_build will create the file to store the w_t primitive.
+  It only creates this for the w_t variants 6-9 which would require
+  extra passes of invf at query time if they were not stored here.
+  For details on similarity changes for mgquery and mg_weights_build,
+  please see the other modification entries.  
+FILES
+ *   mg_fmd_build.c
+ *   mg_wt_build.c
+ *   build_lib.c, build_lib.h
+*************************************************************
+TITLE
+  Similarity variants for mgquery
+APPLICATION
+  mg-2
+TYPE
+  extend
+REPORT
+  jz@kbs.citri.edu.au/alistair - June 1994
+FIX
+  tes@kbs.citri.edu.au - July 1994 .. Feb 1995
+CLAIM
+  "mgquery" needs to be altered to allow modification of
+  the similarity measure. 
+PROBLEM
+  See CITRI/TR-95-3 for more details.
+SOLUTION
+
+  Most of the similarity measures, Sqd, are of the 
+  form:   Aqd
+         -----
+          Bqd
+  where Bqd is an expression involving Wd and possibly Wq,
+  where Aqd is a sum over the common document/query terms
+  of w_qt and w_dt.
+  Building of Aqd
+  ===============
+  The calculation of Aqd is done in the file build_Aqd.c .
+  The functions for doing this used to be in the file invf_get.c .
+  Build_Aqd.c contains 4 different functions for building Aqd, each
+  of them building a different data structure:
+    (i) Array, (ii) Splay Tree, (iii) Hash Table, (iv) List Table.
+  Each of these routines seems to have been construction by modifications
+  to duplicated code. This is often the easiest way to construct variants
+  but is quite difficult to maintain consistency. 
+  As the aim of the exercise was to try out different sim. measures for
+  retrieval effectiveness, I only modified the code that constructed
+  an array. This routine was called "CosineDecode"; I changed it to
+  "build_Aqd_Array." This change reflects the fact that we are only 
+  calculating Aqd and this need not be used for the Cosine measure.
+  The other routines: "CosineDecodeSplay," "CosineDecodeHash," and
+  "CosineDecodeList" have been left unaltered - they need to be updated
+  in the future which would be best be done by abstracting out common code.
+  By the stage of building Aqd, the query terms have been looked up in
+  the inverted file dictionary and put into a list.
+  This list of common terms is traversed to lookup the corresponding
+  invf entries. Before the invf entry is processed, all query and term
+  relevant statistics and primitive quantities are calculated.
+  For example, fqt, ft, wt, rqt, wqt, Wq-partial-sum.
+  To save unnecessary calculations, there is a test for each value
+  to see whether it is needed e.g. "if (sim->variant_needs & NEEDS_wt) ... ".  
+  Aside: Variant Needs
+  --------------------
+  The idea behind the "variant_needs" field is to be able to have all
+  the code in the one place for each possible variant and this code would
+  get the information at the correct time/place only when it is needed.
+  The overhead is a "bit-and" and "test" for each component.
+  The important concern though, is that the "variant_needs" must be
+  accurate i.e. it should be carefully maintained.
+  Each possible need is stored as a bit position in a constant/macro
+  of the form "NEEDS_component" e.g. NEEDS_wt, NEEDS_nt 
+  More recently (Jan/95), I have found that the _need_ing of a component
+  may be relevant to a particular purpose, that is, it may be needed in
+  one situation and not another. This was the case for Wd. 
+  For rdt#6, Wd was needed, however, it might not be needed for Bqd, the
+  denominator of Sqd. So I changed from NEEDS_Wd to NEEDS_Wd_for_Sqd and
+  NEEDS_Wd_for_rdt. 
+  --------------------
+  To handle the different calculations of the variants, I wrote macros
+  based around a switch statement. All these macros are stored in the file
+  "similarity.h" . The point of doing this is to centralise most of the changes
+  and cut down on the number of files which have to be altered if a new
+  way of calculating a primitive is to be added.  
+  This is achieved by having a data record called, "Similarity_variant" whose
+  fields includes all the statistics and the similarity primitives.
+  So the standard procedure is to see if something is needed and if so, then
+  extract it from an mg file or calculate it using a macro - most of the
+  input and output to the macro is done via the "Similarity_variant" structure.
+  As well as calculating Aqd, it is also a convenient place to calculate Wq.
+  Previously, for Cosine measure, Wq was not needed because each Aqd was directly
+  divided by Wq and thus would not change the ordering. However, there are
+  some Sqd's which divide by a sum involving Wq and thus need Wq. 
+  Calculating Sqd and Ordering Documents
+  ====================================== 
+  The file query.ranked.c contains the code for calculating Sqd using the
+  approximate Wd in order to do the ranking of the documents.
+  The mg-1 file was cleaned up and modified slightly.
+  All the heap data structures and routines were taken out and placed in 
+  their own file, heap_weights.c/.h .
+  The major components/steps in the ranking process were abstracted into
+  macros and functions:
+    calc_MaxParas
+    insert_heap_entry
+    insert_greater_heap_entry
+    approx_guided_insert
+    fill_initial_heap
+    add_heap_remainders
+    change_heap_to_exact
+    add_remainder_exact_weights
+    Make_Exact_Root
+    build_doc_list
+  Aside: Zeroing of an Aqd Element
+  -------------------------
+  One interesting change concerned the use of zeroing out an Aqd element
+  so as to mark it as being used in the heap.
+  In the heap, the approx. Sqd is stored based on Aqd/Wd-approx.
+  Later when Aqd is required, it can be extracted from the approx. Sqd
+  by muliplication of Wd-approx i.e. Aqd = Sqd-approx * Wd-approx.
+  This, however, is not always possible for the various Sqd variants.
+  So, instead of zeroing out Aqd, I decided just to make it negative.
+  -------------------------
+  In some Sqd cases, Wd and Wd-approx. are not required. In which case,
+  step 3 which calls on "change_heap_to_exact", "Heap_Build" and
+  "add_remainder_exact_weights" is not required.
+ 
+FILES
+ *    build_Aqd.c
+ *    query.ranked.c
+ *    similarity.c/.h (in libmg)
+ *    heap_weights.c/.h
+ *    backend.c/.h
+*************************************************************
+TITLE
+  Similarity variants for mg_weights_build
+APPLICATION
+  mg-2
+TYPE
+  extend
+REPORT
+  jz@kbs.citri.edu.au/alistair - June 1994
+FIX
+  tes@kbs.citri.edu.au - July 1994 .. Feb 1995
+CLAIM
+  "mg_weights_build" needs to be altered to allow modification of
+  the similarity measure.
+PROBLEM
+  See CITRI/TR-95-3 for more details.
+SOLUTION
+  The weight files which are generated for a particular similarity
+  measure have their names extended by a suffix.
+  In the case of Wd#1 no weights are generated.
+  In the case of the standard cosine weights, Wd#2, a 3 letter suffix
+  is used to represent .
+  In the case of the other Wd variants, a one letter suffix is used
+  to represent which Wd variant it is.
+  In each case, the variant input (e.g. -q 22222222) should be the whole
+  similarity variant string and the relevant fields will be extracted out.
+  This is done for consistency in code and interface. 
+  The code is fairly similar to the original.
+  A dependency check has been added so that the dates of files and the
+  type of needed files is verified before building.
+  The dependencies include, invf dictionary, invf index, invf, fmd and wt files.
+  The major change here, is the possible use of fmd and/or wt files.
+  Later when I was having to write mg_fmd_build and mg_wt_build,
+  I decided to abstract out some macros, namely:
+    Get_ft, Get_ft_Ft, loop_invf_entry,
+  which were put into "build_lib.c" .
+  "loop_invf_entry" takes a function/macro name as a parameter and applies
+  it to the sim record (with field fdt set), current doc number and modifies
+  the return value. 
+FILES
+ *   mg_weights_build.c
+ *   build_lib.c
+*************************************************************
+TITLE
+  Mgstat with non-existent files
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  beebe@math.utah.edu - 16 May 1994
+FIX
+  tes@kbs.citri.edu.au - 10 Aug 1994
+CLAIM
+  NaNs and Infinites would be printed out by mgstat
+  if unable to open .text or .text.dict file.
+PROBLEM
+  The NaNs etc. were output in the column stating
+  the percentage size of the file compared with the
+  number of input bytes of the source text data.
+  If it couldn't read the .text file with its
+  header describing the number of source text bytes, then
+  in working out the percentage it would divide by zero.
+  Also due to some bad control flow, it wouldn't attempt to
+  open the .text file if it failed when opening 
+  the .text.dict file.
+SOLUTION
+  Only printout the percentage if we can read the header
+  from the .text file.
+  Read in text header irrespective of text dictionary file.
+FILES
+ *   mgstat.c
+*************************************************************
+TITLE
+  Boolean tree optimisations
+APPLICATION
+  mg-2
+TYPE
+  extend
+REPORT
+  (i) tes@kbs.citri.edu.au - 28/Sep/94
+  (ii) tes@kbs.citri.edu.au - 12/Dec/94
+FIX
+  (i) tes@kbs.citri.edu.au - 18/Oct/94
+  (ii) tes@kbs.citri.edu.au - 21/Dec/94
+CLAIM
+  The initial prompt for investigating the optimisation of
+  boolean queries is noted in the mg-1 mod14.txt. 
+  The code for optimising seemed to have a number of faults.
+PROBLEM
+  Boolean optimisation was unreliable.
+SOLUTION
+  Initially (in case (i) above, see mg-1/mod14.txt), I rewrote 
+  all the boolean tree and optimising code. I converted the boolean
+  expression into DNF. I did this after reading some notes about 
+  the steps involved in optimisation and they suggested standardising
+  in some normal form. I thought that DNF would be appropriate so that
+  all the terms are converted to be part of "and" expressions and be
+  evaluated quickly using skipping.
+  This, however, can suffer quite badly if the distributive law is
+  applied to often and the query expands in size. If there was
+  some sort of cacheing of invf entries, then it might not be so
+  bad otherwise there is quite an overhead on reading the same
+  invf entry more than once.
+
+  As it happens, CNF queries are reasonably common, where the user
+  queries with a conjunction of disjunctions of similes:
+    e.g. (car | automobile | vehicle) & (fast | quick | speedy)
+  This sort of CNF query expands a hell of a lot !
+  So after speaking with Justin who wanted to benchmark Atlas with Mg on
+  these sort of queries, I looked up the MG book for other ideas.
+
+  The method that I implemented was the following:
+
+  -----------------------------------------------------------------
+  Steps of tree modifications:
+    Gets literals by pushing the nots down, detecting T/F at leaves
+    and collapsing the tree by detecting  'and' of 'and's and 'or' of
+    'or's.
+    Next it looks at the or nodes and if all the children are terms
+    then it marks the or-node as such.
+    Finally, the or-term-nodes are sorted by using the sum of their
+    ft's for comparison.
+  Steps at query evaluation:
+    If it comes across an 'and' of 'or-terms' then the evaluation is
+    done noting the distributive law.
+    I.e. a & (b | c | d) = (a & b) | (a & c) | (a & d)
+    Assuming 'a' is the c-set of documents.
+    All of 'a' is tested against 'b' and matching ones are marked.
+    Next, all the unmarked members of 'a' are tested against 'c'.
+    Likewise for 'd'.
+    Now all the marked members of our c-set are kept.
+    When we do the testing, we can use the skipping in the invf entries.
+  -----------------------------------------------------------------
+
+
+  After doing this, I added the choice of which type of optimisation
+  the user wanted by adding query-environment-variable, "optimise_type".
+  Type 0 = no parse tree modification. 
+  Type 1 = Or-term recognition and CNF query evaluation optimisation. 
+  Type 2 = Put into DNF form. [generally not recommended]
+FILES
+ *   bool_tree.c
+ *   bool_parser.y
+ *   bool_optimiser.c
+ *   bool_query.c 
+ *   bool_tester.c
+ *   term_lists.c
+ *   query_env.c
+ *   invf_get.c [GetDocsOp]
+*************************************************************
+TITLE
+  nonexistent HOME bug  
+APPLICATION
+  mg-1, mg-2
+TYPE
+  bug 
+REPORT
+  cgn@totara.cs.waikato.ac.nz - 2/May/95
+FIX
+  tes@kbs.citri.edu.au - 2/May/95
+CLAIM
+"The big problem was that mgquery crashes when the HOME environment
+ variable is not set, which is the case when it is run by the www server."
+ [...] "I expect it happens when looking for $HOME/.mgrc."
+PROBLEM
+  The result of getenv("HOME")" was used directly in
+  a sprintf call. If the environment variable HOME
+  was not in existence then null would be used.
+  In some C libraries sprintf will convert the 0
+  string into the string "(null)" on others it will core dump.
+  (For example, Solaris seems to core dump, sunos 4 seems ok).
+SOLUTION
+  The result from getenv("HOME")" is tested before
+  being used.
+FILES
+ *   commands.c
+*************************************************************
+TITLE
+  mgquery collection name preference  
+APPLICATION
+  mg-1, mg-2
+TYPE
+  improve
+REPORT
+  cgn@totara.cs.waikato.ac.nz - 2/May/95
+FIX
+  tes@kbs.citri.edu.au - 4/May/95
+CLAIM
+ Surely something must override mquery's preference for ./bib. 
+ If MGDATA is set correctly, I think it should prefer that collection, 
+ and -d should definitely override it. 
+ I could always say -d . if I really wanted ./bib.
+PROBLEM
+Currently the priority is:
+1.  Check if ./name is a directory,
+     If so then use it as the collection directory.
+2.  Check if ./name.text is a file,
+     If so then use ./ as the collection directory.
+3.  Check if mgdir/name is a directory,
+     If so then use mgdir/name as the collection directory.
+4.  Otherwise,
+     Use mgdir/name as the database file prefix.
+     This would be the case if one used "-f alice/alice".
+     However, one would then not specify a final name argument
+     and we'd never get here. Go figure ???
+SOLUTION
+Moved step 3 to the top instead.
+FILES
+ *   mgquery.c [search_for_collection()]
+*************************************************************
+TITLE
+  Printout of query terms
+APPLICATION
+  mg-1, mg-2
+TYPE
+  extend
+REPORT
+  tes@kbs.citri.edu.au - April 95
+FIX
+  tes@kbs.citri.edu.au - April 95
+CLAIM
+  No easy way to find out the parsed and stemmed words
+  used in the query. Would like to know these words
+  so I can call a separate highlighting program to 
+  highlight these words.
+PROBLEM
+  No facility available.
+SOLUTION
+  A ".queryterms" mgquery command was added which lists
+  out the parsed/stemmed queryterms of the last query.
+FILES
+ *    commands.c (added CmdQueryTerms)
+*************************************************************
+TITLE
+  mg_getrc  
+APPLICATION
+  mg-1, mg-2
+TYPE
+  extend
+REPORT
+  bruce@cosc.canterbury.ac.nz - 2/May/95
+FIX
+   - 
+CLAIM
+  Repeated code had to be written for different named
+  gets but really the same type of parsing required.
+  E.g. one might want to use a standard method for inserting
+  ^Bs between paragraphs for different books. One doesn't
+  want to write duplicate code for each different named book,
+  rather note that each book should be filtered "book" style.
+PROBLEM
+  There was no way of abstracting out types of filters from
+  the name of an instance of a collection.
+SOLUTION
+  Allow information to be given with <name, type, files>.
+  This extra info can be provided in a mg_getrc file.
+  See man page for mg_get for details.
+FILES
+ *    mg_get.sh
+*************************************************************
+TITLE
+  TREC DocNo file   
+APPLICATION
+  mg-2
+TYPE
+  improve
+REPORT
+  tes@kbs.citri.edu.au - 26/May/95
+FIX
+  tes@kbs.citri.edu.au - 26/May/95
+CLAIM
+  MG has problems dealing with trec docnos for trec disk 3.
+PROBLEM
+  Trec DocNos file didn't have a wide enough field
+  to handle disk 3. 
+SOLUTION
+  Allow different width fields for file.
+  It is still fixed width but a number in the header
+  says how wide the field is.
+FILES
+ *   passes/mg.special.c
+ *   query/mgquery.c
+*************************************************************
+TITLE
+  Boolean optimiser #1 with `!'  
+APPLICATION
+  mg-1, mg-2
+TYPE
+  bug 
+REPORT
+  triffid@iconz.co.nz - 20/7/95
+FIX
+  tes@kbs.citri.edu.au - 27/7/95
+CLAIM
+  Complained about not-nodes. 
+  e.g. complained about "croquet & !hedgehog"
+PROBLEM
+  Boolean optimiser type#1 didn't convert
+  "and not"s into diff nodes.
+SOLUTION
+  Added code to convert '&!' to '-'.
+FILES
+ *   mg/bool_optimiser.c [mg-1]
+ *   query/bool_optimiser.c [mg-2]
+*************************************************************
+TITLE
+   Autoconfiguring mg-1  
+APPLICATION
+  mg-1
+TYPE
+  improve
+REPORT
+  many people - 94/95
+FIX
+  tes@kbs.citri.edu.au - Aug/95
+CLAIM
+  Portability is limited by setting up c-macros just for particular
+  machines and operating systems.
+  People had to make changes for HP, Next, Linux, Dec Alpha, ...
+PROBLEM
+  Porting was only targetting at the machines that the author had
+  access to.
+SOLUTION
+  Use GNU's autoconfigure program.
+  This allows checking of the systems features/characteristics.
+  It also allows some checking for specific machines/OS - although
+  I have not utilised this option.
+  I used GNU's tar-1.11.8 as an example to base my changes on.
+  I also used autoscan to generate the initial "configure.in".
+  The "Makefile.in"s were done very similarly to GNU tar's.
+  The "config.h" and "sysfuncs.h" files were scrapped and 
+  rewritten. The new "config.h" file is generated by the configure
+  script - it contains all the #define's for the system features.
+  The "sysfuncs.h" file wraps up a number of system headers. 
+  For example, some systems use , while some use ;
+  which one is included is decided in "sysfuncs.h".
+  I have also used GNU tar's use of ansi2knr in its Makefiles.
+  This should hopefully allow the package to work on a system with
+  only a K&R C compiler.
+  However, there are probably problems with what I have done.
+  I am concerned about <stdarg.h> for example.
+  I also noticed that "ansi2knr" require function definitions as
+  the GNU coding style recommends ie. with function name the first
+  string on the line. This prompted me to run all the package's code
+  thru GNU's indent.
+  Setting up the configure changes is difficult. It really seems
+  necessary to try the package out on many target machines so one
+  can know what is necessary.
+  A simple check target for the main Makefile has been written.
+  It is used to see if the installation is working - it does
+  not test much of the functionality of mg.
+  It does cmp's on data files and diff's on query/result files.
+FILES
+  Most of the files in the distribution.
+*************************************************************
+TITLE
+  Consistent use of stderr
+APPLICATION
+  mg-1
+TYPE
+  improve
+REPORT
+  beebe@math.utah.edu - 16 May 1994
+FIX
+  tes@kbs.citri.edu.au - 11 August 1994
+CLAIM
+  Inconsistent use of stdout/stderr in usage messages.
+PROBLEM
+  Sometimes used "printf" and sometimes used "fprintf(stderr"
+  in usage messages.
+SOLUTION
+  All should now use "fprintf(stderr" in usage messages.
+FILES
+ *   mg_compression_dict.c
+ *   mg_compression_dict.1
+ *   mg_fast_comp_dict.c
+ *   mg_fast_comp_dict.1
+ *   mg_invf_dict.c
+ *   mg_invf_dict.1
+ *   mg_invf_dump.c
+ *   mg_invf_dump.1
+ *   mg_invf_rebuild.c
+ *   mg_invf_rebuild.1
+ *   mg_perf_hash_build.c
+ *   mg_perf_hash_build.1
+ *   mg_text_estimate.c
+ *   mg_text_estimate.1
+ *   mg_weights_build.c
+ *   mg_weights_build.1
+*************************************************************
+TITLE
+  xmg bug
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  cgn@cpsc.ucalgary.ca - 22 April 1994
+FIX
+  cgn@cpsc.ucalgary.ca - 22 April 1994
+CLAIM
+  "Serious problem in xmg, which I fear occurs whenever a query
+   doesn't return anything."
+PROBLEM
+  ??
+SOLUTION
+  [xmg.sh 201] set rank 0
+FILES
+ *   xmg.sh
+*************************************************************
+TITLE
+  Unnecessary loading of text
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  tes@kbs.citri.edu.au - ?? August 1994
+FIX
+  tes@kbs.citri.edu.au - 12 August 1994
+CLAIM
+  Mg was loading and uncompressing text when the
+  query did not require the text.
+PROBLEM
+  There was no test for the query mode
+  before loading and uncompressing the text.
+SOLUTION
+  Only load/uncompress text if query mode
+  is for text, headers or silent(for timing).
+FILES
+ *   mgquery.c
+*************************************************************
+TITLE
+  Man page errors
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  beebe@math.utah.edu - 16 May 1994
+FIX
+  beebe@math.utah.edu - 16 May 1994
+CLAIM
+  Man page errors.
+PROBLEM
+  See below.
+SOLUTION
+ "The mg_make_fast_dict.1 file has been renamed mg_fast_comp_dict.1,
+  and all mg_make_fast_dict strings changed to mg_fast_comp_dict in all
+  man pages.
+  A large number of errors of spelling, typography, spacing, fonts,
+  grammar, omitted words, slang, punctuation, missing man page
+  cross-references, and man-page style have been corrected."
+FILES
+ *    mg_compression_dict.1
+ *    mg_fast_comp_dict.1
+ *    mg_get.1
+ *    mg_invf_dict.1
+ *    mg_invf_dump.1
+ *    mg_invf_rebuild.1
+ *    mg_passes.1
+ *    mg_perf_hash_build.1
+ *    mg_text_estimate.1
+ *    mg_weights_build.1
+ *    mgbilevel.1
+ *    mgbuild.1
+ *    mgdictlist.1
+ *    mgfelics.1
+ *    mgquery.1
+ *    mgstat.1
+ *    mgtic.1
+ *    mgticbuild.1
+ *    mgticdump.1
+ *    mgticprune.1
+ *    mgticstat.1
+ *    xmg.1
+*************************************************************
+TITLE
+  Man page overview
+APPLICATION
+  mg-1
+TYPE
+  extend
+REPORT
+  beebe@math.utah.edu - 
+FIX
+  tes@kbs.citri.edu.au - 17 August 1994
+CLAIM
+  "Write new mg.1 file to give a brief overview of mg, with samples
+   of how to use it.  Otherwise, users are likely to be completely
+   overwhelmed by the number of programs (about 20) which might need to
+   be used, when in reality, only 2 or 3 are likely to be run by end
+   users."
+SOLUTION
+  It was thought that mg.1, written by Nelson Beebe, was very useful
+  but a bit too comprehensive for an introduction.
+  Therefore, two man files, mgintro.1 and mgintro++.1 were written
+  with the basic stuff in mgintro.1 and slightly more advanced stuff
+  in mgintro++.1 . 
+FILES
+ *   mg.1
+ *   mgintro.1
+ *   mgintro++.1 
+*************************************************************
+TITLE
+  Parse errors not bus errors
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  tim@cosc.canterbury.ac.nz - 2 Jun 94
+FIX
+  tes@kbs.citri.edu.au - 19 Aug 94
+CLAIM
+  "These two queries 
+   (which I typed in before I knew what I was doing!!)
+      > The Queen of Hearts, she made some tarts
+      > "The Queen of Hearts" and "she made some tarts"
+      produced the following result:
+      mgquery : parse error
+      Bus error
+  "
+PROBLEM
+  What is expected to happen under boolean querying:
+    Query1:
+    > The Queen of Hearts, she made some tarts
+    will produce a parse error due to the comma which
+    is not a valid TERM.
+    Query2:
+    > "The Queen of Hearts" and "she made some tarts"
+    will store a post-processing string
+    of ''The Queen of Hearts" and "she made some tarts'' and
+    will have a main boolean query of the empty string.
+    This is because the postprocessing string takes in
+    everything between the first quote and the last one.
+    An empty string is illegal for the boolean grammar and
+    hence a parse error.
+  The problem stems from the fact that the processing of
+  the parse tree is carried out, even though we have a 
+  parse error. In the case of using an empty string to build
+  a parse tree, it is likely to leave the parse tree undefined.
+SOLUTION
+  As soon as we find out that there is a parse-error,
+  we abandon any processing of the parse tree.
+FILES
+ *   query.bool.y
+ *   query.bool.c (generated from query.bool.y)
+*************************************************************
+TITLE
+  Perfect hashing on small vocab
+APPLICATION
+  mg-1
+TYPE
+  bug
+REPORT
+  tes@kbs.citri.edu.au - July 1994
+FIX
+  alistair@cs.mu.oz.au - July 1994
+CLAIM
+  Mg could not handle small collections in the case
+  where there was only a small number of unique words.
+  The perfect hash function would report an error.
+PROBLEM
+  Rounding of the arithmetic during the calculation of the
+  parameters of the perfect hash function was resulting in a
+  combination of values such that the probability of a hash
+  function being found was very small. This led to the limit
+  on the generation loop being exceeded, and eventual
+  failure.
+SOLUTION
+  By using ceiling rather than floor when converting from a
+  floating point value to an integer parameter, the arithmetic
+  is now correct for all lexicon sizes, and the probability of
+  each iteration successfully generating a hash function is
+  sufficiently great that with _very_ high probability the
+  execution loop counter will not be exceeded unless there
+  genuinely is no hash function (for example, if the lexicon
+  contains two words the same there cannot be  a hash
+  function).
+FILES
+ *   perf_hash.c
+*************************************************************

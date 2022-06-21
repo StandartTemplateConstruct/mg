@@ -1,0 +1,178 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(src/text/mgquery.c)
+AC_CONFIG_HEADER(config.h)
+
+dnl get $target_cpu, $target_vendor, and $target_os
+dnl (as well as host_*)
+AC_CANONICAL_SYSTEM
+AC_ARG_PROGRAM
+
+dnl
+PACKAGE=mg
+VERSION=1.2
+
+AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
+AC_SUBST(PACKAGE)
+AC_SUBST(VERSION)
+
+dnl
+dnl Disable all Java compilation
+dnl
+AC_ARG_ENABLE(java, [  --disable-java          Disable Java compilation], ENABLE_JAVA=$enableval, ENABLE_JAVA=yes)
+if test $ENABLE_JAVA = "yes" -o $ENABLE_JAVA = "1" ; then
+  ENABLE_JAVA=1
+  if test "x$JAVA_HOME" != "x" ; then
+    echo "Detected JAVA_HOME is set, however this will not be used during compilation"
+    echo "To control the version of 'javac' and 'java' set environment variables JAVAC"
+    echo "and JAVA respectively"
+    export JAVA_HOME=
+  fi
+else
+  ENABLE_JAVA=0
+fi
+AC_SUBST(ENABLE_JAVA)
+
+AC_MSG_CHECKING(to see if architecture is 64-bit)
+arch_64bit=no
+case "$host_cpu" in
+x86_64) arch_64bit=yes ;;
+esac
+
+if test "$arch_64bit" = yes; then
+  AC_MSG_RESULT(yes)
+  if test -z "$COMPAT32BITFLAGS" ; then
+    COMPAT32BITFLAGS="-m32"
+  fi
+else
+  AC_MSG_RESULT(no)
+  if test -z "$COMPAT32BITFLAGS" ; then
+    COMPAT32BITFLAGS=
+  fi
+fi
+AC_SUBST(COMPAT32BITFLAGS)
+
+
+dnl Checks for programs.
+AC_PROG_CXX
+AC_PROG_AWK
+AC_PROG_YACC
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+if test $ENABLE_JAVA = "1" ; then
+  AC_PROG_JAVA
+  AC_PROG_JAVAC
+fi
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_AIX
+AC_ISC_POSIX
+AC_MINIX
+fp_C_PROTOTYPES
+AC_C_CONST
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+dnl --- This should be in the stdc checking -----------------
+if test "$ac_cv_prog_cc_stdc" = '-Xc'; then
+dnl The Pyramids running SMP_DC.OSx on MIPS r3000 chips with
+dnl /usr/opt/cc3.11/bin/cc treat -Xc as full ANSI mode - no POSIX or
+dnl XOPEN extensions (like popen).
+dnl Unfortunately -D_{XOPEN,POSIX}_SOURCE can't provide all that mg
+dnl needs. So drop back to -Xa
+AC_TRY_COMPILE(
+[#include <stdio.h>
+], [ FILE *rubbish = popen("yes", "r"); ],,
+[CC="`echo $CC | sed 's/-Xc/-Xa/'`"    ac_cv_prog_cc_stdc='-Xa'])
+fi
+dnl ----------------------
+
+
+dnl Checks for libraries.
+dnl Replace `main' with a function in -lm:
+AC_CHECK_LIB(m, main)
+
+dnl Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h limits.h sys/time.h unistd.h string.h memory.h sys/procfs.h)
+AC_EGREP_HEADER(fread, stdio.h, AC_DEFINE(HAVE_FREAD_DECL))
+AC_EGREP_HEADER(fgetc, stdio.h, AC_DEFINE(HAVE_FGETC_DECL))
+AC_EGREP_HEADER(pr_brksize, sys/procfs.h, AC_DEFINE(HAVE_PR_BRKSIZE))
+
+dnl Checks for library functions.
+AC_FUNC_ALLOCA
+AC_PROG_GCC_TRADITIONAL
+AC_TYPE_SIGNAL
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(ftime select strftime strtol getrusage times mallinfo setbuffer getpagesize)
+AC_REPLACE_FUNCS(ftruncate strstr strcasecmp)
+
+
+# *** Custom checking (based on GNU tar configure.in) ***
+# ---------------------------------------------------------------------------
+AC_MSG_CHECKING(for HP-UX needing gmalloc)
+if test "`(uname -s) 2> /dev/null`" = 'HP-UX'; then
+  AC_MSG_RESULT(yes)
+  AC_LIBOBJ(gmalloc)
+  AC_DEFINE(HAVE_VALLOC)
+else
+  AC_MSG_RESULT(no)
+  AC_CHECK_FUNCS(valloc)
+fi
+
+# we need to set an extended JNI path for Mac OS/Darwin, as jni.h is on
+# a non-standard Path
+# is there a better way to do this??
+AC_MSG_CHECKING(for OS to set JNI options)
+# set defaults
+JNIINC=""
+JNISUFFIX="so"
+JNIFLAGS="-shared"
+
+if test "`(uname -s) 2> /dev/null`" = 'Darwin'; then
+  AC_MSG_RESULT(Darwin)
+  JNIINC="-I/System/Library/Frameworks/JavaVM.framework/Headers/ "
+  JNISUFFIX="jnilib"
+  JNIFLAGS="-dynamiclib -fno-common -single_module -framework JavaVM"
+fi
+if test "`(uname -s) 2> /dev/null`" = 'SunOS'; then
+  AC_MSG_RESULT(Solaris)
+  JNIINC="-I\$(JAVA_HOME)/include/solaris "
+fi
+if test "`(uname -s) 2> /dev/null`" = 'Linux'; then
+  AC_MSG_RESULT(Linux)
+  JNIINC="-I\$(JAVA_HOME)/include/linux -I\$(JAVA_HOME)/include "
+fi
+
+AC_SUBST(JNIINC)
+AC_SUBST(JNISUFFIX)
+AC_SUBST(JNIFLAGS)
+
+fp_WITH_DMALLOC
+fp_WITH_REGEX
+
+# text for endianness
+AC_C_BIGENDIAN
+
+# ---------------------------------------------------------------------------
+if test "$ac_cv_func_alloca" = 'no'; then
+dnl    support functions for alloca.c
+  AC_LIBOBJ(xmalloc)
+  AC_LIBOBJ(error)
+fi
+
+
+# ---------------------------------------------------------------------------
+
+AC_OUTPUT([Makefile src/text/Makefile lib/Makefile
+	  jni/Makefile java/org/greenstone/mg/Makefile ], 
+[test -z "$CONFIG_HEADERS" || echo timestamp > stamp-h])
+
+# To prevent timestamp problems causing bool_parser.c to be generated from bool_parser.y
+touch src/text/bool_parser.c

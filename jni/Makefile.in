@@ -1,0 +1,68 @@
+
+SHELL = /bin/sh
+VPATH = @srcdir@
+exec_prefix = @exec_prefix@
+prefix = @prefix@
+bindir = @bindir@
+srcdir = @srcdir@
+libdir = @libdir@
+subdir = jni
+top_srcdir = @top_srcdir@
+transform = @program_transform_name@
+
+
+AR = ar
+CC = @CC@
+CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -ansi -fpic -DSILENT -DSHORT_SUFFIX -DNZDL -DQUIET -DPARADOCNUM
+DEFS = @DEFS@
+RANLIB = @RANLIB@
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+LDFLAGS = @LDFLAGS@ @COMPAT32BITFLAGS@
+#NOTE: libmgtext.a needs to come before libmglib.a !!!
+QUERY_LIBS = ../src/text/libmgtext.a ../lib/libmglib.a @LIBS@
+PASSES_LIBS = ../src/text/libmgpass.a ../lib/libmglib.a @LIBS@
+TOUCH = echo timestamp >
+AWK = @AWK@
+
+JNIFLAGS=@JNIFLAGS@
+JNISUFFIX=@JNISUFFIX@
+JNIINC=@JNIINC@
+datadir = $(prefix)/share
+libexecdir = $(exec_prefix)/libexec
+localedir = $(datadir)/locale
+mandir = $(prefix)/man/man1
+
+CCOMPILE = $(CC) -c $(DEFS) $(INCLUDES) $(CFLAGS)
+
+.SUFFIXES:
+
+.SUFFIXES: .c .o
+.c.o:
+	$(CCOMPILE) $<
+
+INCLUDES = -I.. -I../lib -I../src/text $(JNIINC)
+
+all: compile link
+
+compile:
+	$(CCOMPILE) MGSearchWrapperImpl.c MGRetrieveWrapperImpl.c MGPassesWrapperImpl.c
+
+link:
+	$(CC) $(LDFLAGS) $(JNIFLAGS) -o libmgretrievejni.$(JNISUFFIX) MGRetrieveWrapperImpl.o $(QUERY_LIBS)
+	$(CC) $(LDFLAGS) $(JNIFLAGS) -o libmgsearchjni.$(JNISUFFIX) MGSearchWrapperImpl.o $(QUERY_LIBS)
+	$(CC) $(LDFLAGS)  $(JNIFLAGS) -o libmgpassjni.$(JNISUFFIX)  MGPassesWrapperImpl.o  $(PASSES_LIBS)
+
+clean:
+	rm -rf *.o libmgretrievejni.$(JNISUFFIX) libmgsearchjni.$(JNISUFFIX) libmgpassjni.$(JNISUFFIX) 
+
+distclean: clean
+	rm -f Makefile
+
+install:
+#	../mkinstalldirs $(libdir); \
+#	cp libmgjni.$(JNISUFFIX) libmgpassjni.$(JNISUFFIX)  $(libdir)/;
+
+
+

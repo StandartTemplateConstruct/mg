@@ -1,0 +1,86 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mg_get_merge.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mg_get_merge 1 \*(Dt CITRI
+.SH NAME
+mg_get_merge \- output source texts for processing
+.SH SYNOPSIS
+.B mg_get_merge
+.I collection-name
+.if n .ti +9n
+[
+.BR \-init " |"
+.BR \-i " |"
+.BR \-text " |"
+.BR \-t " |"
+.BR \-cleanup " |"
+.B  \-c
+]
+.SH DESCRIPTION
+This program is the default one used by
+.BR mgmerge (1)
+to generate the source text for new documents to appended to
+an
+.BR mg (1)
+system database.
+Its function is exactly the same as
+.BR mg_get (1)
+except that it generates the 
+.I new 
+documents to be added to an
+.BR mg (1)
+system database that has already been built using
+.BR mgbuild(1).
+Any program may be used to generate the source
+text for
+.BR mgmerge (1),
+as long as it confirms to the interface specified
+here.
+.SH OPTIONS
+The
+.I collection-name
+must appear before any other option.  Only the first option has any
+significance.  If no option is specified,
+.B \-text
+is assumed.
+.TP "\w'\fB\-cleanup\fP and \fB\-c\fP'u+2n"
+.BR \-init " and " \-i
+The program is called once with this flag at the start of merging a
+collection.
+.TP
+.BR \-text " and " \-t
+The program is called with this flag multiple times during the
+merging of a collection.  The program outputs (on
+.IR stdout )
+the text of the collection.
+.I Documents
+within the collection are separated by ctrl-B's (ASCII code 2).
+.TP
+.BR \-cleanup " and " \-c
+The program is called once with this flag at the completion of
+merging a collection.
+.SH ENVIRONMENT
+.TP "\w'\fBMGDATA\fP'u+2n"
+.SB MGDATA
+If this environment variable exists, then its value is used as the
+default directory where the
+.BR mg (1)
+collection files are.  If this variable does not exist, then the
+directory \*(lq\fB.\fP\*(rq is used by default.  The command line
+option
+.BI \-d " directory"
+overrides the directory in
+.BR MGDATA .
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_get (1),
+.BR mgbuild (1),
+.BR mgmerge (1),
+.BR mg_text_merge (1),
+.BR mg_invf_merge (1).

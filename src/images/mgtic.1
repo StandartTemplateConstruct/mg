@@ -1,0 +1,137 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mgtic.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mgtic 1 \*(Dt CITRI
+.SH NAME
+mgtic \- textual image compression.
+.SH SYNOPSIS
+.B mgtic
+.B \-e
+[
+.B \-L
+]
+[
+.B \-Q
+]
+[
+.B \-X
+]
+.I libraryfile
+.I infile
+.if n .ti +9n
+[
+.I \>compressed\-outfile
+]
+.nf
+or
+.fi
+.B mgtic
+.B \-d
+[
+.B \-L
+]
+[
+.BI \-X " libraryfile"
+]
+.I compressed-infile
+.if n .ti +9n
+[
+.I \>outfile
+]
+.SH DESCRIPTION
+This is the main routine in the
+.B mgtic
+system.
+.B mgtic
+is used to
+processes a series of files, and by using the
+.I libraryfile
+produced by
+.BR mgticbuild (1),
+compresses input files with respect to the marks contained in the
+library.  On the CCITT test faxes, lossless mode achieved around 20:1
+compression, and lossy, around 40:1 compression.  On more textual
+images, the amount of compression is determined by the resolution of
+the original file, and the amount of noise in the image.  By default,
+.B mgtic
+will reconstruct a lossy version of the image.  This
+can be changed to lossless by using the
+.B \-L
+option.
+.SH OPTIONS
+Options may appear in any order, but must come before the input
+filenames.
+.TP "\w'\fB\-X\fP \fI[libraryfile]\fP'u+2n"
+.B \-h
+This displays a usage line on
+.IR stderr .
+.TP
+.B \-e
+Encode
+.I infile
+with respect to the library.
+.TP
+.B \-d
+Decodes
+.IR compressed-infile
+with respect to the library.
+.TP
+.B \-l
+This specifies lossy mode, and is the default mode for (de)compression.
+Do not generate the residue.  If used in encoding mode, does not store
+the residue in the output.  If used in decoding mode, the residue (if
+it exists) is ignored.
+.TP
+.B \-L
+Use lossless mode for (de)compression, which generates the residue.
+If used in encoding mode, this stores the residue in the compressed
+output.  If used in decoding mode (assuming the residue is present),
+this allows the original file to be recovered exactly.
+.TP
+.BI \-R\  filename
+Stores the residue as an external file
+.I filename
+which could possibly be stored on another medium.  During
+decompression, if the residue file specified does not relate to the
+compressed file, the resulting decompressed image will be a mess.
+Note that only the width and height of the residue image is checked.
+.TP
+.BI \-Q
+Uses a quicker form of compression.  This option decreases the time
+spent looking for a good match during encoding.  On average this
+option decreases compression ratios, but increases compression speed.
+.TP
+.BI \-X " [libraryfile]"
+Use an external library file, instead of (de)compressing the library
+within the normal stream.  When decoding, the
+.B \-X
+option must be followed by the
+.IR libraryfile .
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_compression_dict (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_dump (1),
+.BR mg_invf_rebuild (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_text_estimate (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgfelics (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgticbuild (1),
+.BR mgticdump (1),
+.BR mgticprune (1),
+.BR mgticstat (1).

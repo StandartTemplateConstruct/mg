@@ -1,0 +1,112 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mg_text_estimate.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mg_text_estimate 1 \*(Dt CITRI
+.SH NAME
+mg_text_estimate \- Estimate the size of the compressed text based on the text statistics and a compression dictionary.
+.SH SYNOPSIS
+.B mg_text_estimate
+[
+.B \-h
+]
+[
+.BR \-H " |"
+.BR \-B " |"
+.BR \-D " |"
+.BR \-Y " |"
+.B \-M
+]
+.if n .ti +9n
+.I stats-dict
+.I compression-dict
+.SH DESCRIPTION
+This program estimates the size of the compressed text that would be
+generated if text with certain statistics were compressed with a
+particular dictionary.  This program has no real use in the
+.BR mg (1)
+system, except for experimenting with the
+.BR mg_compression_dict (1)
+program.
+.SH OPTIONS
+Options may appear in any order.
+.TP "\w'\fB\-m\fP'u+2n"
+.B \-h
+This displays a usage line on
+.IR stderr .
+.TP
+.B \-H
+This specifies that novel words will be coded character by character
+using Huffman codes.
+.TP
+.B \-B
+This specifies that the size of an auxiliary dictionary will be
+estimated.  Each novel word found will be placed at the end of the
+auxiliary dictionary.  Novel words will be coded in the compressed text
+using binary codes.  The binary code represents their occurrence
+position in the auxiliary dictionary.
+.TP
+.B \-D
+This specifies that the size of an auxiliary dictionary will be
+estimated.  Each novel word found will be placed at the end of the
+auxiliary dictionary.  Novel words will be coded in the compressed text
+using delta codes.  The delta code represents their occurrence position
+in the auxiliary dictionary.
+.TP
+.B \-Y
+This specifies that the size of an auxiliary dictionary will be
+estimated.  Each novel word found will be placed at the end of the
+auxiliary dictionary.  Novel words will be coded in the compressed text
+using a combination of gamma and binary codes.  The code represents
+their occurrence position in the auxiliary dictionary.  This generally
+produces better compression than
+.B \-B
+or
+.BR \-D .
+.TP
+.B \-M
+This specifies that the size of an auxiliary dictionary will be
+estimated.  Each novel word found will be placed at the end of the
+auxiliary dictionary.  Novel words will be coded in the compressed text
+using a combination of gamma and binary codes.  The code represents
+their occurrence position in the auxiliary dictionary.  This method is
+adaptive within documents, and generally produces better compression
+than
+.BR \-B ,
+.B \-D
+or
+.BR \-Y .
+.SH FILES
+.TP 20
+.B *.text.stats
+Statistics about the text.
+.TP
+.B *.text.dict
+Compressed compression dictionary.
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_compression_dict (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_dump (1),
+.BR mg_invf_rebuild (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgfelics (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgtic (1),
+.BR mgticbuild (1),
+.BR mgticdump (1),
+.BR mgticprune (1),
+.BR mgticstat (1).

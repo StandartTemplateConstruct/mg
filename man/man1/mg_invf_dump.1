@@ -1,0 +1,142 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mg_invf_dump.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mg_invf_dump 1 \*(Dt CITRI
+.SH NAME
+mg_invf_dump \- Dump out an inverted file in ASCII
+.SH SYNOPSIS
+.B mg_invf_dump
+[
+.B \-h
+]
+[
+.B \-b
+]
+[
+.B \-w
+]
+[
+.B \-t
+]
+[
+.BI \-d " directory"
+]
+.BI \-f " name"
+.SH DESCRIPTION
+This program dumps out an inverted file produced by the
+.BR mg (1)
+system as ASCII numbers.  This program could be used in conjunction
+with
+.BR mgdictlist (1)
+to write simple shell programs that work with the inverted files.  The
+output from the program looks something like this:
+.LP
+.RS
+.ft 3
+.nf
+6 337
+1
+ 1 1
+1
+ 5 1
+1
+ 2 1
+1
+ 1 1
+4
+ 1 3
+ 2 7
+ 3 2
+ 5 2
+1
+ 1 1
+ . . .
+.fi
+.ft
+.RE
+The first number (6) is the number of documents in the collection.  It
+is followed by the number of different terms in the collection.  For
+each term, the number of different documents it occurs in follows. The
+document numbers that the term occurs in are listed next.  If
+.B \-w
+is specified, then the number of times the term occurred in the
+document is printed alongside the document number.
+If
+.B \-t
+is specified, the term itself is also displayed in quotes.
+.SH OPTIONS
+Options may appear in any order.
+.TP "\w'\fB\-d\fP \fIdirectory\fP'u+2n"
+.B \-h
+This displays a usage line on
+.IR stderr .
+.TP
+.B \-b
+This option will cause the output from the program to be in fixed-size
+binary numbers, rather than in ASCII.
+.TP
+.B \-w
+If the inverted file is a level-2 or level-3 inverted file, this causes
+the word counts per document to be output.
+.TP
+.B \-t
+This option causes each term to be displayed along with the number of
+documents it appears in. The term is printed in quotes,
+as in "the".
+.TP
+.BI \-d " directory"
+This specifies the directory where the document collection can be found.
+.TP
+.BI \-f " name"
+This specifies the base name of the document collection.
+.SH ENVIRONMENT
+.TP "\w'\fBMGDATA\fP'u+2n"
+.SB MGDATA
+If this environment variable exists, then its value is used as the
+default directory where the
+.BR mg (1)
+collection files are.  If this variable does not exist, then the
+directory \*(lq\fB.\fP\*(rq is used by default.  The command line
+option
+.BI \-d " directory"
+overrides the directory in
+.BR MGDATA .
+.SH FILES
+.TP 20
+.B *.invf.dict
+The compressed stemmed dictionary.
+.TP
+.B *.invf.ORG
+The original inverted file saved by
+.BR mg_invf_rebuild .
+.TP
+.B *.invf
+The inverted file.
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_compression_dict (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_rebuild (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_text_estimate (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgfelics (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgtic (1),
+.BR mgticbuild (1),
+.BR mgticdump (1),
+.BR mgticprune (1),
+.BR mgticstat (1).

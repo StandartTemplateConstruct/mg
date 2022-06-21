@@ -1,0 +1,46 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+ <head>
+  <title>Index of /greenstone/common-src/indexers/mg/man/man1</title>
+ </head>
+ <body>
+<h1>Index of /greenstone/common-src/indexers/mg/man/man1</h1>
+  <table>
+   <tr><th valign="top"><img src="/icons/blank.gif" alt="[ICO]"></th><th><a href="?C=N;O=A">Name</a></th><th><a href="?C=M;O=A">Last modified</a></th><th><a href="?C=S;O=A">Size</a></th><th><a href="?C=D;O=A">Description</a></th></tr>
+   <tr><th colspan="5"><hr></th></tr>
+<tr><td valign="top"><img src="/icons/back.gif" alt="[PARENTDIR]"></td><td><a href="/greenstone/common-src/indexers/mg/man/">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="xmg.1">xmg.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.8K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgticstat.1">mgticstat.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.3K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgticprune.1">mgticprune.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgticdump.1">mgticdump.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgticbuild.1">mgticbuild.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgtic.1">mgtic.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgstemidxlist.1">mgstemidxlist.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgstat.1">mgstat.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.8K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgquery.1">mgquery.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right"> 18K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgmerge.1">mgmerge.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgfelics.1">mgfelics.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgdictlist.1">mgdictlist.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.6K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgbuild_4.1">mgbuild_4.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.3K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgbuild.1">mgbuild.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.7K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mgbilevel.1">mgbilevel.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_weights_build.1">mg_weights_build.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_text_merge.1">mg_text_merge.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.7K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_text_estimate.1">mg_text_estimate.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.1K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_stem_idx.1">mg_stem_idx.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_perf_hash_build.1">mg_perf_hash_build.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.2K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_passes.1">mg_passes.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">9.5K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_invf_rebuild.1">mg_invf_rebuild.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.3K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_invf_merge.1">mg_invf_merge.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_invf_dump.1">mg_invf_dump.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">3.0K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_invf_dict.1">mg_invf_dict.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_hilite_words.1">mg_hilite_words.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.4K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_get_merge.1">mg_get_merge.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.1K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_get.1">mg_get.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">4.9K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_fast_comp_dict.1">mg_fast_comp_dict.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">2.1K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_decompress_text.1">mg_decompress_text.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">1.8K</td><td>&nbsp;</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="mg_compression_dict.1">mg_compression_dict.1</a></td><td align="right">2008-07-29 07:20  </td><td align="right">6.6K</td><td>&nbsp;</td></tr>
+   <tr><th colspan="5"><hr></th></tr>
+</table>
+<address>Apache/2.4.6 (CentOS) Server at www.bibliotecacpa.org.ar Port 80</address>
+</body></html>

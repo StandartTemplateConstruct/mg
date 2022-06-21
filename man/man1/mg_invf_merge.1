@@ -1,0 +1,112 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mg_invf_merge.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mg_invf_merge 1 \*(Dt CITRI
+.SH NAME
+mg_invf_merge \- Merge two inverted files and stemmed dictionaries
+.SH SYNOPSIS
+.B mg_invf_merge
+[
+.B \-h
+]
+[
+.B \-s
+]
+[
+.B \-w
+]
+[
+.BI \-d " directory"
+]
+.BI \-f " name"
+.SH DESCRIPTION
+This program takes two
+.BR mg (1)
+database compressed text files and appends the second to
+the first.
+It is part of the
+.BR mgmerge (1)
+addition to the
+.BR mg (1)
+package.
+.SH OPTIONS
+Options may appear in any order.
+.TP "\w'\fB\-d\fP \fIdirectory\fP'u+2n"
+.B \-h
+This displays a usage line on
+.IR stderr .
+.TP
+.B \-s
+This option will cause a slow merge to be performed on the inverted files,
+where each inverted file entry is decoded and recoded.
+The default is a fast merge. Accumulated fast merges slowly degrade
+compression performance on the resulting inverted file so
+a periodic slow merge is recommended.
+.TP
+.B \-w
+By default the database .weights file is updated with
+new weights for the new documents in
+.B mg_text_merge.
+The
+.B -w
+option turns this step off.
+.TP
+.BI \-d " directory"
+This specifies the directory where the document collection can be found.
+.TP
+.BI \-f " name"
+This specifies the base name of the document collection.
+.SH ENVIRONMENT
+.TP "\w'\fBMGDATA\fP'u+2n"
+.SB MGDATA
+If this environment variable exists, then its value is used as the
+default directory where the
+.BR mg (1)
+collection files are.  If this variable does not exist, then the
+directory \*(lq\fB.\fP\*(rq is used by default.  The command line
+option
+.BI \-d " directory"
+overrides the directory in
+.BR MGDATA .
+.SH FILES
+.TP 20
+.B *.old.invf.dict
+The old compressed stemmed dictionary.
+.TP
+.B *.new.invf.dict
+The new compressed stemmed dictionary.
+.TP
+.B *.invf.dict
+The resulting merged compressed stemmed dictionary.
+.TP
+.B *.old.invf.ORG
+The original inverted file saved by
+.BR mg_invf_rebuild .
+.TP
+.B *.old.invf
+The old inverted file.
+.TP
+.B *.new.invf
+The new inverted file.
+.TP
+.B *.invf
+The resulting merged inverted file.
+.TP
+.B *.weight
+The exact weights file.
+.TP
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mgmerge (1),
+.BR mg_get_merge (1),
+.BR mg_text_merge (1),
+.BR mg_invf_rebuild (1),
+.BR mg_invf_dict (1),
+.BR mg_weights_build (1),
+.BR mgquery (1).

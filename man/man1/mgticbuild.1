@@ -1,0 +1,61 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mgticbuild.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mgticbuild 1 \*(Dt CITRI
+.SH NAME
+mgticbuild \- build a library of marks from training documents
+.SH SYNOPSIS
+.B mgticbuild
+[
+.B \-h
+]
+.I "libraryfile infile1 infile2 .\|.\|."
+.SH DESCRIPTION
+.B mgticbuild
+builds an uncompressed library of marks that have been
+extracted from a series of input files.  If the
+.I libraryfile
+does
+not exist, it is created, otherwise new marks are appended to the
+file.
+.SH OPTIONS
+Options may appear in any order.
+.TP "\w'\fIlibraryfile\fP'u+2n"
+.B \-h
+This displays a usage line on
+.IR stderr .
+.TP
+.I libraryfile
+This specifies the name of the library file.
+.TP
+.I infile(s)
+The training files; the only currently-supported format is
+.IR pbm .
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_compression_dict (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_dump (1),
+.BR mg_invf_rebuild (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_text_estimate (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgfelics (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgtic (1),
+.BR mgticdump (1),
+.BR mgticprune (1),
+.BR mgticstat (1).

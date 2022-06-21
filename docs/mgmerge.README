@@ -1,0 +1,230 @@
+A CRASH COURSE GUIDE TO MGMERGE
+===============================
+
+Shane Hudson
+15 November 1994
+
+
+This document is intended as a note to the maintainers of mgmerge
+outlining the mgmerge utility, the changes
+that had to be made to the existing mg code to make mgmerge
+work, and the new source code for mgmerge.
+
+
+****  NOTE:    ****
+All the NEW/CHANGED files are in the file "new_mg.tar" which
+you should have received with this; files that were
+not changed are NOT in the tar file  so it will have to be
+extracted "on top of" the existing code. You'll figure it out :)
+
+
+****  DESCRIPTION:   ****
+mgmerge adds documents to an existing mg database
+without the need to rebuild the database from scratch.
+It works by building a temporary new database from the
+new documents, then merging the "old" and "new" databases
+to give one merged database.
+
+
+The source consists of:
+    mgmerge.sh		The main script, a lot like mgbuild.sh
+    mg_get_merge.sh	Script to retrieve new documents, a lot like
+			mg_get.sh
+    mg_merge.h		header file used by mg_invf_merge.c
+			and mg_text_merge.c
+    mg_text_merge.c	Program to append one compressed text file
+			to another
+    mg_invf_merge.c	Program to merge two inverted files and
+			stemmed dictionaries
+
+See the man pages for mgmerge, mg_get_merge, mg_text_merge and
+mg_invf_merge for a brief overview.
+
+mg_get_merge.sh should really be put into mg_get.sh, with a "-merge"
+option if it is being called by the mgmerge utility, but I was
+too lazy to change it to that.
+
+
+The files updated by mgmerge are:
+
+*.text			with mg_text_merge
+*.text.idx		with mg_text_merge
+*.text.idx.wgt		with mg_weights_build (after merging)
+*.invf			with mg_invf_merge
+*.invf.idx		with      "
+*.invf.dict		with      "
+*.weight		with mg_invf_merge or mg_weights_build
+*.invf.dict.blocked	with mg_invf_dict (after merging)
+
+The *.text.stats file and *.text.dict file remain the same.
+Any other database files (ie, *.invf.dict.hash)
+will be out of date after a merge and will need to be recomputed.
+
+--------------------------------------------------------------------------
+
+MG_TEXT_MERGE
+=============
+
+The two "merging" utilities are mg_text_merge and mg_invf_merge
+
+mg_text_merge simply appends the compressed text for the new
+documents to the old compressed text file.
+For this to succeed, the two files should have been created
+with the same parameters to mg_passes and the same compression
+model must be used. So *.text.dict from the old (static) database
+is used as the model for compressing the new documents.
+The default "-C" option to mg_compression_dict in mgbuild was
+changed to "-S" so novel words in the new documents can be coded.
+The option must be the same in mgmerge -- it is "-S" there too.
+
+---------------
+
+EFFECT on FILE COMPRESSION PERFORMANCE
+
+Since the compression model is not being updated,compression
+performance for the text will slowly degrade. The only solution
+is a periodic rebuild from scratch.
+
+---------------------------------------------------------------------------
+
+MG_INVF_MERGE
+=============
+
+mg_invf_merge updates the stemmed dictionary and
+inverted file.
+For reasons of simplicity, the stemmed dictionaries merged
+are in the ".invf.dict" format, NOT the ".invf.dict.blocked"
+format. 
+So if a database is to be merged the .invf.dict file should
+not be deleted after the .invf.dict.blocked file used by mgquery
+has been created.
+Also for simplicity, level 3 inverted files are not supported, nor
+are skipped format files.
+
+
+
+Merging the inverted files requires every entry in each file
+to be decoded and merged if an entry for the same term appears
+in the other inverted file.
+This can be a slow process if the old inverted file is very large.
+Especially since each entry is decoded bit-by-bit with
+the bit-level I/O rouutines.
+As was noted on page 94 of the book "Managing Gigabytes" (hereafter 
+called "MG"), switching from bernoulli coding (called "Bblock" in
+the mg source code) to gamma or delta coding for the
+inter-document gaps would be an advantage since they require no
+parameters.
+With Bblock coding, N (the number of documents) is a parameter and
+as N changes whenever documents are added, every entry must
+be decoded and recoded.
+My approach was to keep Bblock coding, but keep the N parameter
+constant by recording the artificial N  used to code document
+gaps (called "Nstatic") as well as the real number of documents.
+
+Then, any entry in the old inverted file (called "IFold") that
+is not merged with an entry in the new inverted file (called "IFnew")
+can be copied directly to the merged inverted file (called "IFmerge").
+This can give a significant increase in speed, since usually the
+size of IFnew is very small if only a few documents are being added.
+
+To store Nstatic, a field "static_num_of_docs" was added to
+the invf_dict_header and stem_dict_header structs defined
+in invf.h
+Any program that decodes inverted file entries also had to be changed.
+(The existing mg source code that I changed has been returned with
+this document.)
+Most changes were simply altering a line that
+called BIO_Bblock_Init() so it used the static_num_of_docs
+value rather than num_of_docs.
+
+So since the file format has changed, any existing collection will
+have to be rebuilt first even using mgmerge with it is not
+intended.
+
+-------------
+
+EFFECT on INVERTED FILE COMPRESSION PERFORMANCE
+
+As more merges are accumulatively performed on a database, the
+compression performance will decline.
+The solution is an option in mg_invf_merge to do a "slow"
+merge where every inverted file entry is decoded and recoded using
+the real value of N.
+This is not a lot slower than a fast merge when compared to the
+cost of completely rebuilding the collection from scratch, and 
+the option can be used periodically (when, say, 40% of the
+inverted file has been added since the previous slow merge).
+
+-----------------
+
+THE EXACT WEIGHTS FILE
+
+Recomputing exact document weights requires a complete scan over the
+merged inverted file. This is a waste since the weights for old
+documents will (hopefully) not change much anyway, and the weights
+for new documents can be computed exactly when merging the inverted files,
+at no extra time cost.
+So mg_invf_merge computes the weights for new documents and
+updates the .weight file.
+The weights for old documents are left untouched.
+mgmerge has an option to recompute the weights file.
+This is not much more expensive in terms of time, and is only
+periodically needed.
+
+The effect of leaving the old weights unchanged is difficult to
+asess since the "correct" ranking of documents for a query is
+subjective.
+The frequency with which a rebuild of the weights file with the
+"-w" option should be done is hard to guess.
+But if most merges involves only a few documents, it makes sense
+to not bother recomputing it since the change in old weights values
+is very small and the weights only stray from their "true"
+values slowly over accumulated merging.
+
+-------------------------------------------------------------------------
+
+EXPERIMENTAL RESULTS
+====================
+
+With some small test collections (only a few Mb of text)
+and a slow merge, and a weights file rebuild,
+mgmerge typically took under 20% of the time to completely
+rebuild. Using the default options (fast merge, dont rebuild weights)
+took around 10% or more.
+For larger collections, the savings were greater, especially if the
+added text is very small.
+For example, when the last 6Kb of text of the GNUBib collection was
+added to the rest of it (14Mb) using mgmerge, the total mgmerge time
+was around 20 seconds whereas a complete mgbuild took 280 seconds.
+Only one larger collection was tested (resource contraints prevented
+testing on any really large collections): two short (one-line)
+documents were added to the Gutenberg collection, which comprised
+of nearly 74Mb of source text and had an inverted file size of 9Mb.
+mgmerge took 42 seconds (or 142 seconds with a slow merge and rebuilding the
+weights file), and I'd estimate that an mgbuild on the same machine would 
+have taken at least 20 minutes.
+
+To summarise, mgmerge is not as fast as some sophisticated method
+such as the fixed-length blocks described in section 5.7 of "MG",
+but its huge advantage is that it required almost no changes to
+the existing mg code and is still far better than using mgbuild
+every time a document needs to be added to a collection.
+
+----------------------------------------------------------------------------
+
+OTHER NOTES
+===========
+
+Since it works like mgbuild, mgmerge needs mg_get_merge
+to return the SAME text each time "mg_get_merge -text .." is called.
+
+----
+
+One other thing discovered (but not fixed) was a bug in "invf.pass2.c":
+It crashes on parsed words longer than 128 characters.
+So if any text with words >128 chars is piped to mg_passes,
+the "-N1" and "-N2" options (the memory-efficient inversion method)
+had better be used and not the "-I1"/"-I2" option (which would only
+work on small collections anyway, being the memory-inefficient
+method).
+

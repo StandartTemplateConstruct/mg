@@ -1,0 +1,154 @@
+.TH mg_get 1 "31 January 1994"
+.SH NAME
+mg_get \- output source texts for processing
+.SH SYNOPSIS
+ 
+.B mg_get
+.I collection-name
+.RB [ \-init | \-i | \-text\fP|\fB\-t\fP|\fB\-cleanup\fP|\fB\-c\fP]
+.SH DESCRIPTION
+.LP
+This program is the default one used by mgbuild to generate the source text for the MG system. Any program may be used to generate the source text for mgbuild as long as it confirms to the interface specified here. 
+.SH OPTIONS
+.LP
+The
+.I collection\-name
+must appear before any other option. Only the first option has any significance. If no option is specified
+.B \-text
+is assumed.
+.RS
+.TP
+.BR \-init " and " \-i
+The program is called once with this flag at the start of building a collection.
+.TP
+.BR \-text " and " \-t
+The program is called with this flag multiple times during the building of a collection. The program outputs (on stdout) the text of the collection. \*(lq\fBDocuments\fP\*(rq within the collection are separated with by ctrl-B's (ASCII code 2). \*(lq\fBParagraphs\fP\*(rq within the collection are separated with ctrl-C's (ASCII code 3). A collection need not contain paragraphs unless a level 3 inverted file is being generated (see 
+.B mgbuild 
+and 
+.BR mg_passes ). 
+.TP
+.BR \-cleanup " and " \-c
+The program is called once with this flag at the completion of building a collection.
+.SH ENVIRONMENT
+.TP
+.SB MGDATA
+If this environment variable exists then its value is used a the default 
+directory where the mg collection files are. If this variable does not exist
+then the directory \*(lq\fB.\fP\*(rq is used by default. The command line 
+option 
+.BI \-d " directory"
+overrides the directory in 
+.BR MGDATA .
+.TP
+.SB MG_GETRC
+This environment variable specifies where the file containing the users 
+mg source configurations is. If not set, mg_get uses a default of 
+.B \*\~/.mg_getrc.
+
+This file contains TAB delimited lines of the form
+.RS 
+.RS 
+.I CollectionName
+.I CollectionType
+.I files or directory
+.RE
+
+.I CollectionName
+is the name of the collection supplied to mg_get.
+
+.I CollectionType
+specifies how mg_get should process the
+named files and directories and are descibed below.
+
+.I files or directory
+is either a list of files separted by blanks or a single directory.
+Some of the
+.I CollectionTypes
+deal with files and others with just a single directory.
+Any files used ending with .gz or .Z are decompressed with gzip before
+processing. References to '~' expands to the users HOME directory.
+
+.I CollectionType
+is one of
+.RS
+.TP
+.BR PARA
+For text based documents. The list of files specified are treated as
+a series of paragraphs separated by blank lines. Each paragraph becomes
+a seperate document on the indexed collection.
+.TP
+.BR MAIL
+for mail files. The list of files specified are treated as UNIX mail
+files separated by lines starting with 'From'. Each mail message becomes
+a seperate document on the indexed collection. As a extra feature any
+embedded tarmail encoded contents (enclosed by a 'xbtoa Begin' and 'xbtoa End'
+pair are removed.
+.TP
+.BR DIR
+(and DIR2)
+For a single directory of files. Each file in the directory (and in any of
+it's subdirectories) are treated as a single document. With
+.I DIR
+the pathname of the file is prefixed to the contents of each file as an
+extra line while this is not done for
+.I DIR2
+collections.
+.TP
+.BR BIB
+for biblography files. The list of files specified are treated as
+a series of biblography files (eg BIBTEX or TROFF) separated by lines
+starting with '@'. Each reference  becomes a seperate document on the indexed
+collection.
+.TP
+.BR TXTIMG
+for integrated collections of text and images. The single directory should
+contain files that have the same prefix if they are related. For example,
+monaLisa.pgm might be a gray-level image, and monaLisa.txt would be a textual
+file describing the image. The suffixes recognised are:
+.BR   .txt
+for  ascii text
+.BR  .ptm
+for  scanned text stored as a bilevel image
+.BR  .pbm
+for a black and white image (typically a line drawing)
+.BR  .pgm
+for a gray-scale image
+.BR In addition, if no corresponding ascii text file is found for
+a .pbm or .pgm file, then one is created with suffix .tmp.txt,
+and it stores the name of the image file (in principle it could
+store the OCR of a .txt.pbm file). At present the .tmp.txt files
+are deleted by the '-cleanup' option.
+
+.SH "EXAMPLE"
+
+An example ~/.mg_getrc file might look like:
+   alice   PARA    /users/alice13a.txt.Z
+   mail95  MAIL    ~/MAIL/1995/*
+   doc     DIR     ~/documents
+   bibs    BIB     ~/etc/REFS/*.bib ~/etc/REFS/CC/*.bib
+   letters DIR     ~/LETTERS
+   davinci TXTIMG  ~/images/davinci
+
+.SH "SEE ALSO"
+.LP
+.BR mg_compression_dict (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_dump (1),
+.BR mg_invf_rebuild (1),
+.BR mg_make_fast_dict (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_text_estimate (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgfelics (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgtic (1),
+.BR mgticbuild (1),
+.BR mgticdump (1),
+.BR mgticprune (1),
+.BR mgticstat (1)
+

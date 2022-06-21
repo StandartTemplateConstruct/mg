@@ -1,0 +1,156 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mg_invf_rebuild.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mg_invf_rebuild 1 \*(Dt CITRI
+.SH NAME
+mg_invf_rebuild \- Rebuild an mg inverted file with or without skips.
+.SH SYNOPSIS
+.B mg_invf_rebuild
+.RB [ \-h ]
+.if n .ti +9n
+[
+.BR \-0 " |"
+.B \-1
+[
+.BI \-k " num"
+] |
+.B \-2
+[
+.BI \-s " num"
+]
+[
+.BI \-m " num"
+]
+]
+.if n .ti +9n
+[
+.BI \-d " directory"
+]
+.BI \-f " name"
+.SH DESCRIPTION
+.B mg_invf_rebuild
+builds a new inverted file, with or without skipping, from an old
+inverted file.  This file uses
+.I *.invf.ORG
+and
+.I *.invf.idx.ORG
+as the
+source from which it builds
+.I *.invf
+and
+.IR *.invf.idx .
+If
+.I *.invf.ORG
+or
+.I *.invf.idx.ORG
+do not exist, the program renames
+.I *.invf
+or
+.I *.invf.idx
+to
+.I *.invf.ORG
+or
+.I *.invf.idx.ORG
+as appropriate.  The old inverted file may contain skipping.  This
+means that it is possible to delete the
+.I *.ORG
+files
+after the new inverted file is built.
+.SH OPTIONS
+Options may appear in any order.
+.TP "\w'\fB\-m\fP \fInum\fP'u+2n"
+.B \-h
+This displays a usage line on
+.IR stderr .
+.TP
+.B \-0
+This generates a non-skipped inverted file.  This option is normally
+only needed if the
+.I *.ORG
+files have been deleted.
+.TP
+.B \-1
+This generates a skipped inverted file.  The
+.BI \-k " num"
+argument specifies the number of pointers hopped over with each skip.
+.TP
+.B \-2
+This option generates a skipped inverted file.  The skipped inverted
+file is built so that it is `optimal' for ranking using a specific
+number of accumulators.  Each term in the inverted file has a
+different skip length.  The arguments
+.BR \-s " and " \-m
+control the sizes of the skips.
+.TP
+.BI \-k " num"
+This specifies the number of pointers that should be hopped over with
+each skip.  This option is only valid if
+.B \-1
+is specified.
+.TP
+.BI \-m " num"
+This specifies the intended number of accumulators that will be used
+when ranking queries are done on the collection.
+.TP
+.BI \-s " num"
+This specifies the minimum size for skips.  If the calculation of the
+optimal skip size results in a number smaller than
+.IR num ,
+the skip size is set to
+.IR num .
+.SH ENVIRONMENT
+.TP "\w'\fBMGDATA\fP'u+2n"
+.SB MGDATA
+If this environment variable exists, then its value is used as the
+default directory where the
+.BR mg (1)
+collection files are.  If this variable does not exist, then the
+directory \*(lq\fB.\fP\*(rq is used by default.  The command line
+option
+.BI \-d " directory"
+overrides the directory in
+.BR MGDATA .
+.SH FILES
+.TP 20
+.B *.invf
+Inverted file.
+.TP
+.B *.invf.ORG
+Original inverted file.
+.TP
+.B *.invf.idx
+The index into the inverted file.
+.TP
+.B *.invf.idx.ORG
+The original index into the inverted file.
+.TP
+.B *.invf.dict.build
+Compressed stemmed dictionary.
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_compression_dict (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_dump (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_text_estimate (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgfelics (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgtic (1),
+.BR mgticbuild (1),
+.BR mgticdump (1),
+.BR mgticprune (1),
+.BR mgticstat (1).

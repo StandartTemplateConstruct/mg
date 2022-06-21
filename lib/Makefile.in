@@ -1,0 +1,174 @@
+###########################################################################
+#
+# Makefile.in -- Makefile for the general purpose library
+# Copyright (C) 1994  Neil Sharman; (C) 1995 Tim Shimmin
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#       @(#)Makefile.in	1.3 16 Mar 1994
+#
+###########################################################################
+
+
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+
+SHELL = /bin/sh
+srcdir = @srcdir@
+subdir = lib
+VPATH = @srcdir@
+
+
+AR = ar
+CC = @CC@
+CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -fpic 
+DEFS = @DEFS@
+RANLIB = @RANLIB@
+
+##########################################
+# Uncomment for compiling for the nzdl project
+#
+CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -DQUIET -fpic
+##########################################
+
+
+prefix = @prefix@
+datadir = $(prefix)/share
+localedir = $(datadir)/locale
+
+COMPILE = $(CC) -c $(DEFS) $(INCLUDES) $(CFLAGS)
+
+.SUFFIXES:
+.SUFFIXES: .c .o
+.c.o:
+	$(COMPILE) $<
+
+ANSI2KNR = @ANSI2KNR@
+o = .@U@o
+
+.SUFFIXES: ._c ._o
+.c._c:
+	./ansi2knr $< > $*.tmp && mv $*.tmp $@
+._c._o:
+	@echo $(COMPILE) $<
+	@rm -f _$*.c
+	@ln $< _$*.c && $(COMPILE) _$*.c && mv _$*.o $@ && rm _$*.c
+.c._o:
+	./ansi2knr $< > $*.tmp && mv $*.tmp $*._c
+	@echo $(COMPILE) $*._c
+	@rm -f _$*.c
+	@ln $*._c _$*.c && $(COMPILE) _$*.c && mv _$*.o $@ && rm _$*.c
+
+
+INCLUDES = -I../../.. -I.. -I$(srcdir)
+
+HEADERS = \
+    bitio_m_random.h   filestats.h        local_strings.h    lovinstem.h \
+    bitio_m_stdio.h    getopt.h           memlib.h \
+    bitio_gen.h        bitio_mem.h        mgheap.h             messages.h \
+    bitio_m.h          bitio_mems.h       huffman.h          timing.h \
+    bitio_m_mem.h      bitio_random.h     huffman_mem.h      perf_hash.h \
+    bitio_m_mems.h     bitio_stdio.h      huffman_stdio.h    sptree.h \
+    pathmax.h          getpagesize.h \
+    random.h           simplefrenchstem.h unitool.h  longlong.h
+# regex.h            rx.h               
+
+
+SOURCES = \
+    bitio_random.c    mgheap.c            memlib.c \
+    bitio_stdio.c     huffman.c         messages.c \
+    bitio_gen.c       filestats.c       huffman_mem.c     perf_hash.c \
+    bitio_mem.c       getopt.c          huffman_stdio.c   sptree.c \
+    bitio_mems.c      getopt1.c         local_strings.c   lovinstem.c \
+    timing.c  \
+    alloca.c          error.c           xmalloc.c         strstr.c \
+    gmalloc.c         ftruncate.c       strcasecmp.c      random.c \
+    simplefrenchstem.c                  unitool.c
+# regex.c           rx.c              
+
+OBJECTS = @ALLOCA@ @LIBOBJS@ \
+    bitio_random$o    mgheap$o            memlib$o \
+    bitio_stdio$o     huffman$o         messages$o \
+    bitio_gen$o       filestats$o       huffman_mem$o     perf_hash$o \
+    bitio_mem$o       getopt$o          huffman_stdio$o   sptree$o \
+    bitio_mems$o      getopt1$o         local_strings$o   lovinstem$o \
+    timing$o \
+    error$o           xmalloc$o \
+    random$o          simplefrenchstem$o \
+    unitool$o
+#   gmalloc$o regex$o		rx$o 
+
+LIB_OBJECTS =   \
+    bitio_random$o    mgheap$o            memlib$o \
+    bitio_stdio$o     huffman$o          \
+    bitio_gen$o       filestats$o       huffman_mem$o     perf_hash$o \
+    bitio_mem$o       getopt$o          huffman_stdio$o   sptree$o \
+    bitio_mems$o      getopt1$o         local_strings$o   lovinstem$o \
+    timing$o \
+    error$o           xmalloc$o \
+    random$o          simplefrenchstem$o \
+    unitool$o
+
+
+DISTFILES = Makefile.in $(HEADERS) $(SOURCES)
+
+all : libmglib.a gsdllibmg.a
+
+libmglib.a : $(OBJECTS)
+	rm -f libmglib.a
+	$(AR) cru libmglib.a $(OBJECTS)
+	$(RANLIB) libmglib.a
+
+$(OBJECTS): ../config.h
+
+gsdllibmg.a: $(LIB_OBJECTS)
+	rm -f gsdllibmg.a
+	$(AR) cru gsdllibmg.a $(LIB_OBJECTS)
+	$(RANLIB) gsdllibmg.a
+
+
+install: 
+installdirs:
+uninstall:
+execinstall:
+execuninstall:
+maninstall:
+manuninstall:
+
+dist: $(DISTFILES)
+	for file in $(DISTFILES); do \
+	  ln $$file $(distdir) 2> /dev/null \
+	  || cp -p $$file $(distdir); \
+	done
+
+mostlyclean:
+	rm -f *.o *_.o
+
+clean: mostlyclean
+	rm -f libmglib.a gsdllibmg.a
+
+distclean: clean
+	rm -f Makefile
+
+maintainer-clean: distclean
+	@echo "This command is intended only for maintainers to use;"
+	@echo "rebuilding the deleted files may require special tools."
+
+#Makefile: Makefile.in ../../../config.status
+#	cd ../../.. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+# Tell versions [3.59,3.63) of GNU make not to export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

@@ -1,0 +1,91 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mgticprune.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mgticprune 1 \*(Dt CITRI
+.SH NAME
+mgticprune \- prunes the library to remove duplicates
+.SH SYNOPSIS
+.B mgticprune
+[
+.BI \-a " n"
+]
+[
+.BI \-s " n"
+]
+[
+.B \-Q
+]
+.I libraryfile
+.if n .ti +9n
+[
+.I pruned-libraryfile
+]
+.SH DESCRIPTION
+.B mgticprune
+examines
+.I libraryfile
+and removes duplicate marks.  If
+.I pruned-libraryfile
+is not specified,
+.I libraryfile
+is overwritten with the marks in the pruned library.  The Combined
+Symbol Independent Strategy (CSIS) method is used to match marks.
+.SH OPTIONS
+Options may appear in any order.
+.TP "\w'\fIpruned-libraryfile\fP'u+2n"
+.B \-h
+This displays a usage line on
+.IR stderr .
+.TP
+.BI \-a " n"
+Prune marks when their area is under or equal to the threshold,
+.IR n .
+The default value is\ 3.
+.TP
+.BI \-s " n"
+Prune marks when their width and height is under or equal to
+the threshold,
+.IR n .
+The default value is\ 0.
+.TP
+.BI \-Q
+Use a quicker method of pruning.  The number of iterations through the
+averaging and pruning processes is decreased.  This usually reduces
+time by a half, but compression ratios decrease.
+.TP
+.I libraryfile
+This specifies the name of the library file
+.TP
+.I pruned-libraryfile
+This specifies the name of the prune library, after duplicates and
+matches have been removed.  If this file is not specified, then
+.I libraryfile
+will be overwritten.
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_compression_dict (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_invf_dict (1),
+.BR mg_invf_dump (1),
+.BR mg_invf_rebuild (1),
+.BR mg_passes (1),
+.BR mg_perf_hash_build (1),
+.BR mg_text_estimate (1),
+.BR mg_weights_build (1),
+.BR mgbilevel (1),
+.BR mgbuild (1),
+.BR mgdictlist (1),
+.BR mgfelics (1),
+.BR mgquery (1),
+.BR mgstat (1),
+.BR mgtic (1),
+.BR mgticbuild (1),
+.BR mgticdump (1),
+.BR mgticstat (1).

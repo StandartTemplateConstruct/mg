@@ -1,0 +1,347 @@
+###########################################################################
+#
+# help.mg.src -- Source for the help command
+# Copyright (C) 1994  Neil Sharman
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#       @(#)help.mg.src	1.8 21 Mar 1994
+#
+###########################################################################
+#
+# The help file for mgquery.  
+# Lines starting with '#' are treated as comments and are discarded when
+# the 'help.mg.h' file is produced
+#
+###########################################################################
+
+			  HELP for mgquery
+		   ================================
+
+The text is a summary of the information in the "mgquery" manual pages.
+
+The input to 'mgquery' consists of a series of input lines. The backslash
+character ("\") is used at the end of lines to indicate that input 
+continues on the next line.
+
+Input lines on which the first character is a dot (".") are commands to
+the mgquery program. Input lines that do not start with a dot are queries.
+
+A query consists of two parts. One part is a boolean or ranked query that
+identifies documents. The second part is a post-processing pattern matching
+operation. Any text between the first speech mark (") and the last speech
+mark is considered to the a post-processing pattern. 
+
+
+The following command are available :-
+
+    .help	     - displays this text.
+    .quit            - quits the program.
+    .set name value  - sets parameter "name" to "value" . If the parameter
+                       is a boolean parameter and value is omitted the
+	    	       parameter will be inverted (i.e. if it is true it
+		       will change to false, if it is false it will change
+		       to true).
+    .unset name      - deletes parameter "name"
+    .reset           - sets all the parameters to their initial state.
+    .display         - displays the values of all the current parameters.
+    .push            - pushes the current parameters on to a stack.
+    .pop             - destroys the current parameters and pops a new set
+                       of parameters off the stack.
+    .output arg      - This is used to specify where to send the documents.
+                       Arg may one be of the following:
+		       > filename  : Send output to the specified file.
+		       >> filename : Append output to the specified file.
+                       | command   : The output is piped into command, 
+                                     which is executed by sh.
+    .input arg       - This is used to specify where input comes from.
+                       Arg may one be of the following:
+		       < filename  : Get the input from the specified
+                                     file.
+                       | command   : The input comes from the standard
+                                     output of command, which is executed
+                                     by sh.
+
+On startup the mgquery program reads from the file .mgrc a sequence 
+of commands (NOTE: The .mgrc file may not contain any queries). mgquery 
+first looks for .mgrc in the current directory and then in the users home 
+directory. Lines starting with a '#' in the .mgrc file are considered to
+be comments and are ignored.
+
+The following parameters (used in the .set and .unset commands) are 
+predefined and have special significance :-
+
+accumulator_method = `array'
+	This parameter is used during ranking, and specifies how the
+	weight for each document should be accumulated. The following
+	methods are available `array', `splay_tree', `hash_table', and
+	`list'.
+
+briefstats = `off'
+	This is a boolean parameter that determines whether the the
+	totals for disk, memory and time usage statistics will be 
+	displayed. at the end of each query. 
+	NOTE: this takes precedence over the parameters "diskstats",
+	"memstats" and "timestats". This parameter may take the values 
+	`yes', `no', `true', `false', `on' or `off'.
+
+buffer = `1048576'
+	When the documents are being read in they are read into a 
+	buffer of this size and then displayed from this buffer. If 
+        the documents are larger than this buffer the buffer is
+	expanded automatically. Having a large buffer gives a very
+	slight performance improvement because it allows the order of 
+	disk operations to be optimised. The buffer size is measured
+	in bytes.
+
+diskstats = `off'
+	This is a boolean parameter that determines whether the disk
+	usage statistics for the preceding query will be displayed
+	after each query. This parameter may take the values `yes',
+	`no', `true', `false', `on' or `off'.
+
+doc_sepstr = `---------------------------------- %n\n'
+	This specifies the string that will be used to separate 
+	documents when they are displayed for `boolean' or `docnums'
+	queries. The standard C escape character sequences (see the 
+	man page) may be used to place special characters in the 
+	string. For example, a newline would the `\n'. To include a `%'
+	use the sequence `%%'. To include the MG document number use
+	the sequence `%n'.
+
+expert = `false'
+	If this is true then a lot of the waffle that the program 
+	spits out is suppressed. This parameter may take the values
+	`yes', `no', `true', `false', `on' or `off'.
+
+hash_tbl_size = `1000'
+	One of the options during ranking queries is to use a hash 
+	table to accumulate the weights for each document. The hash 
+	table is a simple chained type. This parameter specifies the 
+	size of the hash table and may take any value between 8 and
+	268435456. 
+
+heads_length = `50'
+	When the mode is `heads' this specifies the number of 
+	characters that	will be output for each document.
+
+maxdocs = `all'
+	The maximum number of documents to display in response to a
+	query. This parameter may take on a numeric value between 1 
+	and 429467295 or the word `all'.
+
+maxparas = `1000'
+	The maximum number of paragraphs to identify during a ranked
+	query with paragraph indexing. After the paragraphs have been
+	identified the paragraphs are converted into documents, and 
+	because some of the paragraphs may refer to the same documents 
+	the final number of answers may be less that maxparas. The 
+	maxdocs parameter will then be applied. This parameter may 
+	take on a numeric value between 1 and 429467295.
+
+max_accumulators = `50000'
+	This parameter limits the number of different paragraph/
+	document numbers to be accumulated during ranked queries when 
+	the parameter `accumulator_method` is set to `splay_tree',
+	`hash_table', or `list'.  This parameter may take any value 
+	between 8 and 268435456.
+
+max_terms = `all'
+	This parameter limits the number of terms that will actually
+	be used during a ranked query. If more terms than the number
+	specified by max_terms are entered, then the extra terms will
+	be discarded. If `sorted_terms' is on then the limiting will 
+	be done after the terms have been sorted. This parameter may
+	take any value between 1 and 429467295 or the word `all'.
+
+memstats = `off'
+	This is a boolean parameter that determines whether the memory 
+	usage statistics for the preceding query will be displayed
+	after each query. This parameter may take the values `yes', 
+	`no', `true', `false', `on' or `off'.
+
+mgdir = `.'
+	This specifies the directory where the MG files may be found.
+	If the environment variable `MGDATA' is set then `mgdir' is
+	initialised to the value in `MGDATA'.
+
+mgname = `'
+	This specifies the name of the MG database to process.
+
+mode = `text'
+	This specifies how documents should be displayed when they
+	are retrieved it may take four different values `text', 
+	`docnums', `silent', `heads' or `count'. `text' displays 
+	the contents of the document. `docnums' displays only the
+	document numbers. `Silent' retrieves all the documents but
+	displays nothing except how many documents were retrieved.
+	This mode is intended to be used in timing experiments. 
+	`Heads` is used to print out the head of each document.
+	`Count' does the minimum amount of work required to determine
+	how many documents would be retrieved, but does not retrieve
+	them.
+
+pager = `more'
+	This is the name of the program that will be used to display
+	the help and the retrieved documents. If the environment 
+	variable "PAGER" is defined then `pager' takes on that value.
+
+para_sepstr = `\n######## PARAGRAPH %n ########\n'
+	This specifies the string that will be used to separate 
+	paragraphs. The standard C escape character sequences (see the 
+	man page) may be used to place special characters in the 
+	string. For example, a newline would the `\n'. To include a `%'
+	use the sequence `%%'. To include the paragraph number within
+	the document use the sequence `%n'.
+
+para_start = `***** Weight = %w *****\n'
+	This specifies the string that will be used at the head of 
+	paragraphs for a paraghaph level index following a ranked query.
+	The standard C escape character sequences (see the man page)
+	may be used to place special characters in the string. For 
+	example, a newline would the `\n'. To include a `%' use the
+	sequence `%%'. To include the paragraph weight use the 
+	sequence `%w'.
+
+qfreq = `true'
+	This determine whether the ranked queries will take into 
+	account the number of times each query term is specified.
+	When this is `true' the number of times a term appears in
+	the query is used in the ranking. When this is `false' all 
+	query term are assumed to occur only once. This parameter
+	may take the values `yes', `no', `true', `false', `on' or
+	`off'.
+
+query = `boolean'
+	This specifies the type of queries that are to be specified.
+	It can take four different values `boolean', `ranked', 
+	`docnums' or `approx-ranked'. 
+
+	`boolean' is for boolean queries. 
+		The yacc grammar for boolean queries is as follows :-
+
+		query   : or;
+ 
+		or      : or '|' and
+		        | and ;	
+ 
+		and     : and '&' not
+        		| and not
+        		| not ;
+
+		not     : term
+		        | '!' not ;
+ 
+		term    : TERM
+		        | '(' or ')' ;
+ 
+
+
+
+	`ranked' and `approx-ranked' are for queries ranked by the
+		cosine measure. `approx-ranked' uses only the low
+		precision document lengths, and therefore only
+		produces an approximation to full cosine ranking.
+
+		query   : TERM
+      			| query TERM ;
+	
+	`docnums' allows the entry of document numbers. Multiple 
+		numbers separated by spaces may be specified
+		or ranges separated by hyphens.
+
+
+		query   : range
+			| query range ;
+
+
+		range   : num
+			| num '-' num ;
+
+
+ranked_doc_sepstr = `---------------------------------- %n %w\n'
+	This specifies the string that will be used to separate 
+	documents when they are displayed for `ranked' or 
+	`approx-ranked'	queries. The standard C escape character 
+	sequences (see the man page) may be used to place special
+	characters in the string. For example, a newline would the
+	`\n'. To include a `%' use the sequence `%%'. To include the
+	MG document number use the sequence `%n'. To include the
+	document weight use the sequence `%w'.
+
+sizestats = `false'
+	If this is true then various numbers are output at the end
+	of each query indicating what went on during the query. 
+	This parameter may take the values `yes', `no', `true', 
+	`false', `on' or `off'.
+
+skip_dump = `skips.%d'
+	If this parameter is set then during ranked queries on skipped
+	inverted files when `accumulator_method' is set to `splay_tree',
+	`hash_table', or `list` a file will be produced in the current
+	directory. The name of the file is the value of this parameter,
+	a `%d' in the file name will be replaced with the process id of
+	mgquery. This file will contain information about the usage of
+	skips during the query processing. This option is expensive; 
+	use `.unset skip_dump' to obtain optimal performance.
+
+sorted_terms = `on'
+	This specifies whether of not the terms should be sorted into
+	decreasing occurrence in documents so that the least often
+	occurring terms are processed first when ranked queries are
+	being done. When this is true the terms are sorted. When this
+	is false the terms are not sorted and are instead processed in
+	order of occurrence. This parameter may take the values `yes',
+	`no', `true', `false', `on' or `off'.
+
+
+stop_at_max_accum = `on'
+	This specifies what should happen when the maximum number of
+	accumulators set by `max_accumulators' is reached. When this
+	is true the the processing of terms is stopped at the completion
+	of the current term. When this is false processing continues but
+	no new accumulators are created. This parameter may take the 
+	values `yes', `no', `true', `false', `on' or `off'.
+
+terminator = `'
+	This specifies the string that will be output after the	last
+	document from the previous query has been output. The standard
+	C escape character sequences (see the man page) may be used to
+	place special characters in the string. For example, a newline
+	would the `\n'. To include a `%' use the sequence `%%'.
+	
+
+timestats = `false'
+	If this is true then the time to process a query is displayed
+	in both real time and CPU time. This parameter may take the
+	values `yes', `no', `true', `false', `on' or `off'.
+
+verbatim = `off'
+	This is a boolean parameter that determines whether the program
+	should attempt to do a regular expression match on the retrieved
+	text. If verbatim is `on' and a post-processing strng is specified
+	with the query then the post-processing string will be searched for
+	in the documents just before they are displayed. If the string is
+	found the document will be displayed, if not the document will not
+	be displayed. If verbatim is `off' the post-processing string will
+	be considered a regular expression like in `vi' or `egrep'.
+	E.G. If verbatim is `on', "and.*the" will look for the 8 character
+	     sequence "and.*the". If verbatim is `off', "and.*the" will
+	     look for the sequence "and" followed somewhere later in the
+	     document by the sequence "the".
+	This parameter may take the values `yes', `no', `true', `false',
+	`on' or `off'.
+
+

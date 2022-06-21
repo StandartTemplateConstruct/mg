@@ -1,0 +1,388 @@
+###########################################################################
+#
+# Makefile.in -- Makefile for the MG system
+# Copyright (C) 1994  Neil Sharman;  1995 Tim Shimmin
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#       @(#)Makefile.in	1.10 22 Mar 1994
+#
+###########################################################################
+
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+
+SHELL = /bin/sh
+VPATH = @srcdir@
+exec_prefix = @exec_prefix@
+prefix = @prefix@
+bindir = @bindir@
+srcdir = @srcdir@
+subdir = src/text
+top_srcdir = @top_srcdir@
+transform = @program_transform_name@
+
+
+AR = ar
+CC = @CC@
+CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -fpic
+DEFS = @DEFS@
+RANLIB = @RANLIB@
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+LDFLAGS = @LDFLAGS@ @COMPAT32BITFLAGS@
+LIBS = ../../lib/libmglib.a @LIBS@
+TOUCH = echo timestamp >
+AWK = @AWK@
+YACC = @YACC@
+
+##########################################
+# Uncomment for compiling for the nzdl project
+#
+CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -fpic -DNZDL -DQUIET -DSHORT_SUFFIX -DPARADOCNUM
+##########################################
+
+datadir = $(prefix)/share
+libexecdir = $(exec_prefix)/libexec
+localedir = $(datadir)/locale
+mandir = $(prefix)/man/man1
+
+COMPILE = $(CC) -c $(DEFS) $(TREC_MODE) $(READLINE) $(INCLUDES) $(CFLAGS)
+LINK = $(CC) $(LDFLAGS) -o $@
+
+.SUFFIXES:
+.SUFFIXES: .c .o
+.c.o:
+	$(COMPILE) $<
+
+
+ANSI2KNR = @ANSI2KNR@
+o = .@U@o
+
+.SUFFIXES: ._c ._o
+.c._c:
+	./ansi2knr $< > $*.tmp && mv $*.tmp $@
+._c._o:
+	@echo $(COMPILE) $<
+	@rm -f _$*.c
+	@ln $< _$*.c && $(COMPILE) _$*.c && mv _$*.o $@ && rm _$*.c
+.c._o:
+	./ansi2knr $< > $*.tmp && mv $*.tmp $*._c
+	@echo $(COMPILE) $*._c
+	@rm -f _$*.c
+	@ln $*._c _$*.c && $(COMPILE) _$*.c && mv _$*.o $@ && rm _$*.c
+
+INCLUDES = -I../../../.. -I../.. -I../../lib -I.
+
+#############################################################################
+#
+# Uncomment (and possibly edit) the following lines if you wish
+# to use the GNU readline library for the input in mgquery
+# 
+#READLINE = -DGNU_READLINE -I/opt/gnu/include/readline -L/opt/gnu/lib
+#READLINE_LIBS = -lreadline -ltermcap
+#
+#
+#############################################################################
+
+#############################################################################
+#
+# When working with the trec collection this should be uncommented.
+#
+# TREC_MODE = -DTREC_MODE
+#
+#
+#############################################################################
+
+SOURCES = \
+  backend.c               locallib.c              mg_weights_build.c   \
+  bool_optimiser.c        mg.special.c            mgdictlist.c         \
+  bool_parser.c           mg_compression_dict.c   mgquery.c            \
+  bool_query.c            mg_errors.c             mgstat.c             \
+  bool_tester.c           mg_fast_comp_dict.c     mg_decompress_text.c \
+  bool_tree.c             mg_files.c              query.docnums.c      \
+  commands.c              mg_hilite_words.c       query.ranked.c       \
+  comp_dict.c             mg_invf_dict.c          read_line.c          \
+  environment.c           mg_invf_dump.c          stem_search.c        \
+  mg_invf_merge.c         stemmer.c               mg_stem_idx.c        \
+  mg_invf_rebuild.c       term_lists.c            mgstemidxlist.c      \
+  invf_get.c              mg_passes.c             text.pass1.c         \
+  ivf.pass1.c             mg_perf_hash_build.c    text.pass2.c         \
+  ivf.pass2.c             mg_text_estimate.c      text_get.c           \
+  lists.c                 mg_text_merge.c         weights.c            \
+  query_term_list.c       words.c                 mg_passes_4jni.c
+
+HEADERS = \
+  backend.h          conditions.h       locallib.h         term_lists.h \
+  bool_optimiser.h   environment.h      mg.h               text.h       \
+  bool_parser.h      globals.h          mg_errors.h        text_get.h   \
+  bool_query.h       hash.h             mg_files.h         warranty.h   \
+  bool_tree.h        help.mg.h          mg_merge.h         weights.h    \
+  build.h            invf.h             read_line.h        words.h      \
+  commands.h         invf_get.h         stem_search.h                   \
+  comp_dict.h        lists.h            stemmer.h                       \
+  query_term_list.h
+
+
+MISC          = Makefile.in help.mg.src bool_parser.y warranty.src conditions.src
+
+ALLFILES      =	$(SOURCES) $(HEADERS) $(MISC) $(MAN)
+
+DISTFILES     = $(ALLFILES) 
+
+EXEC          = mgquery mg_weights_build mgstat mg_invf_dump mg_invf_dict \
+                mg_invf_rebuild mgdictlist mg_passes mg_perf_hash_build \
+                mg_compression_dict mg_text_estimate mg_fast_comp_dict \
+                mg_hilite_words mg_invf_merge mg_text_merge bool_tester \
+                mg_stem_idx mgstemidxlist mg_decompress_text 
+
+MAN           = mgquery.1 mg_weights_build.1 mgstat.1 mg_invf_dump.1 mg_invf_dict.1 \
+                mg_invf_rebuild.1 mgdictlist.1 mg_passes.1 mg_perf_hash_build.1 \
+                mg_compression_dict.1 mg_text_estimate.1 mg_fast_comp_dict.1 \
+                mg_hilite_words.1 mg_invf_merge.1 mg_text_merge.1 \
+                mg_stem_idx.1 mgstemidxlist.1 mg_decompress_text.1 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+all:	$(EXEC) libmgtext.a libmgpass.a
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+help.mg.h : help.mg.src
+	sed -e 's/\\/\\\\/g' -e 's/\"/\\\"/g' help.mg.src | $(AWK) '/^#/ { next; };{ if (x == 0) printf("static char *help_str[] = {\n\"%s\\n\"", $$0); else printf(",\n\"%s\\n\"", $$0); x = 1; }; END { printf("};\n"); }' - >help.mg.h
+
+warranty.h : warranty.src
+	sed  -e 's/\\/\\\\/g' -e 's/\"/\\\"/g' warranty.src | $(AWK) '/^#/ { next; };{ if (x == 0) printf("static char *warranty_str[] = {\n\"%s\\n\"", $$0); else printf(",\n\"%s\\n\"", $$0); x = 1; }; END { printf("};\n"); }' - >warranty.h
+
+conditions.h : conditions.src
+	sed -e 's/\\/\\\\/g' -e 's/\"/\\\"/g' conditions.src | $(AWK) '/^#/ { next; };{ if (x == 0) printf("static char *cond_str[] = {\n\"%s\\n\"", $$0); else printf(",\n\"%s\\n\"", $$0); x = 1; }; END { printf("};\n"); }' - >conditions.h
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+HILITE_OBJS = mg_hilite_words$o stemmer$o locallib$o words$o environment$o
+
+mg_hilite_words: $(HILITE_OBJS)
+	$(LINK) $(HILITE_OBJS) $(LIBS)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+bool_parser.c: bool_parser.y
+	$(YACC) $?
+	mv y.tab.c $@
+
+BOOL_OBJS = bool_tester$o bool_tree$o bool_parser$o bool_optimiser$o  \
+            term_lists$o stemmer$o stem_search$o mg_errors$o query_term_list$o \
+	    words$o environment$o
+
+bool_tester: $(BOOL_OBJS)
+	$(LINK) $(BOOL_OBJS) $(LIBS)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+QUERY_OBJS = \
+	mgquery$o locallib$o lists$o \
+	query.ranked$o query.docnums$o stem_search$o \
+	environment$o commands$o weights$o text_get$o stemmer$o \
+	read_line$o mg_errors$o backend$o invf_get$o \
+	term_lists$o bool_tree$o bool_parser$o bool_optimiser$o bool_query$o \
+	query_term_list$o words$o
+
+mgquery: $(QUERY_OBJS)	
+	$(LINK) $(READLINE) $(QUERY_OBJS) $(READLINE_LIBS) $(LIBS)
+
+commands$o : help.mg.h warranty.h conditions.h
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+PASSES_OBJS = \
+	mg_passes$o text.pass1$o comp_dict$o stemmer$o \
+	text.pass2$o locallib$o \
+	ivf.pass1$o ivf.pass2$o mg.special$o mg_files$o \
+	words$o environment$o
+
+mg_passes: $(PASSES_OBJS)
+	$(LINK) $(PASSES_OBJS) $(LIBS) 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+WEIGHTS_BUILD_OBJS = mg_weights_build$o mg_files$o
+
+mg_weights_build: $(WEIGHTS_BUILD_OBJS)
+	$(LINK) $(WEIGHTS_BUILD_OBJS) $(LIBS)
+
+COMP_DICT_OBJS = mg_compression_dict$o mg_files$o locallib$o
+
+mg_compression_dict: $(COMP_DICT_OBJS)
+	$(LINK) $(COMP_DICT_OBJS) $(LIBS)
+
+FAST_COMP_OBJS = mg_fast_comp_dict$o mg_files$o locallib$o
+
+mg_fast_comp_dict: $(FAST_COMP_OBJS)
+	$(LINK) $(FAST_COMP_OBJS) $(LIBS)
+
+TEXT_EST_OBJS = mg_text_estimate$o locallib$o comp_dict$o mg_files$o
+
+mg_text_estimate: $(TEXT_EST_OBJS)
+	$(LINK) $(TEXT_EST_OBJS) $(LIBS)
+
+STAT_OBJS = mgstat$o mg_files$o locallib$o
+
+mgstat:	$(STAT_OBJS)
+	$(LINK) $(STAT_OBJS) $(LIBS)
+
+INVF_DUMP_OBJS = mg_invf_dump$o locallib$o mg_files$o
+
+mg_invf_dump: $(INVF_DUMP_OBJS)
+	$(LINK) $(INVF_DUMP_OBJS) $(LIBS)
+
+INVF_DICT_OBJS = mg_invf_dict$o mg_files$o locallib$o
+
+mg_invf_dict: $(INVF_DICT_OBJS)
+	$(LINK) $(INVF_DICT_OBJS) $(LIBS)
+
+INVF_REB_OBJS = mg_invf_rebuild$o locallib$o
+
+mg_invf_rebuild: $(INVF_REB_OBJS)
+	$(LINK) $(INVF_REB_OBJS) $(LIBS)
+
+DICTLIST_OBJS = mgdictlist$o locallib$o
+
+mgdictlist: $(DICTLIST_OBJS)
+	$(LINK) $(DICTLIST_OBJS) $(LIBS)
+
+PERF_HASH_OBJS = mg_perf_hash_build$o mg_files$o
+
+mg_perf_hash_build: $(PERF_HASH_OBJS)
+	$(LINK) $(PERF_HASH_OBJS) $(LIBS)
+
+STEM_IDX_OBJS = \
+                mg_stem_idx$o mg_files$o stemmer$o locallib$o \
+                mg_errors$o term_lists$o
+
+mg_stem_idx: $(STEM_IDX_OBJS)
+	$(LINK) $(STEM_IDX_OBJS) $(LIBS)
+
+STEM_IDX_LIST_OBJS = mgstemidxlist$o mg_files$o
+
+mgstemidxlist: $(STEM_IDX_LIST_OBJS)
+	$(LINK) $(STEM_IDX_LIST_OBJS) $(LIBS)
+
+DECOMPRESS_TEXT_OBJS = \
+                mg_decompress_text.o query_term_list.o mg_files.o mg_errors.o \
+                text_get.o locallib.o backend.o stem_search.o \
+                term_lists.o stemmer.o weights.o invf_get.o lists.o
+
+mg_decompress_text: $(DECOMPRESS_TEXT_OBJS)
+	$(LINK) $(DECOMPRESS_TEXT_OBJS) $(LIBS)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+TEXT_MERGE_OBJS = mg_text_merge$o mg_files$o locallib$o
+
+mg_text_merge: $(TEXT_MERGE_OBJS)
+	$(LINK) $(TEXT_MERGE_OBJS) $(LIBS)
+
+INVF_MERGE_OBJS = mg_invf_merge$o mg_files$o locallib$o
+
+mg_invf_merge: $(INVF_MERGE_OBJS)
+	$(LINK) $(INVF_MERGE_OBJS) $(LIBS)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+ansi2knr: ansi2knr.o
+	$(LINK) ansi2knr.o $(LIBS)
+
+install: execinstall #maninstall
+uninstall: execuninstall manuninstall
+
+execinstall: $(EXEC)
+	$(top_srcdir)/mkinstalldirs $(bindir); \
+	for name in $(EXEC); do \
+	  $(INSTALL_PROGRAM) $$name \
+	  $(bindir)/`echo $$name | sed '$(transform)'`; \
+	done
+
+execuninstall:
+	for name in $(EXEC); do \
+	 rm -f $(bindir)/`echo $$name | sed '$(transform)'`; \
+	done
+
+maninstall: $(MAN)
+	$(top_srcdir)/mkinstalldirs $(mandir); \
+	for f in $(MAN); do \
+	  $(INSTALL_DATA) $$f $(mandir)/$$f ;\
+	done
+
+manuninstall: $(MAN)
+	for f in $(MAN); do \
+	  rm -f $(mandir)/$$f ;\
+	done
+
+LIB_OBJS = \
+	query_term_list$o \
+	locallib$o lists$o \
+	query.ranked$o query.docnums$o stem_search$o \
+	environment$o commands$o weights$o text_get$o stemmer$o \
+	read_line$o mg_errors$o backend$o invf_get$o \
+	term_lists$o bool_tree$o bool_parser$o bool_optimiser$o \
+	bool_query$o words$o
+
+libmgtext.a: $(LIB_OBJS)
+	rm -f libmgtext.a
+	$(AR) cru libmgtext.a $(LIB_OBJS)
+	$(RANLIB) libmgtext.a
+
+JNI_LIB_OBJS = \
+	mg_passes_4jni$o text.pass1$o comp_dict$o stemmer$o \
+	text.pass2$o locallib$o  words$o environment$o\
+	ivf.pass1$o ivf.pass2$o mg.special$o mg_files$o 
+
+libmgpass.a: $(JNI_LIB_OBJS)
+	rm -f libmgpass.a
+	$(AR) cru libmgpass.a $(JNI_LIB_OBJS)
+	$(RANLIB) libmgpass.a
+
+mostlyclean:
+	rm -f *$o _*.c _*.o *._c *._o core core.*
+
+clean: mostlyclean
+	rm -f $(EXEC) libmgtext.a libmgpass.a
+
+distclean: clean
+	rm -f ansi2knr
+	rm -f Makefile
+
+maintainer-clean: distclean
+	@echo "This command is intended only for maintainers to use;"
+	@echo "rebuilding the deleted files may require special tools."
+
+dist: $(DISTFILES)
+	for file in $(DISTFILES); do \
+	  ln $(srcdir)/$$file $(distdir) 2> /dev/null \
+	  || cp -p $(srcdir)/$$file $(distdir); \
+	done
+
+# Tell versions [3.59,3.63) of GNU make not to export all variables.
+# Otherwise a system limit (for SysV at least) may be exc
+
+
+
+
+
+

@@ -1,0 +1,212 @@
+.\"------------------------------------------------------------  
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4 
+..
+.Id $Id: mgintro++.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.ds r \&\s-1MG\s0
+.if n .ds - \%--
+.if t .ds - \(em
+.\"------------------------------------------------------------  
+.am SS
+.LP
+..
+.\"------------------------------------------------------------
+.TH MGINTRO++ 1 \*(Dt CITRI
+.\"--------------------------------------------------------------
+.SH NAME
+mgintro++ \- extended introduction to the MG system
+.\"-------------------------------------------------------------
+.SH DESCRIPTION
+This manual assumes the reader has already read
+.BR mgintro (1).
+.\"-------------------------------------------------------------
+.SS Creating Different Databases
+If a user wants to build databases other than for some
+predefined ones, such as "alice", "davinci", "mailfiles", "allfiles",
+then the user has a couple of choices.
+Ultimately (s)he must produce a text file with control-Bs 
+terminating the documents. 
+To do this one can produce one or more such files, or write a
+"get" command (typically in the form of a script or c program).
+.\"-------------------------------------------------------------
+.SS Using Input Files for mgbuild
+If you don't want to write a "get" script and just want to use
+one or more text files as input, then you must first generate
+the file with control-Bs. For a simple example, you could take
+any text file(s) such as "test1.txt" and "test2.txt", and use 
+.BR vi (1)
+to insert control-Bs by typing "control-V b".
+Next you should create a file with "set" statements 
+in the following form:
+.PP
+.IP
+\fBset pipe = 0 # do not use pipe - use file instead 
+.br
+\fBset input_files = 'test1.txt test2.txt'
+.LP
+Let's call this file, "build_options".
+Now issue the command:
+.IP
+.B mgbuild -s build_options test
+.LP
+This should build a database called "test" in the $MGDATA directory,
+based on the source data of "test1.txt" and "test2.txt".
+The build_options file is simply sourced by 
+.BR mgbuild (1)
+after it has set up its variables. 
+Therefore, any settings one makes in the
+build_options file will override the standard settings.
+See 
+.BR mgbuild (1) 
+for more information.
+.\"-------------------------------------------------------------
+.SS Writing A Get Program
+Instead of using files as input, it is often more convenient to 
+write a "get" program. This program is called by 
+.BR mgbuild (1)
+to get the text data with control-Bs as document terminators.
+It should take three options:
+.br
+(i) -init; (ii) -text; (iii) -cleanup.
+.br
+Get will be called with "init" first and with "cleanup" at the end.
+It will call get with "text" when it wants the text and it should
+write the text to stdout.
+.br
+See 
+.BR mg_get (1)
+for an example.
+.\"-------------------------------------------------------------
+.SS Regular Builds
+The MG system provides a static database; 
+there are no update commands.
+So if one wants to keep one's database reasonably up-to-date
+then one can have this done automatically on a regular basis by 
+.BR cron (1).
+A crontab file can be created using:
+crontab -e
+A crontab file contains lines of the form:
+.nf
+.IP
+\fBminute hour day-of-month month day-of-week shell-command.
+.LP
+.fi
+See
+.BR crontab (1)
+for more information.
+.nf
+An example crontab entry is:
+.IP
+\fB15 02 * * * mgbuild allfiles >$MGDATA/allfiles/allfiles.log 2>&1
+.LP
+.fi
+This will build up the mg database for "allfiles", your mail in
+the folders, every morning at 2:15am. 
+.\"
+.\"-------------------------------------------------------------
+.SS Command Structure
+There are 22 commands that make up the mg system. However,
+a user may only need to be aware of a few: 
+.BR mgbuild (1),
+.BR mgquery (1), 
+and perhaps
+.BR mg_get (1). 
+Many of the commands are called by 
+.BR mgbuild(1).
+The commands can be broken up into a hierarchy.
+.PP
+--------------------------------------
+.br
+MG--+--image compression
+    |  |
+    |  +--mgbilevel
+    |  |
+    |  +--mgfelics
+    |  |
+    |  +--mgtic
+    |  |
+    |  +--mgticbuild
+    |  |
+    |  +--mgticdump
+    |  |
+    |  +--mgticprune
+    |  |
+    |  +--mgticstat
+    |
+    +--text 
+       |
+       +--compression
+       |  |
+       |  +--mg_passes -T1
+       |  |
+       |  +--mg_passes -T2
+       |  |
+       |  +--mg_compression_dict
+       |  |
+       |  +--mg_fast_comp_dict
+       |
+       +--indexing
+       |  |
+       |  +--mg_passes -N1
+       |  |
+       |  +--mg_passes -N2
+       |  |
+       |  +--mg_perf_hash_build
+       |  |
+       |  +--mg_invf_dict
+       |  |
+       |  +--mg_invf_rebuild
+       |  
+       +--weights
+       |  |
+       |  +--mg_weights_build
+       |
+       +--query
+       |  |
+       |  +--mgquery
+       |
+       +--tools
+          |
+          +--mg_invf_dump
+          |
+          +--mg_text_estimate
+          |
+          +--mgdictlist
+          |
+          +--mgstat
+.br
+--------------------------------------
+.PP
+.nf
+.BR mgbuild (1)
+calls the following commands:
+.RS
+.BR mg_passes (1), mg_compression_dict (1)
+.BR mg_perf_hash_build (1), mg_invf_dict (1), mg_invf_rebuild (1)
+.BR mg_weights_build (1)
+.RE
+.fi
+.\"--------------------------------------------
+.SH SEE ALSO
+.BR mgintro (1),
+.BR mgbuild (1),
+.BR mg_get (1)
+.br
+"Guide To The \*r System", in Appendix A of the book:
+.PP
+.RS
+.nf
+Ian H. Witten, Alistair Moffat, and Timothy C. Bell
+.I "Managing Gigabytes: Compressing and Indexing Documents and Images"
+Van Nostrand Reinhold
+1994
+xiv + 429 pages
+US$54.95 
+ISBN 0-442-01863-0
+Library of Congress catalog number TA1637 .W58 1994.
+.fi
+.RE
+

@@ -1,0 +1,63 @@
+
+SHELL = /bin/sh
+VPATH = @srcdir@
+exec_prefix = @exec_prefix@
+prefix = @prefix@
+bindir = @bindir@
+srcdir = @srcdir@
+libdir = @libdir@
+subdir = java/org/greenstone/mg
+top_srcdir = @top_srcdir@
+transform = @program_transform_name@
+
+AR = ar
+CC = @CC@
+CXX = @CXX@
+JAVAC = @JAVAC@
+JAVAH = javah
+JAR = jar
+CFLAGS = @CFLAGS@ @COMPAT32BITFLAGS@ -ansi -DSILENT -DSHORT_SUFFIX
+CXXFLAGS = @CXXFLAGS@ @COMPAT32BITFLAGS@ -DSILENT -DSHORT_SUFFIX
+JAVACFLAGS = @JAVACFLAGS@
+DEFS = @DEFS@
+RANLIB = @RANLIB@
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+LDFLAGS = @LDFLAGS@ @COMPAT32BITFLAGS@
+LIBS =  -lstdc++ @LIBS@
+TOUCH = echo timestamp >
+AWK = @AWK@
+
+MGHOME=../../../..
+JAVACLASSDIR=./classes
+JAVASRCDIR=../../..
+JAVACOPTIONS= -deprecation -g -O
+JAVACLASSPATH=$(JAVACLASSDIR)
+
+datadir = $(prefix)/share
+libexecdir = $(exec_prefix)/libexec
+localedir = $(datadir)/locale
+mandir = $(prefix)/man/man1
+
+
+all: setup compile
+
+setup:
+	mkdir -p $(JAVACLASSDIR)
+
+compile: setup
+	"$(JAVAC)" $(JAVACFLAGS) -d "$(JAVACLASSDIR)" -sourcepath "$(JAVASRCDIR)" $(JAVACOPTIONS) *.java
+	"$(JAVAH)" -classpath "$(JAVACLASSPATH)" -d "$(MGHOME)/jni" org.greenstone.mg.MGWrapper
+	"$(JAVAH)" -classpath "$(JAVACLASSPATH)" -d "$(MGHOME)/jni" org.greenstone.mg.MGPassesWrapper
+	"$(JAR)" cf "$(MGHOME)/mg.jar" -C "$(JAVACLASSDIR)" org
+
+clean:
+	rm -rf "$(JAVACLASSDIR)" "$(MGHOME)/mg.jar" "$(MGHOME)/jni/org_greenstone_mg_MGWrapper.h" "$(MGHOME)/jni/org_greenstone_mg_MGPassesWrapper.h"
+
+install:
+
+distclean: clean
+	rm -f Makefile
+
+

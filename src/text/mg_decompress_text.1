@@ -1,0 +1,78 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mg_decompress_text.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mg_decompress_text 1 \*(Dt CITRI
+.SH NAME
+mg_decompress_text \- decompresses the compressed text of a collection
+.SH SYNOPSIS
+.B mg_decompress_text
+[
+.B \-h
+]
+[
+.BI \-d " directory"
+]
+.BI \-f " name"
+.SH DESCRIPTION
+.B mg_decompress_text
+decompresses the compressed text of a collection, inserts paragraph and
+document markers, writing the output to
+.IR stdout ".  "
+This program was created
+to be used as a type of
+.BR mg_get (1).
+.SH OPTIONS
+Options may appear in any order.
+.TP "\w'\fB\-d\fP \fIdirectory\fP'u+2n"
+.B \-h
+This displays a usage line on
+.IR stderr .
+.TP
+.BI \-d " directory"
+This specifies the directory where the document collection can be found.
+.TP
+.BI \-f " name"
+This specifies the base name of the document collection.
+.SH ENVIRONMENT
+.TP "\w'\fBMGDATA\fP'u+2n"
+.SB MGDATA
+If this environment variable exists, then its value is used as the
+default directory where the
+.BR mg (1)
+collection files are.  If this variable does not exist, then the
+directory \*(lq\fB.\fP\*(rq is used by default.  The command line
+option
+.BI \-d " directory"
+overrides the directory in
+.BR MGDATA .
+.SH FILES
+.TP 25
+.B *.text
+Compressed documents.
+.TP
+.B *.text.idx
+Index into the compressed documents.
+.TP
+.B *.text.dict
+Compressed compression dictionary.
+.TP
+.B *.text.dict.aux
+Auxiliary compression dictionary.
+.TP
+.B *.text.dict.fast
+Fast loading compression dictionary.
+.TP
+.B *.invf.paragraph
+Paragraph counts for documents.
+.SH "SEE ALSO"
+.na
+.BR mg (1),
+.BR mg_compression_dict (1),
+.BR mg_fast_comp_dict (1),
+.BR mg_get (1),
+.BR mg_passes (1).

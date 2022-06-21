@@ -1,0 +1,53 @@
+.\"------------------------------------------------------------
+.\" Id - set Rv,revision, and Dt, Date using rcs-Id tag.
+.de Id
+.ds Rv \\$3
+.ds Dt \\$4
+..
+.Id $Id: mgbuild_4.1 16583 2008-07-29 10:20:36Z davidb $
+.\"------------------------------------------------------------
+.TH mgbuild_4 1 \*(Dt CITRI
+.SH NAME
+mgbuild_4 \- build an mg system database using 4 passes instead of 2
+.SH SYNOPSIS
+.B mgbuild_4
+[
+.B \-c
+]
+[
+.BI \-g " get"
+]
+[
+.BI \-s " source"
+]
+[
+.BI \-d " mgdata dir"
+]
+.I collection-name
+.SH DESCRIPTION
+.B mgbuild_4
+is a
+.B csh
+script that executes all the appropriate programs in the correct order
+to completely build an
+.BR mg (1)
+system database ready for queries to be made
+by
+.BR mgquery.
+This program makes use of the
+.BR mg_get (1)
+script to obtain the text of the collection.
+In 
+.BR mgbuild (1)
+the build is done by two passes over the input text. The first
+pass creates the compressed text dictionary and inverted file dictionary,
+the second pass creates the compressed text and inverted file. What 
+.BR mgbuild_4
+does is use a separate pass for each function. This will be slower but will
+not require as much RAM at one time. Therefore, if your build is failing
+due to running short of memory, then 
+.BR mgbuild_4
+is worth a try.
+.SH "SEE ALSO"
+.na
+.BR mgbuild (1)
